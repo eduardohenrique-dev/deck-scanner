@@ -1,0 +1,44 @@
+{
+  "id": "mtg",
+  "name": "Magic: The Gathering",
+  "zones": [
+    { "id": "commander", "name": "Comandante" },
+    { "id": "deck", "name": "Deck" },
+    { "id": "sideboard", "name": "Sideboard" },
+    { "id": "maybeboard", "name": "Talvez" }
+  ],
+  "languages": [
+    { "id": "en", "name": "Inglês" },
+    { "id": "pt", "name": "Português" },
+    { "id": "es", "name": "Espanhol" },
+    { "id": "ja", "name": "Japonês" },
+    { "id": "de", "name": "Alemão" },
+    { "id": "fr", "name": "Francês" },
+    { "id": "it", "name": "Italiano" },
+    { "id": "ko", "name": "Coreano" },
+    { "id": "ru", "name": "Russo" },
+    { "id": "zhs", "name": "Chinês simplificado" },
+    { "id": "zht", "name": "Chinês tradicional" },
+    { "id": "ph", "name": "Phyrexiano" }
+  ],
+  "finishes": [
+    { "id": "nonfoil", "name": "Normal" },
+    { "id": "foil", "name": "Foil" },
+    { "id": "etched", "name": "Etched" }
+  ],
+  "conditions": ["NM", "SP", "MP", "HP", "D"],
+  "number_words": {
+    "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+    "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16,
+    "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20
+  },
+  "identity": {
+    "field": "color_identity",
+    "order": ["W", "U", "B", "R", "G"],
+    "labels": { "W": "Branco", "U": "Azul", "B": "Preto", "R": "Vermelho", "G": "Verde" }
+  },
+  "vision": {
+    "aspect_ratio": 1.397,
+    "card_back_prefix": "__back__"
+  }
+}

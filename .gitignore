@@ -1,0 +1,20 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# dados gerados localmente (catálogo, hashes, uploads, cache de imagens, cenas sintéticas)
+backend/data/
+backend/.env
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# SO / editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

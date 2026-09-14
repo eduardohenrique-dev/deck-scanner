@@ -1,0 +1,24 @@
+{
+  "game": "mtg",
+  "id": "pauper",
+  "name": "Pauper",
+  "group": "Construído",
+  "order": 28,
+  "description": "Mínimo 60 cartas, só comuns, até 4 cópias (deck + sideboard), sideboard até 15.",
+  "deck_size": { "min": 60, "zones": ["deck"] },
+  "zones": ["deck", "sideboard", "maybeboard"],
+  "zone_limits": { "sideboard": { "max": 15 } },
+  "copy_limit": 4,
+  "copy_limit_zones": ["deck", "sideboard"],
+  "copy_limit_exceptions": [
+    { "match": "type_line_regex", "value": "\\bBasic\\b.*\\bLand\\b", "limit": null, "reason": "terreno básico" },
+    { "match": "oracle_text_regex", "value": "A deck can have (?:any number of|up to (?P<n>\\w+)) cards named", "limit": "from_text", "capture": "n", "reason": "permissão no texto da carta" }
+  ],
+  "legality_key": "pauper",
+  "restricted_list_limit": null,
+  "requires_commander": false,
+  "enforces_color_identity": false,
+  "suggestions": [
+    { "type": "mtg_basic_lands", "land_count": 22, "min_sources_early": 14, "min_sources_any": 10 }
+  ]
+}

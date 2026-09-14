@@ -1,0 +1,9 @@
+{
+  "games": [
+    { "id": "mtg", "name": "Magic: The Gathering", "enabled": true, "adapter": "app.games.mtg.adapter:MtgAdapter" },
+    { "id": "pokemon", "name": "Pokémon TCG", "enabled": false, "note": "em breve" },
+    { "id": "ygo", "name": "Yu-Gi-Oh!", "enabled": false, "note": "em breve" },
+    { "id": "lorcana", "name": "Disney Lorcana", "enabled": false, "note": "em breve" },
+    { "id": "opcg", "name": "One Piece Card Game", "enabled": false, "note": "em breve" }
+  ]
+}

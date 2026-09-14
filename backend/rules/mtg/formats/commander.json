@@ -1,0 +1,46 @@
+{
+  "game": "mtg",
+  "id": "commander",
+  "name": "Commander (EDH)",
+  "group": "Commander",
+  "order": 10,
+  "description": "100 cartas (99 + comandante), 1 cópia, identidade de cor do comandante.",
+  "deck_size": { "exact": 100, "zones": ["deck", "commander"] },
+  "zones": ["commander", "deck", "maybeboard"],
+  "copy_limit": 1,
+  "copy_limit_zones": ["deck", "commander"],
+  "copy_limit_exceptions": [
+    { "match": "type_line_regex", "value": "\\bBasic\\b.*\\bLand\\b", "limit": null, "reason": "terreno básico" },
+    { "match": "oracle_text_regex", "value": "A deck can have (?:any number of|up to (?P<n>\\w+)) cards named", "limit": "from_text", "capture": "n", "reason": "permissão no texto da carta" }
+  ],
+  "legality_key": "commander",
+  "restricted_list_limit": null,
+  "requires_commander": true,
+  "commander": {
+    "zone": "commander",
+    "max": 2,
+    "eligibility": { "match": "any", "of": [
+      { "match": "front_type_line_regex", "value": "\\bLegendary\\b.*\\bCreature\\b" },
+      { "match": "all", "of": [
+        { "match": "front_type_line_contains", "value": "Legendary" },
+        { "match": "oracle_text_regex", "value": "isn't on the battlefield, it's an? [^.\\n]*creature" }
+      ] },
+      { "match": "oracle_text_contains", "value": "can be your commander" }
+    ] },
+    "pairing": [
+      { "name": "Partner", "both": { "match": "all", "of": [
+        { "match": "keywords_contains", "value": "Partner" },
+        { "match": "not", "of": { "match": "keywords_contains", "value": "Partner with" } }
+      ] } },
+      { "name": "Partner with", "a": { "match": "oracle_text_regex", "value": "Partner with (?P<partner>[^\\n(]+?)\\s*(?:\\(|\\n|$)" }, "b_name_equals_capture": "partner" },
+      { "name": "Friends forever", "both": { "match": "oracle_text_contains", "value": "Friends forever" } },
+      { "name": "Choose a Background", "a": { "match": "keywords_contains", "value": "Choose a background" }, "b": { "match": "type_line_contains", "value": "Background" }, "grants_eligibility_to_b": true },
+      { "name": "Doctor's companion", "a": { "match": "keywords_contains", "value": "Doctor's companion" }, "b": { "match": "type_line_contains", "value": "Time Lord Doctor" } }
+    ]
+  },
+  "enforces_color_identity": true,
+  "identity": { "field": "color_identity", "order": ["W", "U", "B", "R", "G"], "zones": ["deck", "commander"] },
+  "suggestions": [
+    { "type": "mtg_basic_lands", "land_count": 37, "min_sources_early": 18, "min_sources_any": 12 }
+  ]
+}

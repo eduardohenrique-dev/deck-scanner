@@ -1,0 +1,19 @@
+{
+  "game": "mtg",
+  "id": "limited",
+  "name": "Limitado (Draft / Selado)",
+  "group": "Limitado",
+  "order": 40,
+  "description": "Mínimo 40 cartas, sem limite de cópias.",
+  "deck_size": { "min": 40, "zones": ["deck"] },
+  "zones": ["deck", "sideboard", "maybeboard"],
+  "copy_limit": null,
+  "copy_limit_exceptions": [],
+  "legality_key": null,
+  "restricted_list_limit": null,
+  "requires_commander": false,
+  "enforces_color_identity": false,
+  "suggestions": [
+    { "type": "mtg_basic_lands", "land_count": 17, "min_sources_early": 9, "min_sources_any": 7 }
+  ]
+}

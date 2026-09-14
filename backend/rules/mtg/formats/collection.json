@@ -1,0 +1,18 @@
+{
+  "game": "mtg",
+  "id": "collection",
+  "name": "Coleção (sem formato)",
+  "group": "Coleção",
+  "order": 50,
+  "description": "Sem limite nenhum: só conta o que foi escaneado.",
+  "deck_size": null,
+  "zones": ["deck"],
+  "zone_labels": { "deck": "Coleção" },
+  "copy_limit": null,
+  "copy_limit_exceptions": [],
+  "legality_key": null,
+  "restricted_list_limit": null,
+  "requires_commander": false,
+  "enforces_color_identity": false,
+  "suggestions": []
+}

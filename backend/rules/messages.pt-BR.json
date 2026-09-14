@@ -1,0 +1,19 @@
+{
+  "copy_limit_exceeded": "{detected} cópias de {name} — {format} permite {limit}",
+  "copy_limit_violation": "{quantity} cópias de {name} no deck — {format} permite {limit}",
+  "exception_applied": "{name}: {detected} cópias mantidas ({reason})",
+  "zone_not_allowed": "{name} está em {zone}, zona que {format} não usa",
+  "deck_size_missing": "Faltam {missing} cartas para fechar {target} ({count}/{target})",
+  "deck_size_excess": "Sobram {excess} cartas ({count}/{target})",
+  "deck_size_min_missing": "Faltam {missing} cartas para o mínimo de {target} ({count})",
+  "deck_size_max_excess": "Sobram {excess} cartas acima do máximo de {target} ({count})",
+  "zone_max_excess": "{zone}: {count} cartas — máximo {max}",
+  "banned": "{name} é banida em {format}",
+  "not_legal": "{name} não é legal em {format}",
+  "commander_missing": "Marque o comandante do deck",
+  "commander_too_many": "No máximo {max} comandantes",
+  "commander_ineligible": "{name} não pode ser comandante (precisa ser criatura lendária ou dizer que pode ser seu comandante)",
+  "commander_pairing_invalid": "{names} não formam uma dupla válida de comandantes",
+  "commander_quantity": "{name}: o comandante é uma única carta",
+  "identity_violation": "{name} ({card_identity}) está fora da identidade de cor do comandante ({identity})"
+}
