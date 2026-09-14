@@ -379,8 +379,12 @@ def _filter_partials(partials: list[CardQuad], full: list[CardQuad]) -> list[Car
     return out
 
 
-def detect_primary_card(frame: np.ndarray, max_dim: int = 960) -> CardQuad | None:
-    """Modo vídeo: a carta dominante (maior e mais central) do frame."""
+def detect_primary_card(frame: np.ndarray, max_dim: int = 960, prior: np.ndarray | None = None) -> CardQuad | None:
+    """Modo vídeo: a carta dominante (maior e mais central) do frame.
+
+    `prior` é o quadrilátero da carta no frame anterior: candidatos coerentes com ele ganham
+    preferência (rastreamento), o que evita pular para caixas internas em frames isolados.
+    """
     quads = detect_cards(frame, max_dim=max_dim, min_area_frac=0.02)
     if not quads:
         return None
@@ -390,7 +394,10 @@ def detect_primary_card(frame: np.ndarray, max_dim: int = 960) -> CardQuad | Non
 
     def rank(q: CardQuad) -> float:
         dist = float(np.linalg.norm(q.center - center)) / diag
-        return (q.area / (W * H)) * (0.6 + q.score) * (1.2 - dist) * (0.5 if q.kind == "edge" else 1.0)
+        r = (q.area / (W * H)) * (0.6 + q.score) * (1.2 - dist) * (0.5 if q.kind == "edge" else 1.0)
+        if prior is not None and quad_iou(q.pts, prior) >= 0.6:
+            r *= 2.0
+        return r
 
     return max(quads, key=rank)
 

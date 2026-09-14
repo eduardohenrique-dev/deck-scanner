@@ -76,21 +76,34 @@ def _set_number(e: dict, arena_codes: dict | None = None) -> str:
     return f"({code.upper()}) {e.get('collector_number')}"
 
 
+def _merge_by_name(entries: list[dict], lang: str) -> list[dict]:
+    """Formato só com nome: impressões/idiomas diferentes da mesma carta viram uma linha só."""
+    merged: dict[str, dict] = {}
+    for e in entries:
+        name = display_name(e, lang)
+        if name in merged:
+            merged[name] = {**merged[name], "quantity": merged[name]["quantity"] + e["quantity"]}
+        else:
+            merged[name] = dict(e)
+    return list(merged.values())
+
+
 def export_ligamagic(entries: list[dict], options: dict) -> str:
     lang = options.get("lang", "en")
     commanders, main, side = _zones(entries)
-    lines: list[str] = [f"{e['quantity']} {display_name(e, lang)}" for e in commanders]
+    lines: list[str] = [f"{e['quantity']} {display_name(e, lang)}" for e in _merge_by_name(commanders, lang)]
     if commanders:
         lines.append("")
     last_group = None
-    for e in _sorted(main, options.get("group", False)):
+    for e in _merge_by_name(_sorted(main, options.get("group", False)), lang):
         g = type_group(e.get("front_type_line", ""))
         if options.get("group") and last_group is not None and g != last_group:
             lines.append("")
         last_group = g
         lines.append(f"{e['quantity']} {display_name(e, lang)}")
     if side:
-        lines += ["", "Sideboard"] + [f"{e['quantity']} {display_name(e, lang)}" for e in _sorted(side, options.get("group", False))]
+        lines += ["", "Sideboard"] + [f"{e['quantity']} {display_name(e, lang)}"
+                                      for e in _merge_by_name(_sorted(side, options.get("group", False)), lang)]
     return "\n".join(lines).strip() + "\n"
 
 

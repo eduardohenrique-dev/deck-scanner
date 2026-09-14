@@ -457,6 +457,18 @@ def run(session_id: str) -> dict:
 
 def decide(session_id: str, detection_id: str, other_id: str, same: bool) -> None:
     """Decisão humana sobre um par: mesma carta (força colapso) ou cartas diferentes (bloqueia)."""
+    first, second = store.get_detection(detection_id), store.get_detection(other_id)
+    capture = store.get_capture(first["capture_id"]) if first else None
+    if first and second and capture and capture["type"] != "image":
+        # vídeo: a sequência já é a evidência; a exibição posterior aponta (ou deixa de apontar) para a anterior
+        later, earlier = (first, second) if first["seq"] > second["seq"] else (second, first)
+        notes = [n for n in (later.get("notes") or []) if n != "mesma carta do grupo anterior — contada como outra cópia"]
+        if same:
+            store.update_detection(later["id"], dup_of=earlier.get("dup_of") or earlier["id"], dup_status="user_same",
+                                   notes=notes, dup_candidates={"merged_reasons": ["confirmado na revisão: mesma carta"]})
+        else:
+            store.update_detection(later["id"], dup_of=None, dup_status="user_different", notes=notes)
+        return
     for a, b in ((detection_id, other_id), (other_id, detection_id)):
         d = store.get_detection(a)
         if d is None:

@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --color-bg: #0e1013;
+  --color-panel: #15191e;
+  --color-panel-2: #1c2128;
+  --color-panel-3: #252b33;
+  --color-line: #2c333c;
+  --color-text: #ebe8e1;
+  --color-muted: #99a2ad;
+  --color-faint: #6b7480;
+  --color-accent: #f2b544;
+  --color-accent-strong: #ffc85c;
+  --color-accent-ink: #1b1405;
+  --color-ok: #3fcf8e;
+  --color-warn: #f0b429;
+  --color-bad: #f2646f;
+  --color-info: #6fa8ff;
+
+  --color-mana-w: #f5f0d0;
+  --color-mana-u: #b9d3ee;
+  --color-mana-b: #bdb3ad;
+  --color-mana-r: #eda383;
+  --color-mana-g: #a4c79a;
+  --color-mana-c: #cfc7c3;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 40%, transparent);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-panel-3) transparent;
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-pop {
+  animation: pop-in 220ms ease-out both;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent) 55%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 10px transparent;
+  }
+}
+
+.pulse-ring {
+  animation: pulse-ring 1.4s ease-out infinite;
+}

@@ -23,9 +23,10 @@ from . import deck, identify, store, vlm
 from .photo import _store_result, finish_if_idle
 from .serialize import capture_public, detection_public
 
-SAME_THRESH = 80          # bits de 256 (pHash da arte) para "mesma carta" entre frames
-CONFIRM_FRAMES = 2        # frames seguidos com outra assinatura para trocar de carta
-GAP_FRAMES = 2            # frames sem carta nítida que encerram o grupo (~200 ms a 10 fps)
+SAME_THRESH = 100         # bits de 256 (pHash da arte): acima disso, com a carta parada, é outra carta
+                          # (pares aleatórios ficam em ~128±8; fragmentos da mesma carta são refundidos pela identidade)
+STABLE_MOTION = 0.10      # deslocamento entre frames (fração da largura da carta) para considerar a carta parada
+FAST_MOTION = 0.25        # acima disso é a carta sendo tirada/colocada
 MIN_SHARPNESS = 22.0
 MAX_BEST_FRAMES = 3
 PROCESS_MAX_SIDE = 1280
@@ -68,61 +69,104 @@ def _sig_dist(a: FrameObs, b: FrameObs) -> int:
     return min(hashing.hamming(a.sig, b.sig), hashing.hamming(a.sig, b.sig180))
 
 
+def _center_and_width(pts: np.ndarray) -> tuple[np.ndarray, float]:
+    p = np.asarray(pts, np.float32)
+    return p.mean(axis=0), float((np.linalg.norm(p[0] - p[1]) + np.linalg.norm(p[3] - p[2])) / 2)
+
+
 class TemporalGrouper:
+    """Agrupa frames por continuidade temporal com carta PARADA.
+
+    - frame estável: carta detectada, nítida, deslocada menos de STABLE_MOTION desde o frame anterior;
+    - frames instáveis formam uma transição; a transição guarda o evento mais forte visto:
+      "empty" (carta sumiu) > "fast" (carta sendo tirada) > "unstable" (tremida/foco);
+    - após transição "empty"/"fast" começa OUTRA carta física, mesmo com a mesma arte (básicos seguidos);
+    - após transição leve, continua a mesma carta se a assinatura e a posição conferem;
+    - com a carta parada, assinatura muito diferente = carta trocada no lugar.
+    """
+
+    STRENGTH = {None: 0, "unstable": 1, "fast": 2, "empty": 3}
+
     def __init__(self, on_close: Callable[[Group], None]):
         self.on_close = on_close
         self.current: Group | None = None
-        self.pending: list[FrameObs] = []
-        self.miss = 0
-        self.gap = {"empty": 0, "blurry": 0, "moved": False}
         self.seq = 0
-        self.last_valid_pts: np.ndarray | None = None
+        self.prev_pts: np.ndarray | None = None
+        self.transition: str | None = None
+        self.transition_frames = 0
+        self.fast_run = 0
+        self.empty_run = 0
+        self.last_stable_pts: np.ndarray | None = None
         self.last_closed_pts: np.ndarray | None = None
+        self.areas: list[float] = []
+        self.sharps: list[float] = []
+
+    def _mark(self, kind: str) -> None:
+        if self.STRENGTH[kind] > self.STRENGTH[self.transition]:
+            self.transition = kind
+        self.transition_frames += 1
 
     def push(self, obs: FrameObs) -> None:
-        valid = obs.pts is not None and obs.q is not None and obs.q["sharpness"] >= MIN_SHARPNESS
-        if not valid:
-            self.miss += 1
-            if obs.pts is None:
-                self.gap["empty"] += 1
-            else:
-                self.gap["blurry"] += 1
-                if self.last_valid_pts is not None and detect.quad_iou(obs.pts, self.last_valid_pts) < 0.6:
-                    self.gap["moved"] = True
-            self.pending.clear()
-            if self.current is not None and self.miss >= GAP_FRAMES:
+        if obs.pts is None:
+            self.prev_pts = None
+            self.empty_run += 1
+            self.fast_run = 0
+            self._mark("empty")
+            if self.current is not None and self.transition_frames >= 2:
                 self._close()
             return
-        if self.current is None:
-            self._open(obs)
+        area = float(cv2.contourArea(np.asarray(obs.pts, np.float32)))
+        center, width = _center_and_width(obs.pts)
+        sharpness = obs.q["sharpness"] if obs.q is not None else 0.0
+        ref_sharp = float(np.median(self.sharps[-15:])) if self.current is not None and len(self.sharps) >= 2 else None
+        if self.current is not None and len(self.areas) >= 2:
+            ref_area = float(np.median(self.areas[-15:]))
+            if not (0.65 * ref_area <= area <= 1.5 * ref_area):
+                inside = self.last_stable_pts is not None and cv2.pointPolygonTest(
+                    np.asarray(self.last_stable_pts, np.float32).reshape(-1, 1, 2),
+                    (float(center[0]), float(center[1])), False) >= 0
+                # contorno menor dentro da carta parada = falha do detector (caixa de arte, reflexo);
+                # contorno maior ou deslocado = carta saindo junto com a mão (evidência de troca).
+                # (tratar contorno borrado como troca corrigia um caso e partia várias cartas com reflexo)
+                self._mark("unstable" if (area < 0.65 * ref_area and inside) else "fast")
+                return
+        motion = 0.0
+        if self.prev_pts is not None:
+            motion = float(np.linalg.norm(center - _center_and_width(self.prev_pts)[0])) / max(width, 1.0)
+        self.prev_pts = obs.pts
+        sharp_ok = sharpness >= MIN_SHARPNESS and (ref_sharp is None or sharpness >= 0.2 * ref_sharp)
+        if motion > STABLE_MOTION or not sharp_ok:
+            self._mark("fast" if motion > FAST_MOTION else "unstable")
             return
-        if _sig_dist(obs, self.current.ref) <= SAME_THRESH:
-            self.current.add(obs)
-            self.miss = 0
-            self.pending.clear()
-            self.gap = {"empty": 0, "blurry": 0, "moved": False}
-            self.last_valid_pts = obs.pts
-            return
-        self.pending.append(obs)
-        if len(self.pending) >= CONFIRM_FRAMES:
-            if _sig_dist(self.pending[-1], self.pending[0]) <= SAME_THRESH:
-                pending = self.pending
-                self.pending = []
-                self._close()
-                self.gap = {"empty": 0, "blurry": 0, "moved": True}
-                self._open(pending[0])
-                for o in pending[1:]:
-                    self.current.add(o)
-            else:
-                self.pending = self.pending[-1:]
+        self.fast_run = 0
+        self.empty_run = 0
 
-    def _open(self, obs: FrameObs) -> None:
+        gap = {"event": self.transition, "frames": self.transition_frames}
+        if self.current is None:
+            self._open(obs, gap)
+        elif self.transition in ("empty", "fast"):
+            self._close()
+            self._open(obs, gap)
+        elif _sig_dist(obs, self.current.ref) > SAME_THRESH:
+            self._close()  # carta trocada sem sair do lugar
+            self._open(obs, gap)
+        elif self.transition == "unstable" and self.last_stable_pts is not None \
+                and detect.quad_iou(obs.pts, self.last_stable_pts) < 0.7:
+            self._close()
+            self._open(obs, gap)
+        else:
+            self.current.add(obs)
+        self.areas.append(area)
+        self.sharps.append(sharpness)
+        self.transition, self.transition_frames = None, 0
+        self.last_stable_pts = obs.pts
+
+    def _open(self, obs: FrameObs, gap: dict) -> None:
         self.seq += 1
-        self.current = Group(seq=self.seq, gap_before=dict(self.gap), prev_last_pts=self.last_closed_pts)
+        self.current = Group(seq=self.seq, gap_before=gap, prev_last_pts=self.last_closed_pts)
         self.current.add(obs)
-        self.gap = {"empty": 0, "blurry": 0, "moved": False}
-        self.miss = 0
-        self.last_valid_pts = obs.pts
+        self.areas = []
+        self.sharps = []
 
     def _close(self) -> None:
         g, self.current = self.current, None
@@ -132,7 +176,6 @@ class TemporalGrouper:
         self.on_close(g)
 
     def flush(self) -> None:
-        self.pending.clear()
         self._close()
 
 
@@ -146,6 +189,7 @@ class FrameSequenceProcessor:
         self.grouper = TemporalGrouper(self._on_group_closed)
         self.futures = []
         self.lock = threading.Lock()
+        self.consolidate_lock = threading.Lock()
         self.groups: dict[int, dict] = {}
         self.frames_seen = 0
         self.frame_shape: tuple | None = None
@@ -158,7 +202,7 @@ class FrameSequenceProcessor:
         self.frame_shape = frame.shape
         obs = FrameObs(t=t, idx=self.frames_seen)
         self.frames_seen += 1
-        q = detect.detect_primary_card(frame)
+        q = detect.detect_primary_card(frame, prior=self.grouper.last_stable_pts)
         if q is not None:
             warped = detect.warp_card(frame, q.pts)
             obs.pts, obs.warped, obs.frame = q.pts, warped, frame
@@ -196,7 +240,8 @@ class FrameSequenceProcessor:
         bus.publish(self.session_id, {"type": "detection", "detection": detection_public(det, self.adapter)})
         with self.lock:
             self.groups[group.seq] = {"det_id": det_id, "done": False, "gap_before": group.gap_before,
-                                      "first_pts": group.frames[0].pts, "prev_last_pts": group.prev_last_pts}
+                                      "frames": len(group.frames),
+                                      "angles": [detect.long_axis_angle(f.pts) for f in group.frames]}
         self.futures.append(identify_pool.submit(self._identify_group, group, det_id))
 
     def _identify_group(self, group: Group, det_id: str) -> None:
@@ -234,36 +279,163 @@ class FrameSequenceProcessor:
                                           "detection": detection_public(store.get_detection(det_id), self.adapter)})
             with self.lock:
                 self.groups[group.seq]["done"] = True
-            self._check_repeat(group.seq)
-            self._check_repeat(group.seq + 1)
+            self.consolidate(final=False)
             deck.rebuild(self.session_id)
         finally:
             for o in group.best:
                 o.frame = o.warped = None
 
-    def _check_repeat(self, seq: int) -> None:
-        """Mesma carta em grupos seguidos: foco/tremida sem sair do lugar colapsa; do contrário são cópias."""
-        with self.lock:
-            cur, prev = self.groups.get(seq), self.groups.get(seq - 1)
-            if not cur or not prev or not cur["done"] or not prev["done"]:
+    NOTE_COPY = "mesma carta do grupo anterior — contada como outra cópia"
+    NOTE_LONG = "exibição longa: podem ser 2 cópias seguidas — confira a quantidade"
+
+    def consolidate(self, final: bool) -> None:
+        """Consolida a sequência de grupos (uma carta física por grupo) de forma idempotente.
+
+        - fragmento ruim (não identificado/ruído) sem transição forte = frames ruins da carta anterior;
+        - mesma identidade em grupos seguidos: funde se não houve carta saindo/movimento de troca, ou se
+          um dos lados é um fragmento curto; senão são cópias diferentes (com aviso);
+        - exibição muito mais longa que as demais recebe aviso de possível cópia dupla.
+        """
+        with self.consolidate_lock:
+            with self.lock:
+                ordered = sorted(self.groups.items())
+            items: list[dict] = []
+            for _, g in ordered:
+                if not g["done"]:
+                    if not final:
+                        break
+                    continue
+                items.append({"g": g, "d": store.get_detection(g["det_id"]), "frames": g["frames"]})
+            if not items:
                 return
-        dc, dp = store.get_detection(cur["det_id"]), store.get_detection(prev["det_id"])
-        if dc["status"] != "identified" or dp["status"] != "identified" or dc["oracle_id"] != dp["oracle_id"]:
+            durations = [it["d"]["t_end"] - it["d"]["t_start"] for it in items
+                         if it["d"]["status"] == "identified" and it["frames"] >= 4]
+            median_dur = float(np.median(durations)) if len(durations) >= 5 else None
+            decisions: dict[str, tuple[str | None, list[str]]] = {}
+            prev_real: dict | None = None
+            for it in items:
+                g, d = it["g"], it["d"]
+                gap = g["gap_before"] or {}
+                event = gap.get("event")
+                parent, reasons = None, []
+                if prev_real is not None:
+                    pd = prev_real["d"]
+                    same = d["status"] == pd["status"] and d["status"] in ("identified", "token", "back") \
+                        and d.get("oracle_id") == pd.get("oracle_id")
+                    if d["status"] in ("unidentified", "noise") and event in (None, "unstable"):
+                        parent, reasons = prev_real, ["frames ruins da mesma carta (sem transição)"]
+                    elif same and event in (None, "unstable"):
+                        parent, reasons = prev_real, ["mesma carta sem sair do quadro (tremida ou reposicionada)"]
+                    elif same and min(it["frames"], prev_real["frames"]) < 4 and gap.get("frames", 0) <= 3:
+                        parent, reasons = prev_real, ["fragmento curto da mesma carta"]
+                    elif same and median_dur and (d["t_end"] - pd["t_start"]) <= 1.6 * median_dur:
+                        # duas cópias reais somariam ~2 exibições + a troca; isto cabe em uma só
+                        parent, reasons = prev_real, ["mesma carta: interrupção curta dentro de uma exibição normal"]
+                if parent is not None:
+                    decisions[d["id"]] = (parent["d"]["id"], reasons)
+                    parent["frames"] += it["frames"]  # acumulador local: a carta fundida soma a exibição
+                else:
+                    decisions[d["id"]] = (None, [])
+                    if d["status"] != "noise":
+                        prev_real = it
+            lengths = [it["frames"] for it in items if decisions[it["d"]["id"]][0] is None and it["d"]["status"] == "identified"]
+            median_len = float(np.median(lengths)) if lengths else 0.0
+            plain = [(it["g"], it["d"]) for it in items]
+            for it in items:
+                g, d = it["g"], it["d"]
+                if d.get("dup_status") in ("user_same", "user_different"):
+                    continue  # decisão da revisão prevalece
+                root, reasons = decisions[d["id"]]
+                notes = [n for n in (d.get("notes") or []) if n not in (self.NOTE_COPY, self.NOTE_LONG)]
+                if root is None:
+                    fields = {}
+                    if d.get("dup_status") == "auto":
+                        fields.update(dup_of=None, dup_status=None)
+                    if d["status"] == "identified" and median_len and it["frames"] >= max(16, 1.8 * median_len):
+                        notes.append(self.NOTE_LONG)
+                    prev = self._previous_kept(plain, decisions, d["id"])
+                    if prev is not None and prev["status"] == d["status"] == "identified" and prev.get("oracle_id") == d.get("oracle_id"):
+                        notes.append(self.NOTE_COPY)
+                    if notes != (d.get("notes") or []):
+                        fields["notes"] = notes
+                    if fields:
+                        store.update_detection(d["id"], **fields)
+                elif d.get("dup_of") != root or d.get("dup_status") != "auto" or notes != (d.get("notes") or []):
+                    store.update_detection(d["id"], dup_of=root, dup_status="auto", notes=notes,
+                                           dup_candidates={"merged_reasons": reasons})
+
+    NOTE_SPLIT = "segunda cópia inferida: a pose da carta mudou no meio de uma exibição longa — confira"
+
+    def infer_hidden_copies(self) -> None:
+        """Cópias idênticas trocadas sem evento visível (ex.: básicos seguidos) viram uma exibição longa só.
+
+        Duas cartas físicas nunca ficam na mesma pose: se uma exibição longa (≥ 1,6× a mediana) tem uma mudança
+        sustentada de ângulo no meio, registra uma segunda cópia — sempre com aviso para conferir.
+        """
+        with self.lock:
+            ordered = sorted(self.groups.items())
+        dets = {g["det_id"]: store.get_detection(g["det_id"]) for _, g in ordered}
+        roots: dict[str, list[dict]] = {}
+        for _, g in ordered:
+            d = dets[g["det_id"]]
+            root = d.get("dup_of") if d.get("dup_status") == "auto" and d.get("dup_of") in dets else d["id"]
+            roots.setdefault(root, []).append(g)
+        spans = []
+        for root, parts in roots.items():
+            d = dets[root]
+            if d["status"] != "identified":
+                continue
+            t0 = min(dets[p["det_id"]]["t_start"] for p in parts)
+            t1 = max(dets[p["det_id"]]["t_end"] for p in parts)
+            spans.append((root, parts, t1 - t0))
+        if len(spans) < 5:
             return
-        gap = cur["gap_before"]
-        iou = detect.quad_iou(cur["prev_last_pts"], cur["first_pts"]) if cur["prev_last_pts"] is not None else 0.0
-        if gap.get("empty", 0) == 0 and not gap.get("moved") and iou >= 0.85:
-            store.update_detection(dc["id"], dup_of=dp.get("dup_of") or dp["id"], dup_status="auto",
-                                   dup_candidates={"merged_reasons": ["mesma carta sem sair do quadro (foco ou tremida)"]})
-        else:
-            note = "mesma carta do grupo anterior — contada como outra cópia"
-            if note not in (dc.get("notes") or []):
-                store.update_detection(dc["id"], notes=(dc.get("notes") or []) + [note])
+        median = float(np.median([s for _, _, s in spans]))
+        for root, parts, span in spans:
+            if span < 1.6 * median:
+                continue
+            angles = [a for p in parts for a in p.get("angles", [])]
+            if len(angles) < 10:
+                continue
+            best_delta, best_k = 0.0, None
+            for k in range(5, len(angles) - 4):
+                delta = abs(float(np.median(angles[:k])) - float(np.median(angles[k:])))
+                delta = min(delta, 180.0 - delta)
+                if delta > best_delta:
+                    best_delta, best_k = delta, k
+            clone_key = f"clone:{root}"
+            existing = db.app_db().execute(
+                "SELECT id FROM detections WHERE session_id=? AND raw_name=?", (self.session_id, clone_key)).fetchone()
+            if best_k is None or best_delta < 1.8:
+                continue
+            if existing:
+                continue
+            base = dets[root]
+            clone = {k: base[k] for k in ("bbox", "crop_path", "card_ref_id", "oracle_id", "face", "language", "finish",
+                                          "candidates", "quality", "temporal_group", "frame_count", "t_start", "t_end",
+                                          "art_phash", "full_phash")}
+            clone.update(status="identified", confidence=round(min(base["confidence"], 0.75), 3), source=base["source"],
+                         notes=[self.NOTE_SPLIT], raw_name=clone_key)
+            store.insert_detection_seq(self.session_id, self.capture_id, id=db.new_id(), **clone)
+            notes = [n for n in (base.get("notes") or []) if n != self.NOTE_LONG] + [self.NOTE_SPLIT]
+            store.update_detection(root, notes=notes)
+
+    @staticmethod
+    def _previous_kept(items: list, decisions: dict, det_id: str) -> dict | None:
+        prev = None
+        for _, d in items:
+            if d["id"] == det_id:
+                return prev
+            if decisions[d["id"]][0] is None and d["status"] != "noise":
+                prev = d
+        return None
 
     def finish(self) -> None:
         self.grouper.flush()
         for f in list(self.futures):
             f.result()
+        self.consolidate(final=True)
+        self.infer_hidden_copies()
         deck.rebuild(self.session_id)
 
 

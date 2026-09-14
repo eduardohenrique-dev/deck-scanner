@@ -52,12 +52,13 @@ def image_quality(img: np.ndarray) -> dict:
     gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
     lap = float(cv2.Laplacian(gray, cv2.CV_32F).var())
     hsv = cv2.cvtColor(small, cv2.COLOR_BGR2HSV)
-    glare = float(((hsv[:, :, 2] >= 245) & (hsv[:, :, 1] <= 40)).mean())
+    # reflexo = pixels estourados (quase 255) — molduras e caixas de texto brancas não contam
+    glare = float(((hsv[:, :, 2] >= 252) & (hsv[:, :, 1] <= 20)).mean())
     brightness = float(gray.mean())
     warnings = []
     if lap < 60:
         warnings.append("blur")
-    if glare > 0.02:
+    if glare > 0.04:
         warnings.append("glare")
     if brightness < 50:
         warnings.append("dark")
