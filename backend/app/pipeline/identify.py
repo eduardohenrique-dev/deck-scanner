@@ -25,7 +25,7 @@ MARGIN_MID = 8.0           # margem com confiança 0.5
 MARGIN_SLOPE = 2.2
 SCORE_SOFT_LIMIT = 145.0   # acima disso a confiança decai (score = d_art + 0.5·d_full)
 HASH_ACCEPT = 0.72         # ≈ margem ≥ 10: aceita direto pelo hash
-HASH_VERIFY = 0.12         # abaixo disso nem tenta ORB
+HASH_VERIFY = 0.0          # ORB nos 3 melhores candidatos de qualquer recorte não aceito (local, barato)
 BACK_MAX_SCORE = 110.0
 ORB_ACCEPT_INLIERS = 20
 

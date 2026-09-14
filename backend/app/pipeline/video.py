@@ -165,6 +165,8 @@ class FrameSequenceProcessor:
             obs.sig = hashing.compute_hashes(warped).art
             obs.sig180 = hashing.compute_hashes(cv2.rotate(warped, cv2.ROTATE_180)).art
             obs.q = quality.frame_quality(warped, q.pts, frame.shape)
+            if q.kind == "edge":  # carta saindo do quadro: vale para agrupar, mas não como melhor frame
+                obs.q["score"] = round(obs.q["score"] * 0.6, 4)
         self.grouper.push(obs)
         fh, fw = frame.shape[:2]
         cur = self.grouper.current
@@ -185,8 +187,8 @@ class FrameSequenceProcessor:
         quad = (best.pts / np.array([fw, fh], np.float32)).round(5).tolist()
         xs, ys = [p[0] for p in quad], [p[1] for p in quad]
         crop = store.save_crop(self.session_id, det_id, best.warped)
-        det = store.insert_detection(
-            self.session_id, self.capture_id, id=det_id, seq=store.next_seq(self.session_id),
+        det = store.insert_detection_seq(
+            self.session_id, self.capture_id, id=det_id,
             bbox={"quad": quad, "rect": [min(xs), min(ys), max(xs), max(ys)]}, crop_path=crop, status="pending",
             confidence=0.0, source="none", temporal_group=group.seq, frame_count=len(group.frames),
             t_start=round(group.frames[0].t, 3), t_end=round(group.frames[-1].t, 3),

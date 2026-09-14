@@ -102,6 +102,8 @@ def _binary_maps(small: np.ndarray, gray: np.ndarray) -> list[np.ndarray]:
     maps = []
     auto = cv2.Canny(blur, int(max(10, 0.66 * med)), int(min(255, 1.33 * med + 20)))
     maps.append(cv2.morphologyEx(cv2.dilate(auto, k3, iterations=2), cv2.MORPH_CLOSE, k3))
+    # sem dilatação: preserva o vão fino entre cartas encostadas
+    maps.append(cv2.morphologyEx(cv2.Canny(blur, 40, 120), cv2.MORPH_CLOSE, k3))
     weak = cv2.Canny(blur, 20, 60)
     maps.append(cv2.dilate(weak, k3, iterations=1))
     # borda preta das cartas contra fundos mais claros
@@ -138,7 +140,7 @@ def _intersection(a: np.ndarray, b: np.ndarray) -> float:
 
 
 def detect_cards(img: np.ndarray, *, max_dim: int = 1280, min_area_frac: float = 0.003,
-                 include_partial: bool = False) -> list[CardQuad]:
+                 max_area_frac: float = 0.7, include_partial: bool = False) -> list[CardQuad]:
     H, W = img.shape[:2]
     scale = min(1.0, max_dim / float(max(H, W)))
     small = cv2.resize(img, (int(W * scale), int(H * scale)), interpolation=cv2.INTER_AREA) if scale < 1 else img
@@ -153,7 +155,7 @@ def detect_cards(img: np.ndarray, *, max_dim: int = 1280, min_area_frac: float =
         contours, _ = cv2.findContours(m, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            if area < min_area_frac * img_area or area > 0.9 * img_area:
+            if area < min_area_frac * img_area or area > max_area_frac * img_area:
                 continue
             for q in _contour_quads(cnt):
                 q = order_quad(q)
@@ -168,15 +170,16 @@ def detect_cards(img: np.ndarray, *, max_dim: int = 1280, min_area_frac: float =
                 if not ok:
                     continue
                 qarea = float(cv2.contourArea(q))
-                if qarea < min_area_frac * img_area:
+                if qarea < min_area_frac * img_area or qarea > max_area_frac * img_area:
                     continue
                 ratio = ((sides[1] + sides[3]) / 2) / ((sides[0] + sides[2]) / 2)
                 support = _edge_support(q, support_edges)
                 if support < 0.35:
                     continue
+                ratio = float(ratio)
                 ratio_fit = max(0.0, 1 - abs(ratio - CARD_RATIO) / 0.3)
-                score = 0.5 * support + 0.3 * ratio_fit + 0.2 * (1 - dev / 35.0)
-                cq = CardQuad(pts=q, score=score, area=qarea, ratio=ratio, support=support)
+                score = float(0.5 * support + 0.3 * ratio_fit + 0.2 * (1 - dev / 35.0))
+                cq = CardQuad(pts=q, score=score, area=qarea, ratio=ratio, support=float(support))
                 if RATIO_MIN <= ratio <= RATIO_MAX:
                     raw.append(cq)
                 elif include_partial and support >= 0.55:
@@ -186,7 +189,12 @@ def detect_cards(img: np.ndarray, *, max_dim: int = 1280, min_area_frac: float =
     kept = _nms(raw)
     if include_partial and kept:
         kept += _filter_partials(_nms(partial_raw), kept)
+    margin = 0.006 * max(w, h)
     for q in kept:
+        near_border = ((q.pts[:, 0] <= margin) | (q.pts[:, 0] >= w - 1 - margin) |
+                       (q.pts[:, 1] <= margin) | (q.pts[:, 1] >= h - 1 - margin))
+        if near_border.any():
+            q.kind = "edge"  # cortada pela borda da foto: geometria incompleta
         q.pts = (q.pts / scale).astype(np.float32)
         q.area = q.area / (scale * scale)
     kept.sort(key=lambda q: (round(q.center[1] / max(q.height, 1)), q.center[0]))
@@ -257,15 +265,104 @@ def _is_group(outer: CardQuad, inner: list[CardQuad]) -> bool:
     Cartas encostadas compartilham lados com o contorno do grupo e cobrem quase toda a área.
     Caixas de arte/texto ficam recuadas da borda da carta, então não compartilham lados.
     """
+    def disjoint(qs: list[CardQuad]) -> list[CardQuad]:
+        chosen: list[CardQuad] = []
+        for q in sorted(qs, key=lambda x: -x.area):
+            if all(_intersection(q.pts, c.pts) / min(q.area, c.area) < 0.2 for c in chosen):
+                chosen.append(q)
+        return chosen
+
+    # várias cartas soltas dentro (pasta, área da mesa): 3+ retângulos de carta sem sobreposição
+    if len(disjoint([q for q in inner if 0.03 * outer.area <= q.area <= 0.5 * outer.area])) >= 3:
+        return True
     tol = 0.03 * min(outer.width, outer.height)
-    big = [q for q in inner if q.area >= 0.25 * outer.area and _shared_sides(q, outer, tol) >= 2]
-    if len(big) < 2:
+    big = disjoint([q for q in inner if q.area >= 0.25 * outer.area and _shared_sides(q, outer, tol) >= 2])
+    return len(big) >= 2 and sum(q.area for q in big) >= 0.75 * outer.area
+
+
+def long_axis_angle(pts: np.ndarray) -> float:
+    """Ângulo (graus, 0–180) do eixo longo do quadrilátero em retrato."""
+    p = np.asarray(pts, np.float32)
+    v = ((p[3] - p[0]) + (p[2] - p[1])) / 2
+    return float(np.degrees(np.arctan2(v[1], v[0])) % 180.0)
+
+
+def dominant_angle(quads: list[CardQuad], min_count: int = 3) -> float | None:
+    full = [q for q in quads if q.kind in ("full", "edge")] if min_count <= 2 else [q for q in quads if q.kind == "full"]
+    if len(full) < min_count:
+        return None
+    # média circular com período de 180°
+    ang = np.radians([long_axis_angle(q.pts) * 2 for q in full])
+    weights = np.array([q.area for q in full])
+    return float(np.degrees(np.arctan2((np.sin(ang) * weights).sum(), (np.cos(ang) * weights).sum())) / 2 % 180.0)
+
+
+def is_inner_element(q: CardQuad, median_area: float | None, dom_angle: float | None) -> bool:
+    """Caixa de arte/texto de uma carta cujo contorno não foi detectado (ex.: carta cortada pela borda)."""
+    if median_area is None or dom_angle is None or q.area >= 0.6 * median_area:
         return False
-    chosen: list[CardQuad] = []
-    for q in sorted(big, key=lambda x: -x.area):
-        if all(_intersection(q.pts, c.pts) / min(q.area, c.area) < 0.2 for c in chosen):
-            chosen.append(q)
-    return len(chosen) >= 2 and sum(q.area for q in chosen) >= 0.75 * outer.area
+    diff = abs(long_axis_angle(q.pts) - dom_angle) % 180.0
+    return min(diff, 180.0 - diff) > 55.0
+
+
+def _card_from_axes(center: np.ndarray, width_axis: np.ndarray, height_axis: np.ndarray, card_w: float) -> np.ndarray:
+    card_h = card_w * CARD_RATIO
+    hw, hh = width_axis * card_w / 2, height_axis * card_h / 2
+    return order_quad(np.float32([center - hw - hh, center + hw - hh, center + hw + hh, center - hw + hh]))
+
+
+def hypotheses(q: CardQuad, median_area: float | None, dom_angle: float | None = None) -> list[tuple[str, list[np.ndarray]]]:
+    """Geometrias alternativas para um quadrilátero que o hash não resolveu.
+
+    - "split": duas cartas encostadas formam um retângulo com a proporção de uma carta deitada
+    - "extend_*": carta parcialmente coberta pela vizinha (ou cortada pela borda) — estende até a proporção real
+    - "parent_*": o quadrilátero é a caixa de arte/texto; reconstrói a carta pela geometria da moldura
+    """
+    p = q.pts.astype(np.float32)
+    u = ((p[1] - p[0]) + (p[2] - p[3])) / 2
+    v = ((p[3] - p[0]) + (p[2] - p[1])) / 2
+    w, h = float(np.linalg.norm(u)), float(np.linalg.norm(v))
+    if w < 1 or h < 1:
+        return []
+    uh, vh = u / w, v / h
+    r = h / w
+    out: list[tuple[str, list[np.ndarray]]] = []
+    if is_inner_element(q, median_area, dom_angle):
+        # elemento deitado: o eixo longo dele é a LARGURA da carta; a altura da carta segue ±u
+        c = p.mean(axis=0)
+        card_w = h / 0.84
+        card_h = card_w * CARD_RATIO
+        for sign in (1.0, -1.0):
+            if 1.15 <= r <= 1.6:   # caixa de arte: centro a 0.33 da altura (carta a 0.5)
+                out.append(("parent_art", [_card_from_axes(c + sign * uh * 0.17 * card_h, vh, uh * sign, card_w)]))
+            if 1.5 <= r <= 2.3:    # caixa de texto: centro a ~0.765 da altura
+                out.append(("parent_text", [_card_from_axes(c - sign * uh * 0.265 * card_h, vh, uh * sign, card_w)]))
+        return out
+    if median_area and q.area >= 1.35 * median_area:  # divisão falsa é inofensiva: só vale se o hash aceitar
+        # bloco de N cartas encostadas ao longo do eixo longo. Lado a lado: o lado curto do bloco é a ALTURA
+        # da carta; empilhadas: é a LARGURA. Cada carta é ancorada a partir das extremidades do bloco.
+        options = []
+        for unit, card_side_u in ((w / CARD_RATIO, w), (w * CARD_RATIO, w)):
+            n = int(round(h / unit))
+            if 2 <= n <= 5:
+                options.append((abs(h / unit - n), n, unit))
+        if options:
+            _, n, unit = min(options)
+            step = (h - unit) / (n - 1)
+            parts = []
+            for i in range(n):
+                a0, a1 = p[0] + vh * (i * step), p[1] + vh * (i * step)
+                parts.append(order_quad(np.float32([a0, a1, a1 + vh * unit, a0 + vh * unit])))
+            out.append(("split", parts))
+    if r > 1.44:
+        d = uh * (h / CARD_RATIO - w)
+        out.append(("extend_left", [np.float32([p[0] - d, p[1], p[2], p[3] - d])]))
+        out.append(("extend_right", [np.float32([p[0], p[1] + d, p[2] + d, p[3]])]))
+    if r < 1.36:
+        d = vh * (w * CARD_RATIO - h)
+        out.append(("extend_down", [np.float32([p[0], p[1], p[2] + d, p[3] + d])]))
+        out.append(("extend_up", [np.float32([p[0] - d, p[1] - d, p[2], p[3]])]))
+    return out
 
 
 def _filter_partials(partials: list[CardQuad], full: list[CardQuad]) -> list[CardQuad]:
@@ -293,7 +390,7 @@ def detect_primary_card(frame: np.ndarray, max_dim: int = 960) -> CardQuad | Non
 
     def rank(q: CardQuad) -> float:
         dist = float(np.linalg.norm(q.center - center)) / diag
-        return (q.area / (W * H)) * (0.6 + q.score) * (1.2 - dist)
+        return (q.area / (W * H)) * (0.6 + q.score) * (1.2 - dist) * (0.5 if q.kind == "edge" else 1.0)
 
     return max(quads, key=rank)
 

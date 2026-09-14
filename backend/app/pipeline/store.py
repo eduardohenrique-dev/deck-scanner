@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import shutil
+import threading
 from pathlib import Path
 
 import cv2
@@ -118,6 +119,15 @@ def update_capture(capture_id: str, **fields) -> None:
 def next_seq(session_id: str) -> int:
     return db.app_db().execute("SELECT COALESCE(MAX(seq), 0) + 1 FROM detections WHERE session_id=?",
                                (session_id,)).fetchone()[0]
+
+
+_seq_lock = threading.Lock()
+
+
+def insert_detection_seq(session_id: str, capture_id: str, **fields) -> dict:
+    """Insere alocando o próximo `seq` da sessão de forma atômica (várias threads identificam em paralelo)."""
+    with _seq_lock:
+        return insert_detection(session_id, capture_id, seq=next_seq(session_id), **fields)
 
 
 def insert_detection(session_id: str, capture_id: str, **fields) -> dict:

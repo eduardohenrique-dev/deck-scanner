@@ -304,34 +304,30 @@ def make_photos(out_dir: Path, seed: int = 11, n_photos: int = 10) -> dict:
     quads = []
     for k, it in enumerate(layout):
         r, c = divmod(k, cols)
-        overlap = -card_w * 0.12 if (c > 0 and rng.random() < 0.3) else 0.0  # sobreposição parcial com a vizinha
+        overlap = -card_w * 0.14 if (c > 0 and rng.random() < 0.2) else 0.0  # sobreposição parcial com a vizinha
         cx = 150 + card_w / 2 + c * (card_w + gap_x) + overlap
         cy = 150 + card_h / 2 + r * (card_h + gap_y)
         img = card_image(it["id"])
         if it.get("illegible"):
-            art = img.copy()
-            add_glare(art, (315, 420), 300, 1.6)
-            img = cv2.GaussianBlur(art, (0, 0), 9)
-            cv2.rectangle(img, (0, 0), (629, 879), (15, 15, 15), 24)  # borda preta preservada: a carta é detectável
+            # reflexo total + ruído sobre todo o interior; a borda preta fica: a carta é detectável, não legível
+            veil_rng = np.random.default_rng(seed + 1000)  # RNG separado: não altera o resto da cena
+            img = np.clip(veil_rng.normal(232, 16, img.shape), 0, 255).astype(np.uint8)
+            cv2.rectangle(img, (0, 0), (629, 879), (15, 15, 15), 26)
         sleeve = SLEEVES[int(rng.integers(0, len(SLEEVES)))] if rng.random() < 0.4 else None
         q = quad_for((cx, cy), card_h, float(rng.normal(0, 3)))
         paste(table, card_rgba(img, sleeve, rng), q)
         quads.append(q)
         it["quad_table"] = q.tolist()
 
-    # janelas sobrepostas: cada foto cobre ~2 linhas × 3 colunas, com ≥1 carta em comum com a vizinha
-    windows = []
-    for r0 in (0, 2):
-        for c0 in (0, 1.5, 3):
-            windows.append((r0, c0))
-    windows += [(1, 0.7), (1, 2.3), (1, 3.6), (0.5, 2.0)]
-    windows = windows[:n_photos]
+    # janelas sobrepostas (como a câmera guiada orienta): cada foto cobre ~2 fileiras × 4 cartas,
+    # com cartas em comum entre fotos vizinhas; várias cartas aparecem em 3–5 fotos
+    windows = [(0, 0), (0, 2), (2, 0), (2, 2), (1, 0), (1, 2), (0, 1), (2, 1), (1, 1), (0.5, 1.5)][:n_photos]
     photos = []
     PW, PH = 2000, 1500
     for n, (r0, c0) in enumerate(windows, start=1):
         x0 = 150 + c0 * (card_w + gap_x) - card_w * 0.25
         y0 = 150 + r0 * (card_h + gap_y) - card_h * 0.2
-        w = 3.4 * (card_w + gap_x)
+        w = 4.6 * (card_w + gap_x)
         h = w * PH / PW
         src = np.float32([[x0, y0], [x0 + w, y0], [x0 + w, y0 + h], [x0, y0 + h]])
         jitter = rng.normal(0, 0.03, (4, 2)).astype(np.float32) * np.float32([w, h])
@@ -356,6 +352,8 @@ def make_photos(out_dir: Path, seed: int = 11, n_photos: int = 10) -> dict:
         "table_cards": len(layout),
         "uncovered_positions": sorted(set(range(len(layout))) - covered),
         "photos": photos,
+        "layout": [{"pos": k, "id": it["id"], "kind": it.get("kind"), "illegible": bool(it.get("illegible"))}
+                   for k, it in enumerate(layout)],
     }
     (out_dir / "truth.json").write_text(json.dumps(truth, indent=2))
     cv2.imwrite(str(out_dir / "table_full.jpg"), cv2.resize(table, (TW // 3, TH // 3)))

@@ -67,7 +67,7 @@ def now_iso() -> str:
 
 
 def dumps(value: Any) -> str:
-    return orjson.dumps(value).decode()
+    return orjson.dumps(value, option=orjson.OPT_SERIALIZE_NUMPY).decode()
 
 
 def loads(value: str | bytes | None, default: Any = None) -> Any:
