@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cardName } from "../../lib/format";
 import type { Capture, Detection } from "../../lib/types";
 import { Chip, Modal } from "../ui";
@@ -16,6 +16,10 @@ const STYLE: Record<string, { stroke: string; label: string; dash?: string }> = 
 export default function PhotoOverlay({ capture, detections, focusId, onClose }: { capture: Capture | null; detections: Detection[]; focusId?: string; onClose: () => void }) {
   const [selected, setSelected] = useState<string | undefined>(focusId);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    setSelected(focusId);
+    setSize(null);
+  }, [capture?.id, focusId]);
   const mine = useMemo(() => detections.filter((d) => capture && d.capture_id === capture.id && d.bbox), [capture, detections]);
   const byId = new Map(detections.map((d) => [d.id, d]));
   const sel = mine.find((d) => d.id === selected);

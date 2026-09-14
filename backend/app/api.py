@@ -313,6 +313,9 @@ def _learn(d: dict, session: dict, card_ref_id: str, oracle_id: str | None) -> N
     img = cv2.imread(d["crop_path"]) if d.get("crop_path") else None
     if img is None:
         return
+    art = hashing.art_region(cv2.cvtColor(hashing.normalize_card(img), cv2.COLOR_BGR2GRAY))
+    if float(art.std()) < 12.0:
+        return  # recorte sem conteúdo visível (reflexo total, borrão): nada confiável para aprender
     h = hashing.compute_hashes(img)
     db.catalog_db().execute(
         "INSERT INTO learned_hashes (id, user_id, card_ref_id, face, art, full, color, created_at) VALUES (?,?,?,?,?,?,?,?)",
