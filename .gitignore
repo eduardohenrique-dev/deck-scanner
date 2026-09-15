@@ -23,3 +23,7 @@ frontend/public/_test/
 Thumbs.db
 .vscode/
 .idea/
+.neon
+node_modules/
+
+node_modules/

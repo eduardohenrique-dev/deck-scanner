@@ -8,6 +8,7 @@ O SQL do código usa placeholders `?`, `ON CONFLICT ... DO UPDATE/NOTHING` e tip
 """
 from __future__ import annotations
 
+import atexit
 import re
 import sqlite3
 import threading
@@ -166,9 +167,12 @@ class PostgresDatabase:
         self._sql_cache: dict[str, str] = {}
         self.pool = ConnectionPool(
             url, min_size=0, max_size=max(1, config.DB_POOL_MAX), open=True, timeout=30,
-            # prepare_threshold=None: compatível com o pooler em modo transação (Supabase/PgBouncer)
+            # o Postgres serverless (Neon) derruba conexões quando o banco dorme: testa antes de entregar
+            check=ConnectionPool.check_connection, max_idle=240,
+            # prepare_threshold=None: compatível com o pooler em modo transação (PgBouncer da Neon)
             kwargs={"autocommit": True, "prepare_threshold": None, "row_factory": _pg_row_factory},
         )
+        atexit.register(self.pool.close)
 
     def _sql(self, sql: str) -> str:
         hit = self._sql_cache.get(sql)
@@ -575,7 +579,7 @@ CREATE TABLE IF NOT EXISTS sets (
 CREATE TABLE IF NOT EXISTS art_hashes (
   card_ref_id TEXT NOT NULL,
   face INTEGER NOT NULL DEFAULT 0,
-  art BLOB NOT NULL, full BLOB NOT NULL, color BLOB,
+  art BLOB NOT NULL, "full" BLOB NOT NULL, color BLOB,   -- "full" é palavra reservada no Postgres
   created_at TEXT,
   PRIMARY KEY (card_ref_id, face)
 );
@@ -628,7 +632,7 @@ def _migrate_legacy_sqlite(app, catalog) -> None:
         app.execute("DROP TABLE physical_cards")
     if isinstance(catalog, SqliteDatabase) and catalog is not app:
         if "user_id" in catalog.columns("learned_hashes"):
-            rows = catalog.execute("SELECT l.id, l.user_id, l.card_ref_id, l.face, r.oracle_id, l.art, l.full, l.color, "
+            rows = catalog.execute("SELECT l.id, l.user_id, l.card_ref_id, l.face, r.oracle_id, l.art, l.\"full\", l.color, "
                                    "l.created_at FROM learned_hashes l LEFT JOIN card_refs r ON r.id = l.card_ref_id")
             app.executemany("INSERT INTO learned_hashes (id, user_id, card_ref_id, face, oracle_id, art, full_hash, color, "
                             "created_at) VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT (id) DO NOTHING", [tuple(r) for r in rows])

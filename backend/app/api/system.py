@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import mimetypes
+import time
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
@@ -22,13 +23,23 @@ def health():
     return {"ok": True}
 
 
+@router.get("/wake")
+def wake():
+    """O app chama ao abrir: acorda a função e o Postgres serverless (que dorme após minutos parado)."""
+    started = time.time()
+    try:
+        db.app_db().execute("SELECT 1")
+    except Exception:  # noqa: BLE001 — só aquecimento; a próxima requisição mostra o erro de verdade
+        return {"ok": False}
+    return {"ok": True, "ms": round((time.time() - started) * 1000)}
+
+
 @router.get("/config")
 def public_config():
     """O que o navegador precisa saber antes do login (nada secreto)."""
     return {
         "auth": config.AUTH_MODE,
-        "supabase_url": config.SUPABASE_URL if config.AUTH_MODE == "supabase" else None,
-        "supabase_publishable_key": config.SUPABASE_PUBLISHABLE_KEY if config.AUTH_MODE == "supabase" else None,
+        "neon_auth_url": config.NEON_AUTH_BASE_URL if config.AUTH_MODE == "neon" else None,
         "auth_providers": config.AUTH_PROVIDERS,
         "hosted": config.SERVERLESS or bool(config.DATABASE_URL),
         "vlm": vlm.enabled(),

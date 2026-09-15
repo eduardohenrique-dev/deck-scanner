@@ -39,15 +39,29 @@ async function authHeaders(extra?: HeadersInit): Promise<Headers> {
   return headers;
 }
 
+// Depois de minutos parado, servidor e banco "dormem": a primeira requisição leva alguns segundos.
+// Se ela demorar, a tela avisa em vez de parecer travada (uploads ficam de fora: demoram por natureza).
+const IDLE_MS = 4 * 60_000;
+const SLOW_MS = 1500;
+let lastResponseAt = 0;
+
 async function raw(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = await authHeaders(init.headers);
   if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+  const mayBeWaking = !(init.body instanceof FormData) && Date.now() - lastResponseAt > IDLE_MS;
+  const slowTimer = mayBeWaking ? window.setTimeout(() => window.dispatchEvent(new CustomEvent("server:waking", { detail: true })), SLOW_MS) : 0;
   let res: Response;
   try {
     res = await fetch(path, { ...init, headers });
   } catch {
     throw new ApiError(0, "Sem conexão com o servidor. Confira a internet e tente de novo.");
+  } finally {
+    if (slowTimer) {
+      window.clearTimeout(slowTimer);
+      window.dispatchEvent(new CustomEvent("server:waking", { detail: false }));
+    }
   }
+  lastResponseAt = Date.now();
   if (!res.ok) {
     let message = res.statusText || "Algo deu errado";
     let body: any = null;

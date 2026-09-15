@@ -4,7 +4,7 @@ Aponte a câmera para as cartas e receba a decklist pronta para LigaMagic, Moxfi
 onde cada carta física da coleção está. Arquitetura multi-jogo; Magic: The Gathering implementado.
 
 **Estado:** Fase 1 (núcleo) e Fase 2 (coleção, conferência, histórico, preços, condição e bracket) completas.
-Roda localmente (SQLite, um usuário) ou hospedado (Vercel + Supabase, com login).
+Roda localmente (SQLite, um usuário) ou hospedado (Vercel + Neon + Cloudflare R2, com login).
 
 ---
 
@@ -35,19 +35,26 @@ tudo funciona; recortes que o hash não resolve vão para a revisão.
 Atualizar dados da Scryfall (coleções novas, banlists): `python -m app.indexer all` de novo — só o que falta é
 processado. Game Changers: `python -m tools.sync_game_changers`.
 
-## Hospedagem (Vercel + Supabase)
+## Hospedagem (Vercel + Neon + Cloudflare R2)
 
 Um projeto da Vercel com dois [serviços](https://vercel.com/docs/services) no mesmo domínio (`vercel.json`): `web`
-(build estático do Vite) e `api` (FastAPI em `backend/`, região `gru1`). O Supabase guarda banco, login e arquivos.
+(build estático do Vite) e `api` (FastAPI em `backend/`, região `gru1`). A **Neon** (São Paulo) guarda o Postgres e o
+login (Neon Auth, JWT EdDSA); o **Cloudflare R2** guarda fotos, recortes e o índice de hashes. Tudo cabe nos planos
+gratuitos: o catálogo enxuto ocupa 231 MB dos 0,5 GB da Neon.
 
-1. Crie um projeto no Supabase (região São Paulo) e preencha `backend/.env.hosted` a partir de `backend/.env.example`
-   (URL do *Transaction pooler*, URL do projeto, chaves publishable e secret). O arquivo nunca vai para o git.
-2. `python -m tools.hosted check` → `python -m tools.hosted all`: cria as tabelas com RLS ligado, copia o catálogo
-   (só as colunas que o servidor lê, ~250 MB) e envia o índice de hashes para o Storage.
-3. `vercel link` e `python -m tools.hosted vercel-env`: grava as variáveis no projeto sem passar pelo terminal.
-4. No Supabase → Authentication → URL Configuration: *Site URL* e *Redirect URLs* com o domínio da Vercel.
+1. `neon link --project-id <id> --branch production` e `neon config apply --update-existing` na raiz: aplica o
+   `neon.ts` (login ligado, CPU limitada a 0,25 CU para render ~400 h/mês) e baixa as variáveis para `.env.local`.
+2. Bucket privado no R2 + token de API; variáveis `S3_*` em `backend/.env.hosted` (modelo em `backend/.env.example`).
+3. `python -m tools.hosted check` → `python -m tools.hosted all`: tabelas, catálogo e índice de hashes no bucket.
+4. `vercel link` e `python -m tools.hosted vercel-env`: grava as variáveis no projeto sem passar pelo terminal.
+5. `neon neon-auth domain add https://<domínio>` para o login com Google voltar ao app.
 
-Sem banco e login configurados, a API hospedada responde 503 em vez de abrir sem autenticação.
+Testar a API local contra a Neon antes de publicar: `python -m tools.serve_hosted`. Sem banco, login e bucket
+configurados, a API hospedada responde 503 em vez de abrir sem autenticação.
+
+**Banco dormindo:** a Neon desliga o processador após 5 minutos parado e religa em centenas de milissegundos. O app
+chama `/api/wake` ao abrir, a conexão é testada antes de cada uso e a tela avisa "acordando a taverna…" se a primeira
+ação demorar.
 
 ---
 
@@ -97,8 +104,8 @@ backend/
     api/           REST por área (sessões, entradas, cartas, decks, coleção, sistema)
     games/         GameAdapter e o adapter de Magic (Scryfall, importadores, exportadores, terrenos)
     db.py          mesmo SQL em SQLite (local) e Postgres (hospedado)
-    storage.py     disco local ou Supabase Storage
-    auth.py        usuário local ou JWT do Supabase
+    storage.py     disco local ou bucket S3/R2 (assinatura AWS V4 própria, testada com os exemplos da AWS)
+    auth.py        usuário local ou JWT do Neon Auth (EdDSA via JWKS)
   rules/           DADOS: formatos, mensagens, brackets, Game Changers
   tools/           cenas sintéticas, calibração, e2e, avaliação de idioma, preparação da hospedagem
   tests/           pytest
@@ -152,7 +159,7 @@ some: `quantity_detected` guarda o que foi lido e o aviso explica a diferença.
 
 ```powershell
 cd backend
-.\.venv\Scripts\python -m pytest                          # 36 testes
+.\.venv\Scripts\python -m pytest                          # 39 testes
 .\.venv\Scripts\python -m tools.e2e video                   # vídeo sintético de 100 cartas (visão em Python)
 .\.venv\Scripts\python -m tools.e2e photos                  # 10 fotos sobrepostas de uma mesa sintética
 .\.venv\Scripts\python -m tools.printlang_eval --n 200      # impressão e idioma pela imagem

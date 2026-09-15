@@ -17,8 +17,8 @@ from ...vision import hashing
 from ...vision.hashindex import build_index_file
 from .scryfall_import import log
 
-UPSERT_HASH_SQL = ("INSERT INTO art_hashes (card_ref_id, face, art, full, color, created_at) VALUES (?,?,?,?,?,?) "
-                   "ON CONFLICT (card_ref_id, face) DO UPDATE SET art=excluded.art, full=excluded.full, "
+UPSERT_HASH_SQL = ("INSERT INTO art_hashes (card_ref_id, face, art, \"full\", color, created_at) VALUES (?,?,?,?,?,?) "
+                   "ON CONFLICT (card_ref_id, face) DO UPDATE SET art=excluded.art, \"full\"=excluded.\"full\", "
                    "color=excluded.color, created_at=excluded.created_at")
 CARD_BACK_ID = "0aeebaf5-8c7d-4636-9e82-8c27447861f7"
 CARD_BACK_REF = f"__back__:{CARD_BACK_ID}"

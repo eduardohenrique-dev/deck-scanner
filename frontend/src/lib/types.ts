@@ -40,9 +40,8 @@ export type CardSummary = {
 };
 
 export type AppConfig = {
-  auth: "local" | "supabase";
-  supabase_url: string | null;
-  supabase_publishable_key: string | null;
+  auth: "local" | "neon";
+  neon_auth_url: string | null;
   auth_providers?: string[];
   hosted: boolean;
   vlm: boolean;

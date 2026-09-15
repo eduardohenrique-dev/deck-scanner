@@ -101,7 +101,7 @@ def _u64(blobs: list[bytes]) -> np.ndarray:
 def build_index_file(target=config.HASH_INDEX_FILE) -> dict:
     """Gera o arquivo do índice a partir de art_hashes do catálogo SQLite local."""
     rows = db.catalog_db().execute(
-        "SELECT h.card_ref_id, h.face, h.art, h.full, h.color, r.oracle_id "
+        "SELECT h.card_ref_id, h.face, h.art, h.\"full\", h.color, r.oracle_id "
         "FROM art_hashes h LEFT JOIN card_refs r ON r.id = h.card_ref_id").fetchall()
     ids = np.frombuffer(b"".join(_uuid_bytes(r[0]) for r in rows), np.uint8).reshape(len(rows), 16)
     oracles = np.frombuffer(b"".join(_uuid_bytes(r[5]) for r in rows), np.uint8).reshape(len(rows), 16)

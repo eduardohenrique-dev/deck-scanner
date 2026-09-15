@@ -44,23 +44,26 @@ for _d in (DATA_DIR, CACHE_DIR, STORAGE_DIR, SCRYFALL_DIR):
 DATABASE_URL = _env("DATABASE_URL")          # vazio = SQLite local
 DB_POOL_MAX = int(_env("DECKSCANNER_DB_POOL", "4"))
 
-# ---------------------------------------------------------------- login
-SUPABASE_URL = _env("SUPABASE_URL").rstrip("/")
-SUPABASE_PUBLISHABLE_KEY = _env("SUPABASE_PUBLISHABLE_KEY")   # pública (vai para o navegador)
-SUPABASE_SECRET_KEY = _env("SUPABASE_SECRET_KEY")             # só no servidor (Storage)
-SUPABASE_JWT_SECRET = _env("SUPABASE_JWT_SECRET")             # projetos com chave JWT legada (HS256)
-AUTH_MODE = _env("DECKSCANNER_AUTH") or ("supabase" if SUPABASE_URL else "local")
-# formas de entrar mostradas na tela de login; google e anonymous precisam estar ativados no painel do Supabase
-AUTH_PROVIDERS = [p.strip() for p in _env("DECKSCANNER_AUTH_PROVIDERS", "email").split(",") if p.strip()]
+# ---------------------------------------------------------------- login (Neon Auth)
+NEON_AUTH_BASE_URL = _env("NEON_AUTH_BASE_URL").rstrip("/")   # público: o navegador fala direto com ele
+NEON_AUTH_JWKS_URL = _env("NEON_AUTH_JWKS_URL") or (f"{NEON_AUTH_BASE_URL}/.well-known/jwks.json" if NEON_AUTH_BASE_URL else "")
+AUTH_MODE = _env("DECKSCANNER_AUTH") or ("neon" if NEON_AUTH_BASE_URL else "local")
+# formas de entrar mostradas na tela de login (password = e-mail e senha)
+AUTH_PROVIDERS = [p.strip() for p in _env("DECKSCANNER_AUTH_PROVIDERS", "password,google").split(",") if p.strip()]
 DEFAULT_USER_ID = "local"
 DEFAULT_GAME_ID = "mtg"
 
 # ---------------------------------------------------------------- arquivos (fotos, recortes, índice)
-STORAGE_BACKEND = _env("DECKSCANNER_STORAGE") or ("supabase" if SUPABASE_URL and SUPABASE_SECRET_KEY else "local")
-STORAGE_BUCKET = _env("DECKSCANNER_BUCKET", "deck-scanner")
+# Hospedado: qualquer storage compatível com S3 (Cloudflare R2, por exemplo), bucket privado.
+S3_ENDPOINT = _env("S3_ENDPOINT").rstrip("/")     # R2: https://<account-id>.r2.cloudflarestorage.com
+S3_REGION = _env("S3_REGION", "auto")
+S3_BUCKET = _env("S3_BUCKET")
+S3_ACCESS_KEY_ID = _env("S3_ACCESS_KEY_ID")
+S3_SECRET_ACCESS_KEY = _env("S3_SECRET_ACCESS_KEY")
+STORAGE_BACKEND = _env("DECKSCANNER_STORAGE") or ("s3" if S3_ENDPOINT and S3_BUCKET and S3_ACCESS_KEY_ID else "local")
 MEDIA_URL_TTL = 3600
 # segredo para assinar URLs de mídia servidas pela própria API (modo local); troque em produção
-MEDIA_SIGNING_SECRET = _env("DECKSCANNER_MEDIA_SECRET") or SUPABASE_SECRET_KEY or "deck-scanner-local"
+MEDIA_SIGNING_SECRET = _env("DECKSCANNER_MEDIA_SECRET") or S3_SECRET_ACCESS_KEY or "deck-scanner-local"
 
 # ---------------------------------------------------------------- Scryfall
 USER_AGENT = "DeckScanner/0.2"

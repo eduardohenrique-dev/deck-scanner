@@ -1,13 +1,25 @@
-import type { Session as SupaSession, SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
 import type { AppConfig } from "./types";
 
 /**
- * Login só existe no modo hospedado (Supabase). No modo local o app abre direto, com um usuário só.
- * O cliente do Supabase é carregado sob demanda: quem roda local não baixa esse código.
+ * Login só existe no modo hospedado (Neon Auth). No modo local o app abre direto, com um usuário só.
+ * O cliente de login é carregado sob demanda: quem roda local não baixa esse código.
+ * A API recebe o JWT da sessão (válido por 15 min; a biblioteca renova sozinha antes de expirar).
  */
 let configPromise: Promise<AppConfig> | null = null;
-let clientPromise: Promise<SupabaseClient | null> | null = null;
+let clientPromise: Promise<AuthClient | null> | null = null;
+
+type Result<T> = { data: T | null; error: { message?: string; code?: string; status?: number } | null };
+type SessionData = { session: { token?: string; expiresAt?: string }; user: { id: string; email: string; name?: string | null; image?: string | null } };
+type AuthClient = {
+  getSession: () => Promise<Result<SessionData>>;
+  signIn: {
+    email: (body: { email: string; password: string; callbackURL?: string }) => Promise<Result<unknown>>;
+    social: (body: { provider: "google"; callbackURL?: string }) => Promise<Result<unknown>>;
+  };
+  signUp: { email: (body: { email: string; password: string; name: string; callbackURL?: string }) => Promise<Result<unknown>> };
+  signOut: () => Promise<Result<unknown>>;
+};
 
 export function loadConfig(): Promise<AppConfig> {
   if (!configPromise) {
@@ -27,88 +39,103 @@ export function loadConfig(): Promise<AppConfig> {
   return configPromise;
 }
 
-export function getSupabase(): Promise<SupabaseClient | null> {
+function authClient(): Promise<AuthClient | null> {
   if (!clientPromise) {
     clientPromise = loadConfig().then(async (cfg) => {
-      if (cfg.auth !== "supabase" || !cfg.supabase_url || !cfg.supabase_publishable_key) return null;
-      const { createClient } = await import("@supabase/supabase-js");
-      return createClient(cfg.supabase_url, cfg.supabase_publishable_key, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-      });
+      if (cfg.auth !== "neon" || !cfg.neon_auth_url) return null;
+      const { createAuthClient } = await import("@neondatabase/auth");
+      return createAuthClient(cfg.neon_auth_url) as unknown as AuthClient;
     });
   }
   return clientPromise;
 }
 
-export async function accessToken(): Promise<string | null> {
-  const client = await getSupabase();
-  if (!client) return null;
-  const { data } = await client.auth.getSession();
-  return data.session?.access_token ?? null;
+function changed() {
+  window.dispatchEvent(new Event("auth:changed"));
 }
+
+export async function accessToken(): Promise<string | null> {
+  const client = await authClient();
+  if (!client) return null;
+  const { data } = await client.getSession();
+  return data?.session?.token ?? null;
+}
+
+export type AuthUser = SessionData["user"];
 
 export type AuthState =
   | { status: "loading" }
   | { status: "error"; message: string }
   | { status: "local"; config: AppConfig }
   | { status: "signed-out"; config: AppConfig }
-  | { status: "signed-in"; config: AppConfig; session: SupaSession };
+  | { status: "signed-in"; config: AppConfig; user: AuthUser };
 
 export function useAuth(): AuthState {
   const [state, setState] = useState<AuthState>({ status: "loading" });
   useEffect(() => {
-    let unsub: (() => void) | undefined;
     let cancelled = false;
-    (async () => {
+    const refresh = async () => {
       try {
         const config = await loadConfig();
-        const client = await getSupabase();
+        const client = await authClient();
         if (cancelled) return;
-        if (!client) {
-          setState({ status: "local", config });
-          return;
-        }
-        const { data } = await client.auth.getSession();
+        if (!client) return setState({ status: "local", config });
+        // na volta do login com Google a biblioteca troca o código da URL pela sessão aqui
+        const { data } = await client.getSession();
         if (cancelled) return;
-        setState(data.session ? { status: "signed-in", config, session: data.session } : { status: "signed-out", config });
-        const { data: sub } = client.auth.onAuthStateChange((_event, session) => {
-          setState(session ? { status: "signed-in", config, session } : { status: "signed-out", config });
-        });
-        unsub = () => sub.subscription.unsubscribe();
+        setState(data?.user ? { status: "signed-in", config, user: data.user } : { status: "signed-out", config });
       } catch (e) {
         if (!cancelled) setState({ status: "error", message: (e as Error).message });
       }
-    })();
+    };
+    void refresh();
+    window.addEventListener("auth:changed", refresh);
     return () => {
       cancelled = true;
-      unsub?.();
+      window.removeEventListener("auth:changed", refresh);
     };
   }, []);
   return state;
 }
 
-export async function signInWithEmail(email: string): Promise<void> {
-  const client = await getSupabase();
+const MESSAGES: Record<string, string> = {
+  INVALID_EMAIL_OR_PASSWORD: "E-mail ou senha não conferem.",
+  USER_ALREADY_EXISTS: "Já existe uma conta com esse e-mail. Entre com a senha.",
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "Já existe uma conta com esse e-mail. Entre com a senha.",
+  PASSWORD_TOO_SHORT: "A senha precisa de pelo menos 8 caracteres.",
+  INVALID_EMAIL: "Esse e-mail não parece válido.",
+};
+
+function fail(error: Result<unknown>["error"]): never {
+  const code = error?.code ?? "";
+  throw new Error(MESSAGES[code] ?? (error?.status === 429 ? "Muitas tentativas. Espere um minuto e tente de novo." : error?.message || "Não deu certo, tente de novo."));
+}
+
+export async function signInWithPassword(email: string, password: string): Promise<void> {
+  const client = await authClient();
   if (!client) return;
-  const { error } = await client.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin } });
-  if (error) throw error;
+  const { error } = await client.signIn.email({ email, password });
+  if (error) fail(error);
+  changed();
+}
+
+export async function signUpWithPassword(name: string, email: string, password: string): Promise<void> {
+  const client = await authClient();
+  if (!client) return;
+  const { error } = await client.signUp.email({ name, email, password });
+  if (error) fail(error);
+  changed();
 }
 
 export async function signInWithGoogle(): Promise<void> {
-  const client = await getSupabase();
+  const client = await authClient();
   if (!client) return;
-  const { error } = await client.auth.signInWithOAuth({ provider: "google", options: { redirectTo: location.origin } });
-  if (error) throw error;
-}
-
-export async function signInAnonymously(): Promise<void> {
-  const client = await getSupabase();
-  if (!client) return;
-  const { error } = await client.auth.signInAnonymously();
-  if (error) throw error;
+  const { error } = await client.signIn.social({ provider: "google", callbackURL: location.origin });
+  if (error) fail(error);
 }
 
 export async function signOut(): Promise<void> {
-  const client = await getSupabase();
-  await client?.auth.signOut();
+  const client = await authClient();
+  await client?.signOut();
+  changed();
 }

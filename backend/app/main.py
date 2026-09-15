@@ -42,14 +42,14 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Deck Scanner", version="0.2.0", lifespan=lifespan)
 
 
-MISCONFIGURED = config.SERVERLESS and (not config.DATABASE_URL or config.AUTH_MODE != "supabase")
+MISCONFIGURED = config.SERVERLESS and (not config.DATABASE_URL or config.AUTH_MODE != "neon" or config.STORAGE_BACKEND != "s3")
 
 
 @app.middleware("http")
 async def _ready_middleware(request: Request, call_next):
     # hospedado sem banco/login configurados: nunca abre a API sem autenticação num domínio público
     if MISCONFIGURED and request.url.path.startswith("/api") and request.url.path != "/api/health":
-        return JSONResponse({"detail": "servidor ainda não configurado (DATABASE_URL e SUPABASE_*)"}, status_code=503)
+        return JSONResponse({"detail": "servidor ainda não configurado (DATABASE_URL, NEON_AUTH_* e S3_*)"}, status_code=503)
     oidc = request.headers.get("x-vercel-oidc-token")
     if oidc:  # token da função para o AI Gateway; usado também pelas threads de identificação
         os.environ["VERCEL_OIDC_TOKEN"] = oidc

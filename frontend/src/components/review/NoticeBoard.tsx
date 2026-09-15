@@ -1,6 +1,5 @@
 import { Check } from "lucide-react";
 import { useState } from "react";
-import { api } from "../../lib/api";
 import { toast, toastError } from "../../lib/toast";
 import type { DeckState, Entry, FormatRule, Issue, SessionState, Validation } from "../../lib/types";
 import { IdentityPips } from "../mtg";
@@ -152,8 +151,4 @@ export default function NoticeBoard({
       </div>
     </section>
   );
-}
-
-export async function applySessionSuggestion(sessionId: string, type: string) {
-  return api.applySessionSuggestion(sessionId, type);
 }
