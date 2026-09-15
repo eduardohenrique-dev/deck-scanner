@@ -1,0 +1,8 @@
+# `vercel deploy` local: sobe só o código (o catálogo e o índice ficam na Neon e no R2)
+backend/data
+backend/.venv
+**/node_modules
+**/__pycache__
+frontend/dist
+.env*
+backend/.env.*
