@@ -24,8 +24,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const chrome = ["C:/Program Files/Google/Chrome/Application/chrome.exe", "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe"].find((p) => fs.existsSync(p));
 const port = 9300 + Math.floor(Math.random() * 500);
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), "shot-"));
-// --fake-camera: câmera sintética do Chrome (testa o fluxo da câmera ao vivo sem aparelho)
-const camera = args.includes("--fake-camera") ? ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required"] : [];
+// --fake-camera: câmera sintética do Chrome (testa o fluxo da câmera ao vivo sem aparelho); --cameras 2 simula mais de uma
+const cameras = Number(opt("--cameras", "1"));
+const camera = args.includes("--fake-camera")
+  ? [`--use-fake-device-for-media-stream=device-count=${cameras}`, "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required"]
+  : [];
 const proc = spawn(chrome, ["--headless=new", `--remote-debugging-port=${port}`, "--disable-gpu", "--hide-scrollbars", "--no-first-run", `--user-data-dir=${profile}`, ...camera, "about:blank"], { stdio: "ignore" });
 
 let target;

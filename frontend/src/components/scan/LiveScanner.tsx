@@ -1,9 +1,9 @@
-import { Camera, Flashlight, FlashlightOff, Play, Square, Volume2, VolumeX, X } from "lucide-react";
+import { Camera, Flashlight, FlashlightOff, Play, Square, SwitchCamera, Volume2, VolumeX, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useMediaQuery, usePersistentState } from "../../lib/hooks";
 import type { SessionState } from "../../lib/types";
 import { Lens } from "../icons";
-import { Button, cx, IconButton } from "../ui";
+import { Button, cx, IconButton, Select } from "../ui";
 import ReadsStrip from "./ReadsStrip";
 import ScanOverlay, { guidance } from "./ScanOverlay";
 import { prepareVision, useScanner, visionLoaded } from "./useScanner";
@@ -27,6 +27,9 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
   const [size, setSize] = useState({ w: 1280, h: 720 });
   const [torch, setTorch] = useState<boolean | null>(null);
   const [sound, setSound] = usePersistentState("deckscanner:sound", true);
+  const [cameraId, setCameraId] = usePersistentState<string | null>("deckscanner:camera", null);
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [firstLoad] = useState(() => !visionLoaded());
   const scanner = useScanner(sessionId, onState, { sound });
   const running = scanner.phase === "running";
@@ -52,18 +55,48 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
     return () => void lock?.release().catch(() => undefined);
   }, [running]);
 
-  async function openCamera() {
+  async function listCameras() {
+    try {
+      const all = await navigator.mediaDevices.enumerateDevices();
+      setCameras(all.filter((d) => d.kind === "videoinput" && d.deviceId));
+    } catch {
+      setCameras([]);
+    }
+  }
+
+  // quando uma webcam é plugada ou removida com a câmera aberta
+  useEffect(() => {
+    if (camera !== "on" || !navigator.mediaDevices?.addEventListener) return;
+    const onChange = () => void listCameras();
+    navigator.mediaDevices.addEventListener("devicechange", onChange);
+    return () => navigator.mediaDevices.removeEventListener("devicechange", onChange);
+  }, [camera]);
+
+  async function openCamera(deviceId: string | null = cameraId) {
     if (!navigator.mediaDevices?.getUserMedia) {
       setCamera("unsupported");
       return;
     }
-    setCamera("opening");
+    // trocando de câmera o visor continua aberto (no celular não sai da tela cheia)
+    if (!stream.current) setCamera("opening");
     void prepareVision().catch(() => undefined);
-    try {
-      const media = await navigator.mediaDevices.getUserMedia({
+    const resolution = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+    const request = (id: string | null) =>
+      navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        video: id ? { deviceId: { exact: id }, ...resolution } : { facingMode: { ideal: "environment" }, ...resolution },
       });
+    try {
+      stream.current?.getTracks().forEach((t) => t.stop());
+      let media: MediaStream;
+      try {
+        media = await request(deviceId);
+      } catch (e) {
+        // a câmera lembrada pode ter sido desconectada: volta para a padrão
+        if (!deviceId || (e as DOMException).name === "NotAllowedError") throw e;
+        setCameraId(null);
+        media = await request(null);
+      }
       stream.current = media;
       const el = video.current!;
       el.srcObject = media;
@@ -72,11 +105,26 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
       const track = media.getVideoTracks()[0];
       const caps = (track.getCapabilities?.() ?? {}) as MediaTrackCapabilities & { torch?: boolean };
       setTorch(caps.torch ? false : null);
+      setActiveId(track.getSettings?.().deviceId ?? null);
       setCamera("on");
+      // os nomes das câmeras só aparecem depois da permissão
+      void listCameras();
     } catch (e) {
       const name = (e as DOMException).name;
       setCamera(name === "NotAllowedError" || name === "SecurityError" ? "denied" : "failed");
     }
+  }
+
+  function switchCamera(id: string) {
+    if (id === activeId) return;
+    setCameraId(id);
+    void openCamera(id);
+  }
+
+  function nextCamera() {
+    if (cameras.length < 2) return;
+    const i = cameras.findIndex((c) => c.deviceId === activeId);
+    switchCamera(cameras[(i + 1) % cameras.length].deviceId);
   }
 
   async function toggleTorch() {
@@ -138,6 +186,11 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
                 )}
               </div>
               <div className="flex gap-1 rounded-[6px] border border-oak-600 bg-oak-950/85 p-0.5">
+                {immersive && cameras.length > 1 && (
+                  <IconButton label="Trocar de câmera" onClick={nextCamera} disabled={busy} title={busy ? "Termine a leitura para trocar de câmera" : undefined}>
+                    <SwitchCamera className="size-[18px]" />
+                  </IconButton>
+                )}
                 {torch !== null && (
                   <IconButton label={torch ? "Desligar lanterna" : "Ligar lanterna"} onClick={toggleTorch}>
                     {torch ? <FlashlightOff className="size-[18px]" /> : <Flashlight className="size-[18px]" />}
@@ -155,7 +208,7 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
             </div>
           </>
         ) : (
-          <CameraMessage state={camera} onOpen={openCamera} />
+          <CameraMessage state={camera} onOpen={() => void openCamera()} />
         )}
       </div>
 
@@ -183,6 +236,25 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
                 fechar câmera
               </Button>
             )}
+            {!immersive && cameras.length > 1 && (
+              <label className="flex min-w-0 items-center gap-2 text-[14px] text-cream-faint sm:ml-auto">
+                <Camera className="size-4 shrink-0 text-brass-400" aria-hidden="true" />
+                <span className="sr-only">Câmera</span>
+                <Select
+                  value={activeId ?? ""}
+                  onChange={(e) => switchCamera(e.target.value)}
+                  disabled={busy}
+                  title={busy ? "Termine a leitura para trocar de câmera" : "Escolher câmera"}
+                  className="h-10 w-auto max-w-[16rem] truncate"
+                >
+                  {cameras.map((c, i) => (
+                    <option key={c.deviceId} value={c.deviceId}>
+                      {cameraName(c, i)}
+                    </option>
+                  ))}
+                </Select>
+              </label>
+            )}
             <p className={cx("text-[14px] text-cream-faint", immersive && "basis-full text-center")}>
               {scanner.phase === "loading" && firstLoad
                 ? "Na primeira vez o leitor de imagem é baixado (cerca de 13 MB)."
@@ -205,6 +277,12 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
       </div>
     </div>
   );
+}
+
+/** Rótulo legível: tira o código "(046d:0825)" que o Windows e o Chrome penduram no nome. */
+function cameraName(device: MediaDeviceInfo, index: number) {
+  const name = device.label.replace(/\s*\([0-9a-f]{4}:[0-9a-f]{4}\)\s*$/i, "").trim();
+  return name || `Câmera ${index + 1}`;
 }
 
 function CameraMessage({ state, onOpen }: { state: CameraState; onOpen: () => void }) {
