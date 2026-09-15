@@ -116,6 +116,23 @@ class GameAdapter(ABC):
     def card_summary(self, card_ref_id: str, lang: str = "pt") -> dict | None:
         """Resumo para a UI (nomes, imagem oficial, set/número, preço)."""
 
+    def card_fields_many(self, ids) -> dict[str, dict]:
+        """Lote de `card_fields` (adapters com banco remoto devem sobrescrever com uma consulta só)."""
+        out = {}
+        for i in dict.fromkeys(ids):
+            f = self.card_fields(i) if i else None
+            if f is not None:
+                out[i] = f
+        return out
+
+    def card_summaries(self, ids, lang: str = "pt") -> dict[str, dict]:
+        out = {}
+        for i in dict.fromkeys(ids):
+            s = self.card_summary(i, lang) if i else None
+            if s is not None:
+                out[i] = s
+        return out
+
     @abstractmethod
     def search(self, query: str, lang: str = "pt", limit: int = 12) -> list[dict]:
         ...

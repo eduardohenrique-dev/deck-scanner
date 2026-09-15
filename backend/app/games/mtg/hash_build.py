@@ -14,8 +14,12 @@ import httpx
 
 from ... import config, db
 from ...vision import hashing
+from ...vision.hashindex import build_index_file
 from .scryfall_import import log
 
+UPSERT_HASH_SQL = ("INSERT INTO art_hashes (card_ref_id, face, art, full, color, created_at) VALUES (?,?,?,?,?,?) "
+                   "ON CONFLICT (card_ref_id, face) DO UPDATE SET art=excluded.art, full=excluded.full, "
+                   "color=excluded.color, created_at=excluded.created_at")
 CARD_BACK_ID = "0aeebaf5-8c7d-4636-9e82-8c27447861f7"
 CARD_BACK_REF = f"__back__:{CARD_BACK_ID}"
 CARD_BACK_URL = f"https://backs.scryfall.io/small/0/a/{CARD_BACK_ID}.jpg"
@@ -119,9 +123,7 @@ async def _run(targets: list[tuple[str, int, str]], concurrency: int) -> dict:
             stats["ok"] += len(rows)
             stats["failed"] += len(results) - len(rows)
             if rows:
-                conn.executemany(
-                    "INSERT OR REPLACE INTO art_hashes (card_ref_id, face, art, full, color, created_at) "
-                    "VALUES (?,?,?,?,?,?)", rows)
+                conn.executemany(UPSERT_HASH_SQL, rows)
             done = i + len(results)
             rate = done / max(time.time() - started, 1e-6)
             log(f"[hashes] {done}/{len(targets)} ({rate:.0f} img/s, falhas {stats['failed']})")
@@ -136,10 +138,7 @@ def ensure_card_back() -> None:
     resp = httpx.get(CARD_BACK_URL, headers={"User-Agent": config.USER_AGENT}, timeout=30)
     resp.raise_for_status()
     art, full, color = _hash_bytes(resp.content)
-    conn.execute(
-        "INSERT OR REPLACE INTO art_hashes (card_ref_id, face, art, full, color, created_at) VALUES (?,?,?,?,?,?)",
-        (CARD_BACK_REF, 0, art, full, color, db.now_iso()),
-    )
+    conn.execute(UPSERT_HASH_SQL, (CARD_BACK_REF, 0, art, full, color, db.now_iso()))
 
 
 def build_hashes(langs: tuple[str, ...] = ("en",), limit: int | None = None, sets: list[str] | None = None,
@@ -151,7 +150,8 @@ def build_hashes(langs: tuple[str, ...] = ("en",), limit: int | None = None, set
         return {"ok": 0, "failed": 0}
     stats = asyncio.run(_run(targets, concurrency))
     total = db.catalog_db().execute("SELECT COUNT(*) FROM art_hashes").fetchone()[0]
-    db.meta_set("mtg.hashes.count", str(total))
-    db.meta_set("mtg.hashes.updated_at", db.now_iso())
-    log(f"[hashes] concluído: {stats} — total no banco {total}")
+    db.catalog_meta_set("mtg.hashes.count", str(total))
+    db.catalog_meta_set("mtg.hashes.updated_at", db.now_iso())
+    info = build_index_file()
+    log(f"[hashes] concluído: {stats} — total no banco {total}; índice {info['file']}")
     return stats

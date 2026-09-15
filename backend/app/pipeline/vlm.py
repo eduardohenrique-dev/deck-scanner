@@ -1,12 +1,15 @@
 """Etapa 3 da cascata: modelo multimodal (Claude) só nos recortes que o hash local não resolveu.
 
 Envia o RECORTE da carta (nunca a foto inteira) e exige JSON estruturado via output_config.format.
-Sem ANTHROPIC_API_KEY a etapa fica desligada e o recorte vai direto para revisão humana.
+Provedores: API da Anthropic (ANTHROPIC_API_KEY) ou Vercel AI Gateway (AI_GATEWAY_API_KEY ou o token
+OIDC da própria função na Vercel). Sem nenhum dos dois a etapa fica desligada e o recorte vai direto
+para revisão humana.
 """
 from __future__ import annotations
 
 import base64
 import json
+import os
 import threading
 import time
 
@@ -63,13 +66,32 @@ def enabled() -> bool:
     return config.VLM_ENABLED
 
 
+GATEWAY_URL = "https://ai-gateway.vercel.sh"
+
+
 def _get_client():
     global _client
+    import anthropic
+
+    if config.VLM_PROVIDER == "gateway":
+        # o token OIDC da Vercel expira: com ele o cliente é recriado a cada chamada (é barato)
+        key = config.AI_GATEWAY_API_KEY or os.environ.get("VERCEL_OIDC_TOKEN", "")
+        if not config.AI_GATEWAY_API_KEY:
+            return anthropic.Anthropic(api_key=key, base_url=GATEWAY_URL, max_retries=2, timeout=90.0)
     with _client_lock:
         if _client is None:
-            import anthropic
-            _client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY, max_retries=2, timeout=90.0)
+            if config.VLM_PROVIDER == "gateway":
+                _client = anthropic.Anthropic(api_key=config.AI_GATEWAY_API_KEY, base_url=GATEWAY_URL,
+                                              max_retries=2, timeout=90.0)
+            else:
+                _client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY, max_retries=2, timeout=90.0)
         return _client
+
+
+def model_name() -> str:
+    if config.VLM_PROVIDER == "gateway" and "/" not in config.VLM_MODEL:
+        return f"anthropic/{config.VLM_MODEL}"
+    return config.VLM_MODEL
 
 
 def read_card(image_bgr: np.ndarray, hints: list[str] | None = None, *, session_id: str | None = None,
@@ -89,7 +111,7 @@ def read_card(image_bgr: np.ndarray, hints: list[str] | None = None, *, session_
     if hints:
         text += "\n\nCandidatos sugeridos pelo hash visual local (podem estar errados): " + "; ".join(hints[:5])
     params = {
-        "model": config.VLM_MODEL,
+        "model": model_name(),
         "max_tokens": 4096,
         "output_config": {"format": {"type": "json_schema", "schema": SCHEMA}, "effort": config.VLM_EFFORT},
         "messages": [{
@@ -106,7 +128,7 @@ def read_card(image_bgr: np.ndarray, hints: list[str] | None = None, *, session_
     response = None
     try:
         with _sem:
-            if config.VLM_MODEL in ("claude-opus-5", "claude-fable-5-1"):
+            if config.VLM_PROVIDER == "anthropic" and config.VLM_MODEL in ("claude-opus-5", "claude-fable-5-1"):
                 # recusa de classificador → reexecuta no modelo de fallback recomendado, no mesmo request
                 response = client.beta.messages.create(
                     betas=["server-side-fallback-2026-07-01"], fallbacks="default", **params)

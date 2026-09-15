@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 import threading
 import unicodedata
+from collections import OrderedDict
 
 from ... import db
 from ..base import GameAdapter, RawCard, ResolvedCard
@@ -11,10 +12,22 @@ from . import exporters, manabase
 from .scryfall_api import client as scryfall, upsert_card
 
 FTS_TOKEN = re.compile(r"\w+", re.UNICODE)
+SUMMARY_SQL = (
+    "SELECT r.*, o.names_i18n, o.name_en AS oracle_name, o.type_line AS oracle_type_line "
+    "FROM card_refs r LEFT JOIN oracle_cards o ON o.oracle_id = r.oracle_id WHERE r.id {cond}")
+FIELDS_SQL = (
+    "SELECT r.id, r.oracle_id, r.name_en, r.lang, r.printed_name, r.set_code, r.collector_number, r.layout, r.kind, "
+    "o.type_line, o.oracle_text, o.mana_cost, o.cmc, o.colors, o.color_identity, o.produced_mana, o.keywords, "
+    "o.legalities, o.faces, o.game_changer, o.names_i18n, o.name_en AS oracle_name "
+    "FROM card_refs r LEFT JOIN oracle_cards o ON o.oracle_id = r.oracle_id WHERE r.id {cond}")
 
 
-def _strip_accents(text: str) -> str:
+def strip_accents(text: str) -> str:
     return unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode()
+
+
+def normalize_name(text: str) -> str:
+    return " ".join(FTS_TOKEN.findall(strip_accents(text).casefold()))
 
 
 def normalize_collector_number(value: str | None) -> str | None:
@@ -28,14 +41,35 @@ def normalize_collector_number(value: str | None) -> str | None:
     return v or None
 
 
+class _Lru(OrderedDict):
+    def __init__(self, size: int):
+        super().__init__()
+        self.size = size
+        self.lock = threading.Lock()
+
+    def get_hit(self, key):
+        with self.lock:
+            if key in self:
+                self.move_to_end(key)
+                return super().__getitem__(key)
+        return None
+
+    def put(self, key, value) -> None:
+        with self.lock:
+            self[key] = value
+            self.move_to_end(key)
+            while len(self) > self.size:
+                self.popitem(last=False)
+
+
 class MtgAdapter(GameAdapter):
     id = "mtg"
     name = "Magic: The Gathering"
 
     def __init__(self, rules_dir, manifest):
         super().__init__(rules_dir, manifest)
-        self._fields_lock = threading.Lock()
-        self._fields_cache: dict[str, dict] = {}
+        self._fields_cache = _Lru(20000)
+        self._summary_cache = _Lru(20000)
 
     # ------------------------------------------------------------------ resolução canônica
     def resolve_card(self, raw: RawCard) -> ResolvedCard | None:
@@ -103,22 +137,25 @@ class MtgAdapter(GameAdapter):
 
     def _oracle_by_name(self, name: str) -> str | None:
         conn = db.catalog_db()
-        row = conn.execute("SELECT oracle_id FROM oracle_cards WHERE name_en = ? COLLATE NOCASE", (name.strip(),)).fetchone()
+        clean = name.strip()
+        row = conn.execute("SELECT oracle_id FROM oracle_cards WHERE lower(name_en) = lower(?)", (clean,)).fetchone()
         if row:
             return row["oracle_id"]
-        row = conn.execute("SELECT oracle_id FROM card_names WHERE name = ? COLLATE NOCASE LIMIT 1", (name.strip(),)).fetchone()
+        row = conn.execute("SELECT oracle_id FROM card_names WHERE lower(name) = lower(?) LIMIT 1", (clean,)).fetchone()
         if row:
             return row["oracle_id"]
-        tokens = FTS_TOKEN.findall(_strip_accents(name))
-        if not tokens:
+        norm = normalize_name(clean)
+        if not norm:
             return None
-        query = " ".join(f'"{t}"' for t in tokens)
+        if conn.dialect == "postgres":
+            row = conn.execute("SELECT oracle_id FROM card_names WHERE name_norm = ? LIMIT 1", (norm,)).fetchone()
+            return row["oracle_id"] if row else None
+        query = " ".join(f'"{t}"' for t in norm.split())
         rows = conn.execute(
             "SELECT n.oracle_id, n.name FROM card_names_fts f JOIN card_names n ON n.rowid = f.rowid "
             "WHERE card_names_fts MATCH ? LIMIT 20", (query,)).fetchall()
-        target = _strip_accents(name).casefold().strip()
         for r in rows:
-            if _strip_accents(r["name"]).casefold().strip() == target:
+            if normalize_name(r["name"]) == norm:
                 return r["oracle_id"]
         return None
 
@@ -136,30 +173,11 @@ class MtgAdapter(GameAdapter):
         sql = (f"SELECT r.id, r.name_en, r.lang FROM card_refs r JOIN oracle_cards o ON o.oracle_id = r.oracle_id "
                f"WHERE r.oracle_id = ? ORDER BY {', '.join(order_sql)}, r.released_at DESC LIMIT 1")
         row = db.catalog_db().execute(sql, [oracle_id] + order_params).fetchone()
-        return dict(row) if row else None
+        return db.row_to_dict(row) if row else None
 
     # ------------------------------------------------------------------ dados para regras e UI
-    def _fields_cached(self, card_ref_id: str) -> dict | None:
-        with self._fields_lock:
-            hit = self._fields_cache.get(card_ref_id)
-        if hit is not None:
-            return hit
-        fields = self._load_fields(card_ref_id)
-        if fields is not None:
-            with self._fields_lock:
-                self._fields_cache[card_ref_id] = fields
-        return fields
-
-    def _load_fields(self, card_ref_id: str) -> dict | None:
-        conn = db.catalog_db()
-        r = conn.execute(
-            "SELECT r.id, r.oracle_id, r.name_en, r.lang, r.printed_name, r.set_code, r.collector_number, r.layout, r.kind, "
-            "o.type_line, o.oracle_text, o.mana_cost, o.cmc, o.colors, o.color_identity, o.produced_mana, o.keywords, "
-            "o.legalities, o.faces, o.game_changer, o.names_i18n, o.name_en AS oracle_name "
-            "FROM card_refs r LEFT JOIN oracle_cards o ON o.oracle_id = r.oracle_id WHERE r.id = ?",
-            (card_ref_id,)).fetchone()
-        if r is None:
-            return None
+    @staticmethod
+    def _fields_from_row(r) -> dict:
         faces = db.loads(r["faces"], None) or []
         front = faces[0] if faces else {}
         names_i18n = db.loads(r["names_i18n"], {}) or {}
@@ -185,16 +203,27 @@ class MtgAdapter(GameAdapter):
         }
 
     def card_fields(self, card_ref_id: str) -> dict | None:
-        return self._fields_cached(card_ref_id)
+        return self.card_fields_many([card_ref_id]).get(card_ref_id)
 
-    def card_summary(self, card_ref_id: str, lang: str = "pt") -> dict | None:
-        conn = db.catalog_db()
-        r = conn.execute(
-            "SELECT r.*, o.names_i18n, o.name_en AS oracle_name, o.type_line AS oracle_type_line "
-            "FROM card_refs r LEFT JOIN oracle_cards o ON o.oracle_id = r.oracle_id WHERE r.id = ?",
-            (card_ref_id,)).fetchone()
-        if r is None:
-            return None
+    def card_fields_many(self, ids) -> dict[str, dict]:
+        out: dict[str, dict] = {}
+        missing = []
+        for i in dict.fromkeys(i for i in ids if i):
+            hit = self._fields_cache.get_hit(i)
+            if hit is not None:
+                out[i] = hit
+            else:
+                missing.append(i)
+        for part in db.chunks(missing, 500):
+            rows = db.catalog_db().execute(FIELDS_SQL.format(cond=f"IN ({db.placeholders(len(part))})"), list(part))
+            for r in rows:
+                fields = self._fields_from_row(r)
+                self._fields_cache.put(r["id"], fields)
+                out[r["id"]] = fields
+        return out
+
+    @staticmethod
+    def _summary_from_row(r, lang: str = "pt") -> dict:
         faces = db.loads(r["faces"], None) or []
         names_i18n = db.loads(r["names_i18n"], {}) or {}
         prices = db.loads(r["prices"], {}) or {}
@@ -217,54 +246,93 @@ class MtgAdapter(GameAdapter):
             "type_line": r["type_line"],
             "front_type_line": (faces[0].get("type_line") if faces else None) or r["type_line"],
             "mana_cost": r["mana_cost"],
+            "color_identity": db.loads(r["color_identity"], []),
             "finishes": db.loads(r["finishes"], []),
             "games": db.loads(r["games"], []),
             "image_small": r["image_small"],
             "image_normal": r["image_normal"],
             "faces": [{"name": f.get("name"), "image_normal": f.get("image_normal")} for f in faces if f.get("image_normal")],
-            "prices": {k: prices.get(k) for k in ("usd", "usd_foil", "usd_etched", "eur")},
+            "prices": {k: prices.get(k) for k in ("usd", "usd_foil", "usd_etched", "eur", "eur_foil")},
             "frame_effects": db.loads(r["frame_effects"], []),
+            "border_color": r["border_color"],
             "full_art": bool(r["full_art"]),
             "promo": bool(r["promo"]),
             "artist": r["artist"],
+            "illustration_id": r["illustration_id"],
+            "released_at": r["released_at"],
+            "game_changer": bool(r["game_changer"]),
         }
+
+    def card_summary(self, card_ref_id: str, lang: str = "pt") -> dict | None:
+        return self.card_summaries([card_ref_id], lang).get(card_ref_id)
+
+    def card_summaries(self, ids, lang: str = "pt") -> dict[str, dict]:
+        out: dict[str, dict] = {}
+        missing = []
+        for i in dict.fromkeys(i for i in ids if i):
+            hit = self._summary_cache.get_hit((i, lang))
+            if hit is not None:
+                out[i] = hit
+            else:
+                missing.append(i)
+        for part in db.chunks(missing, 500):
+            rows = db.catalog_db().execute(SUMMARY_SQL.format(cond=f"IN ({db.placeholders(len(part))})"), list(part))
+            for r in rows:
+                s = self._summary_from_row(r, lang)
+                self._summary_cache.put((r["id"], lang), s)
+                out[r["id"]] = s
+        return out
+
+    def invalidate(self, card_ref_id: str) -> None:
+        self._fields_cache.pop(card_ref_id, None)
+        for key in [k for k in self._summary_cache if k[0] == card_ref_id]:
+            self._summary_cache.pop(key, None)
 
     def search(self, query: str, lang: str = "pt", limit: int = 12) -> list[dict]:
         conn = db.catalog_db()
-        tokens = FTS_TOKEN.findall(_strip_accents(query))
+        norm = normalize_name(query)
+        tokens = norm.split()
         if not tokens:
             return []
-        fts = " ".join(f'"{t}"*' for t in tokens)
-        rows = conn.execute(
-            "SELECT n.oracle_id, n.lang, n.name, o.name_en, o.default_ref_id, o.kind, bm25(card_names_fts) AS rank "
-            "FROM card_names_fts f JOIN card_names n ON n.rowid = f.rowid "
-            "JOIN oracle_cards o ON o.oracle_id = n.oracle_id "
-            "WHERE card_names_fts MATCH ? ORDER BY rank LIMIT 300", (fts,)).fetchall()
-        q = _strip_accents(query).casefold().strip()
+        if conn.dialect == "postgres":
+            where = " AND ".join("n.name_norm LIKE ?" for _ in tokens)
+            rows = conn.execute(
+                "SELECT n.oracle_id, n.lang, n.name, o.name_en, o.default_ref_id, o.kind, "
+                "-similarity(n.name_norm, ?) AS rank FROM card_names n JOIN oracle_cards o ON o.oracle_id = n.oracle_id "
+                f"WHERE {where} ORDER BY rank LIMIT 300", [norm] + [f"%{t}%" for t in tokens]).fetchall()
+        else:
+            fts = " ".join(f'"{t}"*' for t in tokens)
+            rows = conn.execute(
+                "SELECT n.oracle_id, n.lang, n.name, o.name_en, o.default_ref_id, o.kind, bm25(card_names_fts) AS rank "
+                "FROM card_names_fts f JOIN card_names n ON n.rowid = f.rowid "
+                "JOIN oracle_cards o ON o.oracle_id = n.oracle_id "
+                "WHERE card_names_fts MATCH ? ORDER BY rank LIMIT 300", (fts,)).fetchall()
         scored: dict[str, tuple] = {}
         for r in rows:
-            name = _strip_accents(r["name"]).casefold()
-            score = (0 if name == q else 1 if name.startswith(q) else 2,
+            name = normalize_name(r["name"])
+            score = (0 if name == norm else 1 if name.startswith(norm) else 2,
                      0 if r["kind"] == "card" else 1,
                      0 if r["lang"] in (lang, "en") else 1,
                      len(r["name"]), r["rank"])
             best = scored.get(r["oracle_id"])
             if best is None or score < best[0]:
                 scored[r["oracle_id"]] = (score, r)
+        chosen = sorted(scored.values(), key=lambda x: x[0])[:limit]
+        summaries = self.card_summaries([r["default_ref_id"] for _, r in chosen if r["default_ref_id"]], lang)
         out = []
-        for score, r in sorted(scored.values(), key=lambda x: x[0])[:limit]:
-            summary = self.card_summary(r["default_ref_id"], lang) if r["default_ref_id"] else None
+        for _, r in chosen:
+            summary = summaries.get(r["default_ref_id"])
             if summary:
-                summary["matched_name"] = r["name"]
-                summary["matched_lang"] = r["lang"]
-                out.append(summary)
+                out.append({**summary, "matched_name": r["name"], "matched_lang": r["lang"]})
         return out
 
     def prints_of(self, oracle_id: str, limit: int = 80) -> list[dict]:
         rows = db.catalog_db().execute(
             "SELECT id FROM card_refs WHERE oracle_id=? ORDER BY CASE lang WHEN 'en' THEN 0 WHEN 'pt' THEN 1 ELSE 2 END, "
             "released_at DESC LIMIT ?", (oracle_id, limit)).fetchall()
-        return [s for s in (self.card_summary(r["id"]) for r in rows) if s]
+        ids = [r["id"] for r in rows]
+        summaries = self.card_summaries(ids)
+        return [summaries[i] for i in ids if i in summaries]
 
     def basic_land_ref(self, color: str, prefer_set: str | None = None) -> str | None:
         name = manabase.BASIC_BY_COLOR.get(color)

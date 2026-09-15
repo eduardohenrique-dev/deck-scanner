@@ -9,4 +9,7 @@ pillow>=11.0
 pillow-heif>=0.20
 anthropic>=0.60
 python-dotenv>=1.0
+psycopg[binary]>=3.2
+psycopg-pool>=3.2
+pyjwt[crypto]>=2.9
 pytest>=8.3

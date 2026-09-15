@@ -1,10 +1,9 @@
-"""Consolida detecções em cartas físicas e entradas de deck, e roda o motor de regras."""
+"""Consolida detecções em cartas físicas e entradas de lista, e roda o motor de regras."""
 from __future__ import annotations
 
-import threading
 from collections import defaultdict
 
-from .. import config, db
+from .. import db
 from ..events import bus
 from ..games import registry
 from ..rules import engine
@@ -18,11 +17,8 @@ def representatives(dets: list[dict]) -> list[dict]:
     return [d for d in dets if d["status"] == "identified" and not (d.get("dup_of") and d["dup_of"] in ids)]
 
 
-_rebuild_locks: dict[str, threading.RLock] = defaultdict(threading.RLock)
-
-
 def rebuild(session_id: str, publish: bool = True) -> dict:
-    with _rebuild_locks[session_id]:
+    with db.lease_lock(f"rebuild:{session_id}"):
         return _rebuild(session_id, publish)
 
 
@@ -41,6 +37,7 @@ def _rebuild(session_id: str, publish: bool) -> dict:
         groups[(d["card_ref_id"], d.get("finish") or "nonfoil", d.get("language") or default_lang)].append(d)
 
     conn = db.app_db()
+    fields_by_ref = adapter.card_fields_many([k[0] for k in groups])
     with db.tx(conn):
         existing = store.entries(session["deck_id"])
         by_key: dict[tuple, dict] = {}
@@ -53,10 +50,13 @@ def _rebuild(session_id: str, publish: bool) -> dict:
             e = by_key.get(key)
             if e:
                 seen.add(e["id"])
-                store.update_entry(e["id"], quantity_detected=len(members), allocated_physical_ids=phys,
-                                   position=min(e["position"], members[0]["seq"]) if e["manual"] else members[0]["seq"])
+                position = min(e["position"], members[0]["seq"]) if e["manual"] else members[0]["seq"]
+                if e["quantity_detected"] != len(members) or (e.get("allocated_physical_ids") or []) != phys \
+                        or e["position"] != position:
+                    store.update_entry(e["id"], quantity_detected=len(members), allocated_physical_ids=phys,
+                                       position=position)
             else:
-                fields = adapter.card_fields(key[0]) or {}
+                fields = fields_by_ref.get(key[0]) or {}
                 store.insert_entry(session["deck_id"], zone=default_zone, card_ref_id=key[0], oracle_id=fields.get("key"),
                                    language=key[2], finish=key[1], quantity=len(members),
                                    quantity_detected=len(members), is_commander=0, manual=0, rule_warnings=[],
@@ -70,18 +70,6 @@ def _rebuild(session_id: str, publish: bool) -> dict:
             else:
                 store.delete_entry(e["id"])
 
-        conn.execute("DELETE FROM physical_cards WHERE session_id=?", (session_id,))
-        rows = []
-        for d in reps:
-            s = db.catalog_db().execute("SELECT set_code, collector_number FROM card_refs WHERE id=?",
-                                        (d["card_ref_id"],)).fetchone()
-            rows.append((d["id"], config.DEFAULT_USER_ID, session["game_id"], session_id, d["card_ref_id"],
-                         s["set_code"] if s else None, s["collector_number"] if s else None, d.get("language"),
-                         d.get("finish"), None, "session", session_id, db.now_iso()))
-        conn.executemany(
-            "INSERT OR REPLACE INTO physical_cards (id, user_id, game_id, session_id, card_ref_id, set_code, "
-            "collector_number, language, finish, condition, location_type, location_id, acquired_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", rows)
         rep_ids = {d["id"] for d in reps}
         for d in dets:
             phys_id = d["id"] if d["id"] in rep_ids else (d.get("dup_of") if d["status"] == "identified" else None)
@@ -97,26 +85,33 @@ def _rebuild(session_id: str, publish: bool) -> dict:
 
 def validate(session_id: str) -> dict:
     session = store.get_session(session_id)
-    adapter = registry.get(session["game_id"])
-    rule = adapter.format(session["format_id"])
-    rows = store.entries(session["deck_id"])
-    engine_entries, cards = [], {}
+    return validate_deck(store.get_deck(session["deck_id"]))
+
+
+def validate_deck(deck: dict, persist: bool = True) -> dict:
+    adapter = registry.get(deck["game_id"])
+    rule = adapter.format(deck["format_id"])
+    rows = store.entries(deck["id"])
+    cards = adapter.card_fields_many([e["card_ref_id"] for e in rows])
+    engine_entries = []
     for e in rows:
-        fields = adapter.card_fields(e["card_ref_id"])
+        fields = cards.get(e["card_ref_id"])
         if fields is None:
             continue
-        cards[e["card_ref_id"]] = fields
         engine_entries.append(engine.EngineEntry(
             id=e["id"], card_ref_id=e["card_ref_id"], key=e["oracle_id"] or fields["key"], zone=e["zone"],
             quantity_detected=e["quantity_detected"], quantity_override=e["quantity_override"],
             is_commander=bool(e["is_commander"]), position=e["position"], manual=bool(e["manual"])))
     report = engine.evaluate(rule, engine_entries, cards, game_meta=adapter.game_meta(), messages=load_messages(),
                              suggestion_providers=adapter.suggestion_providers())
-    conn = db.app_db()
-    with db.tx(conn):
+    if persist:
+        changes = []
         for e in rows:
             info = report["entries"].get(e["id"])
             if info and (info["quantity"] != e["quantity"] or info["warnings"] != (e["rule_warnings"] or [])):
-                conn.execute("UPDATE deck_entries SET quantity=?, rule_warnings=? WHERE id=?",
-                             (info["quantity"], db.dumps(info["warnings"]), e["id"]))
+                changes.append((info["quantity"], db.dumps(info["warnings"]), e["id"]))
+        if changes:
+            conn = db.app_db()
+            with db.tx(conn):
+                conn.executemany("UPDATE deck_entries SET quantity=?, rule_warnings=? WHERE id=?", changes)
     return report

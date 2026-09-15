@@ -14,6 +14,7 @@ from pathlib import Path
 
 from app import config, db
 from app.pipeline import deck, photo, store, video
+from app.pipeline.imageio import encode_jpeg, load_image_bytes
 from tools import synth
 
 
@@ -56,11 +57,11 @@ def run_video(folder: Path, regen: bool) -> dict:
     if regen or not (folder / "truth.json").exists():
         synth.make_video(folder)
     truth = json.loads((folder / "truth.json").read_text())
-    db.init_app_db()
-    s = store.create_session("mtg", "commander", "video", "e2e vídeo", {"default_language": "en"})
-    cap = store.add_capture(s["id"], "video", str(folder / "deck.mp4"), "deck.mp4")
+    db.init_all()
+    s = store.create_session(config.DEFAULT_USER_ID, "mtg", "commander", "video", "e2e vídeo", {"default_language": "en"})
+    cap = store.add_capture(s["id"], "video", None, "deck.mp4", status="processing")
     started = time.time()
-    video.process_video_file(s["id"], cap["id"])
+    video.process_video_file(s["id"], cap["id"], str(folder / "deck.mp4"))
     got, stats = _result_oracles(s["id"])
     return _report("video", _truth_oracles(truth["cards"]), got, stats,
                    {"session_id": s["id"], "truth_backs": truth["backs"], "truth_tokens": truth["tokens"]}, started)
@@ -70,12 +71,16 @@ def run_photos(folder: Path, regen: bool) -> dict:
     if regen or not (folder / "truth.json").exists():
         synth.make_photos(folder)
     truth = json.loads((folder / "truth.json").read_text())
-    db.init_app_db()
-    s = store.create_session("mtg", "collection", "photo", "e2e fotos", {"default_language": "en"})
+    db.init_all()
+    s = store.create_session(config.DEFAULT_USER_ID, "mtg", "collection", "photo", "e2e fotos", {"default_language": "en"})
     started = time.time()
-    caps = [store.add_capture(s["id"], "image", str(folder / p["file"]), p["file"]) for p in truth["photos"]]
-    for c in caps:
-        photo.process_photo(s["id"], c["id"])
+    for p in truth["photos"]:
+        img = load_image_bytes((folder / p["file"]).read_bytes())
+        cid = db.new_id()
+        key = store.store_capture_file(s["id"], cid, encode_jpeg(img, 90), ".jpg", "image/jpeg")
+        store.add_capture(s["id"], "image", key, p["file"], capture_id=cid)
+        store.update_capture(cid, w=img.shape[1], h=img.shape[0])
+        photo.process_photo(s["id"], cid, img)
     got, stats = _result_oracles(s["id"])
     return _report("photos", _truth_oracles(truth["cards"]), got, stats,
                    {"session_id": s["id"], "truth_backs": truth["backs"], "truth_illegible": len(truth["illegible"]),

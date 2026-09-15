@@ -1,7 +1,7 @@
-"""Cliente da API da Scryfall: rate limit (~10 req/s), User-Agent próprio e cache local em SQLite.
+"""Cliente da API da Scryfall: rate limit (~10 req/s), User-Agent próprio e cache no banco.
 
-Usado só para o que o bulk local não resolve (carta nova, leitura do modelo com set/número
-fora do catálogo). Toda carta obtida pela API é gravada no catálogo local.
+Usado só para o que o catálogo local não resolve (carta nova, leitura do modelo com set/número
+fora do catálogo, preços atualizados). Toda carta obtida pela API é gravada no catálogo.
 """
 from __future__ import annotations
 
@@ -28,11 +28,22 @@ class ScryfallClient:
                 time.sleep(wait)
             self._last = time.monotonic()
 
+    def _cached(self, key: str, ttl: float):
+        row = db.app_db().execute("SELECT status, body, fetched_at FROM api_cache WHERE key=?", (key,)).fetchone()
+        if row and time.time() - row["fetched_at"] < ttl:
+            return row, True
+        return row, False
+
+    def _store(self, key: str, status: int, body) -> None:
+        db.app_db().execute(
+            "INSERT INTO api_cache(key, status, body, fetched_at) VALUES(?,?,?,?) "
+            "ON CONFLICT(key) DO UPDATE SET status=excluded.status, body=excluded.body, fetched_at=excluded.fetched_at",
+            (key, status, db.dumps(body) if body is not None else None, time.time()))
+
     def get(self, path: str, params: dict | None = None, ttl: float = config.SCRYFALL_CACHE_TTL) -> tuple[int, dict | None]:
         key = path + ("?" + urlencode(sorted(params.items())) if params else "")
-        conn = db.catalog_db()
-        cached = conn.execute("SELECT status, body, fetched_at FROM api_cache WHERE key=?", (key,)).fetchone()
-        if cached and time.time() - cached["fetched_at"] < ttl:
+        cached, fresh = self._cached(key, ttl)
+        if fresh:
             return cached["status"], db.loads(cached["body"], None)
         body = None
         status = 0
@@ -52,12 +63,21 @@ class ScryfallClient:
                 body = resp.json()
             break
         if status in (200, 404):
-            conn.execute(
-                "INSERT INTO api_cache(key, status, body, fetched_at) VALUES(?,?,?,?) "
-                "ON CONFLICT(key) DO UPDATE SET status=excluded.status, body=excluded.body, fetched_at=excluded.fetched_at",
-                (key, status, db.dumps(body) if body is not None else None, time.time()),
-            )
+            self._store(key, status, body)
         return status, body
+
+    def post(self, path: str, payload: dict) -> tuple[int, dict | None]:
+        for attempt in range(3):
+            self._throttle()
+            try:
+                resp = self._client.post(config.SCRYFALL_API + path, json=payload)
+            except httpx.HTTPError:
+                return 0, None
+            if resp.status_code == 429:
+                time.sleep(1.0 + attempt)
+                continue
+            return resp.status_code, resp.json() if "json" in resp.headers.get("content-type", "") else None
+        return 429, None
 
     def card_by_set_number(self, set_code: str, number: str, lang: str | None = None) -> dict | None:
         path = f"/cards/{quote(set_code.lower())}/{quote(str(number))}"
@@ -77,26 +97,36 @@ class ScryfallClient:
         status, body = self.get(f"/cards/{quote(card_id)}")
         return body if status == 200 and body and body.get("object") == "card" else None
 
+    def collection(self, ids: list[str]) -> list[dict]:
+        """Até 75 cartas por requisição (/cards/collection) — usado para preços atualizados."""
+        out: list[dict] = []
+        for i in range(0, len(ids), 75):
+            status, body = self.post("/cards/collection", {"identifiers": [{"id": x} for x in ids[i:i + 75]]})
+            if status == 200 and body:
+                out.extend(body.get("data") or [])
+        return out
+
 
 def upsert_card(card: dict) -> str:
-    """Grava no catálogo local uma carta vinda da API (e o oracle correspondente, se faltar)."""
+    """Grava no catálogo uma carta vinda da API (e o oracle correspondente, se faltar)."""
     conn = db.catalog_db()
     row = scryfall_import.card_row(card)
-    conn.execute(scryfall_import.INSERT_CARD_SQL, row)
+    conn.execute(scryfall_import.UPSERT_CARD_SQL, row)
     values = dict(zip(scryfall_import.CARD_COLUMNS, row))
     oracle_id = values["oracle_id"]
     if oracle_id and conn.execute("SELECT 1 FROM oracle_cards WHERE oracle_id=?", (oracle_id,)).fetchone() is None:
         conn.execute(
             "INSERT INTO oracle_cards (oracle_id, game_id, name_en, default_ref_id, kind, layout, mana_cost, cmc, "
             "type_line, oracle_text, colors, color_identity, produced_mana, keywords, legalities, faces, game_changer) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT (oracle_id) DO NOTHING",
             (oracle_id, "mtg", card["name"], card["id"], values["kind"], values["layout"], values["mana_cost"],
              values["cmc"], values["type_line"], values["oracle_text"], values["colors"], values["color_identity"],
              values["produced_mana"], values["keywords"], values["legalities"], values["faces"],
              values["game_changer"]),
         )
-        conn.execute("INSERT OR IGNORE INTO card_names (game_id, oracle_id, lang, name) VALUES (?,?,?,?)",
-                     ("mtg", oracle_id, "en", card["name"]))
+        conn.execute("INSERT INTO card_names (game_id, oracle_id, lang, name, name_norm) VALUES (?,?,?,?,?) "
+                     "ON CONFLICT DO NOTHING",
+                     ("mtg", oracle_id, "en", card["name"], scryfall_import.name_norm(card["name"])))
     return card["id"]
 
 

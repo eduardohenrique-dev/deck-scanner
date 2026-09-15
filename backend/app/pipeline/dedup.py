@@ -18,9 +18,8 @@ import itertools
 import cv2
 import numpy as np
 
-from ..vision import detect, hashing
+from ..vision import hashing
 from . import store
-from .imageio import load_image
 
 _homography_cache: dict[tuple[str, str], np.ndarray | None] = {}
 _features_cache: dict[str, tuple] = {}
@@ -31,7 +30,10 @@ def _features(cap: dict):
     hit = _features_cache.get(cap["id"])
     if hit is not None:
         return hit
-    img = load_image(cap["file_path"])
+    img = store.load_image_key(cap["file_path"])
+    if img is None:
+        hit = (np.zeros((0, 2), np.float32), None, (cap.get("w") or 1, cap.get("h") or 1), None)
+        return hit
     h, w = img.shape[:2]
     scale = min(1.0, 1600.0 / max(h, w))
     gray = cv2.cvtColor(cv2.resize(img, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
@@ -39,7 +41,10 @@ def _features(cap: dict):
     orb = cv2.ORB_create(nfeatures=5000, fastThreshold=8)
     kps, desc = orb.detectAndCompute(gray, None)
     pts = np.float32([k.pt for k in kps]) / scale if kps else np.zeros((0, 2), np.float32)
-    hit = (pts, desc, (w, h), img)
+    hit = (pts, desc, (w, h), None)
+    if len(_features_cache) > 60:  # várias sessões no mesmo processo: descarta as mais antigas
+        for key in list(_features_cache)[:30]:
+            _features_cache.pop(key, None)
     _features_cache[cap["id"]] = hit
     return hit
 
@@ -269,7 +274,8 @@ def _crop_similarity(a: dict, b: dict) -> float:
 
 def _wear_similarity(a: dict, b: dict) -> float:
     """Marcas físicas: compara bordas (desgaste/riscos/reflexo da sleeve) no anel externo do recorte."""
-    ia, ib = cv2.imread(a["crop_path"], cv2.IMREAD_GRAYSCALE), cv2.imread(b["crop_path"], cv2.IMREAD_GRAYSCALE)
+    ia = store.load_image_key(a.get("crop_path"), cv2.IMREAD_GRAYSCALE)
+    ib = store.load_image_key(b.get("crop_path"), cv2.IMREAD_GRAYSCALE)
     if ia is None or ib is None:
         return 0.0
     ea = cv2.Canny(cv2.resize(ia, (244, 340)), 60, 160)

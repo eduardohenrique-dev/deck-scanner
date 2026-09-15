@@ -93,11 +93,11 @@ def _finalize(result: IdentifyResult, adapter: GameAdapter, default_language: st
 
 def identify(card_bgr: np.ndarray, *, adapter: GameAdapter, context_bgr: np.ndarray | None = None,
              default_language: str = "en", session_id: str | None = None, allow_vlm: bool = True,
-             allow_orb: bool = True) -> IdentifyResult:
+             allow_orb: bool = True, user_id: str | None = None) -> IdentifyResult:
     index = get_index()
     qh = hashing.compute_query_hashes(card_bgr, context_bgr)
     result = IdentifyResult(hashes=qh[0])
-    cands = index.query(qh, k=16)
+    cands = index.query(qh, k=16, user_id=user_id)
 
     if cands:
         best = cands[0]

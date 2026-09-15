@@ -17,7 +17,6 @@ from ..games import registry
 from ..jobs import identify_pool
 from ..vision import detect, hashing, quality
 from . import dedup, deck, identify, store
-from .imageio import load_image
 from .serialize import capture_public, detection_public
 
 HYPOTHESIS_NOTES = {
@@ -42,7 +41,7 @@ def _warps(img: np.ndarray, pts: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
             detect.warp_card(img, pts, out_w=620, out_h=864, expand=hashing.CONTEXT_EXPAND))
 
 
-def process_photo(session_id: str, capture_id: str) -> None:
+def process_photo(session_id: str, capture_id: str, img: np.ndarray | None = None) -> None:
     session = store.get_session(session_id)
     cap = store.get_capture(capture_id)
     if session is None or cap is None:
@@ -53,7 +52,12 @@ def process_photo(session_id: str, capture_id: str) -> None:
     store.update_session(session_id, status="processing")
     bus.publish(session_id, {"type": "capture", "capture": capture_public(store.get_capture(capture_id))})
 
-    img = load_image(cap["file_path"])
+    if img is None:
+        img = store.load_image_key(cap["file_path"])
+    if img is None:
+        store.update_capture(capture_id, status="error", error="imagem não encontrada")
+        return
+    user_id = session["user_id"]
     H, W = img.shape[:2]
     iq = quality.image_quality(img)
     quads = detect.detect_cards(img, include_partial=True)
@@ -68,7 +72,7 @@ def process_photo(session_id: str, capture_id: str) -> None:
     def quick_identify(pts: np.ndarray):
         w_, c_ = _warps(img, pts)
         return w_, identify.identify(w_, adapter=adapter, context_bgr=c_, default_language=lang,
-                                     session_id=session_id, allow_orb=False, allow_vlm=False)
+                                     session_id=session_id, allow_orb=False, allow_vlm=False, user_id=user_id)
 
     pending: list[tuple[str, detect.CardQuad]] = []
     for q in quads:
@@ -125,7 +129,7 @@ def process_photo(session_id: str, capture_id: str) -> None:
                     else:
                         ctx = _warps(img, pts)[1]
                         r = identify.identify(w_, adapter=adapter, context_bgr=ctx, default_language=lang,
-                                              session_id=session_id)
+                                              session_id=session_id, user_id=user_id)
                 r.notes.append(HYPOTHESIS_NOTES.get(label, "carta parcialmente coberta"))
                 fields = {"bbox": _norm_quad(pts, W, H), "quality": {
                     **quality.frame_quality(w_, pts, img.shape), "kind": kind, "hypothesis": label}}
@@ -150,7 +154,7 @@ def process_photo(session_id: str, capture_id: str) -> None:
             _store_result(session_id, det_id, first, warped)
         else:
             result = identify.identify(warped, adapter=adapter, context_bgr=_warps(img, q.pts)[1],
-                                       default_language=lang, session_id=session_id)
+                                       default_language=lang, session_id=session_id, user_id=user_id)
             if q.kind == "partial":
                 result.notes.append("carta parcialmente visível")
                 if result.status == "identified":
@@ -210,7 +214,8 @@ def finish_if_idle(session_id: str) -> None:
     """Deduplica e reconstrói o deck a cada foto concluída (lista incremental sempre consistente)."""
     caps = store.captures(session_id)
     if sum(1 for c in caps if c["type"] == "image" and c["status"] == "done") >= 2:
-        dedup.run(session_id)
+        with db.lease_lock(f"dedup:{session_id}", ttl=120):
+            dedup.run(session_id)
     deck.rebuild(session_id)
     if not any(c["status"] in ("queued", "processing") for c in caps):
         store.update_session(session_id, status="review")

@@ -1,36 +1,61 @@
 """Aplicação FastAPI do Deck Scanner.
 
-Dev:  uvicorn app.main:app --reload --port 8000   (frontend Vite em :5173 com proxy /api)
-Prod: npm run build no frontend e só `uvicorn app.main:app --port 8000` (serve o build)
+Local:     uvicorn app.main:app --port 8420  (frontend Vite em :5190 com proxy /api)
+Produção:  a Vercel importa `app` (api/index.py) e serve o build do frontend como estático.
 """
 from __future__ import annotations
 
-import asyncio
+import threading
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-from fastapi.responses import FileResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, JSONResponse
 
 from . import config, db
 from .api import router
-from .events import bus
 from .vision.hashindex import get_index
+
+_ready = threading.Event()
+_ready_lock = threading.Lock()
+
+
+def ensure_ready() -> None:
+    """Schema e índice sob demanda: em serverless o lifespan nem sempre roda antes da 1ª requisição."""
+    if _ready.is_set():
+        return
+    with _ready_lock:
+        if _ready.is_set():
+            return
+        db.init_all()
+        _ready.set()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    db.init_app_db()
-    db.init_catalog_db()
-    bus.bind(asyncio.get_running_loop())
-    await asyncio.to_thread(get_index)
+    ensure_ready()
+    if not config.SERVERLESS:
+        threading.Thread(target=get_index, name="hashindex-warmup", daemon=True).start()
     yield
 
 
-app = FastAPI(title="Deck Scanner", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Deck Scanner", version="0.2.0", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def _ready_middleware(request: Request, call_next):
+    if request.url.path.startswith("/api") and not _ready.is_set():
+        try:
+            ensure_ready()
+        except Exception as exc:  # noqa: BLE001 — banco fora do ar: resposta clara em vez de 500 genérico
+            return JSONResponse({"detail": f"banco indisponível: {type(exc).__name__}"}, status_code=503)
+    return await call_next(request)
+
+
 app.include_router(router)
 
-if config.FRONTEND_DIST.exists():
+if config.FRONTEND_DIST.exists() and not config.SERVERLESS:
+    from fastapi.staticfiles import StaticFiles
+
     assets = config.FRONTEND_DIST / "assets"
     if assets.exists():
         app.mount("/assets", StaticFiles(directory=assets), name="assets")

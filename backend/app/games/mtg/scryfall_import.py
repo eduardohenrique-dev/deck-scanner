@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import gzip
+import re
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Iterator
 
@@ -23,10 +25,19 @@ CARD_COLUMNS = (
     "illustration_id", "highres", "image_small", "image_normal", "image_large", "faces", "prices",
     "arena_id", "game_changer",
 )
-INSERT_CARD_SQL = (
-    f"INSERT OR REPLACE INTO card_refs ({', '.join(CARD_COLUMNS)}) "
-    f"VALUES ({', '.join('?' for _ in CARD_COLUMNS)})"
+UPSERT_CARD_SQL = (
+    f"INSERT INTO card_refs ({', '.join(CARD_COLUMNS)}) VALUES ({', '.join('?' for _ in CARD_COLUMNS)}) "
+    f"ON CONFLICT (id) DO UPDATE SET " + ", ".join(f"{c}=excluded.{c}" for c in CARD_COLUMNS if c != "id")
 )
+INSERT_CARD_SQL = UPSERT_CARD_SQL
+INSERT_NAME_SQL = ("INSERT INTO card_names (game_id, oracle_id, lang, name, name_norm) VALUES (?,?,?,?,?) "
+                   "ON CONFLICT DO NOTHING")
+_TOKEN = re.compile(r"\w+", re.UNICODE)
+
+
+def name_norm(text: str) -> str:
+    plain = unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode()
+    return " ".join(_TOKEN.findall(plain.casefold()))
 
 
 def log(msg: str) -> None:
@@ -256,18 +267,20 @@ def import_default_cards(path: Path) -> dict:
                 r["keywords"], r["legalities"], r["faces"], r["game_changer"], None,
             ))
         conn.executemany(
-            "INSERT OR REPLACE INTO oracle_cards (oracle_id, game_id, name_en, default_ref_id, kind, layout, "
+            "INSERT INTO oracle_cards (oracle_id, game_id, name_en, default_ref_id, kind, layout, "
             "mana_cost, cmc, type_line, oracle_text, colors, color_identity, produced_mana, keywords, "
-            "legalities, faces, game_changer, names_i18n) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "legalities, faces, game_changer, names_i18n) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
+            "ON CONFLICT (oracle_id) DO UPDATE SET name_en=excluded.name_en, default_ref_id=excluded.default_ref_id, "
+            "kind=excluded.kind, layout=excluded.layout, mana_cost=excluded.mana_cost, cmc=excluded.cmc, "
+            "type_line=excluded.type_line, oracle_text=excluded.oracle_text, colors=excluded.colors, "
+            "color_identity=excluded.color_identity, produced_mana=excluded.produced_mana, keywords=excluded.keywords, "
+            "legalities=excluded.legalities, faces=excluded.faces, game_changer=excluded.game_changer",
             oracle_rows,
         )
         conn.execute("DELETE FROM card_names WHERE game_id=? AND lang='en'", (GAME_ID,))
-        conn.executemany(
-            "INSERT OR IGNORE INTO card_names (game_id, oracle_id, lang, name) VALUES (?,?,?,?)",
-            [(GAME_ID, o, lang, n) for (o, lang, n) in names],
-        )
-    db.meta_set("mtg.default_cards.file", path.name)
-    db.meta_set("mtg.default_cards.count", str(count))
+        conn.executemany(INSERT_NAME_SQL, [(GAME_ID, o, lang, n, name_norm(n)) for (o, lang, n) in names])
+    db.catalog_meta_set("mtg.default_cards.file", path.name)
+    db.catalog_meta_set("mtg.default_cards.count", str(count))
     log(f"[catalog] {count} impressões, {len(best)} cartas (oracle)")
     return {"prints": count, "oracle_cards": len(best)}
 
@@ -310,20 +323,45 @@ def import_i18n(path: Path, full_langs: tuple[str, ...] = ("pt",)) -> dict:
         if batch:
             conn.executemany(INSERT_CARD_SQL, batch)
         conn.execute("DELETE FROM card_names WHERE game_id=? AND lang<>'en'", (GAME_ID,))
-        conn.executemany(
-            "INSERT OR IGNORE INTO card_names (game_id, oracle_id, lang, name) VALUES (?,?,?,?)",
-            [(GAME_ID, o, lang, n) for (o, lang, n) in names],
-        )
+        conn.executemany(INSERT_NAME_SQL, [(GAME_ID, o, lang, n, name_norm(n)) for (o, lang, n) in names])
         conn.executemany(
             "UPDATE oracle_cards SET names_i18n=? WHERE oracle_id=?",
             [(db.dumps(v), o) for o, v in front_names.items()],
         )
     rebuild_name_index()
-    db.meta_set("mtg.all_cards.file", path.name)
+    db.catalog_meta_set("mtg.all_cards.file", path.name)
     log(f"[i18n] {len(names)} nomes traduzidos; {full_count} impressões completas em {full_langs}")
     return {"names": len(names), "full_prints": full_count}
 
 
 def rebuild_name_index() -> None:
     conn = db.catalog_db()
-    conn.execute("INSERT INTO card_names_fts(card_names_fts) VALUES('rebuild')")
+    if conn.dialect == "sqlite":
+        conn.execute("INSERT INTO card_names_fts(card_names_fts) VALUES('rebuild')")
+
+
+def backfill_name_norm() -> int:
+    """Preenche name_norm em catálogos importados antes da coluna existir."""
+    conn = db.catalog_db()
+    rows = conn.execute("SELECT game_id, oracle_id, lang, name FROM card_names WHERE name_norm IS NULL").fetchall()
+    with db.tx(conn):
+        conn.executemany("UPDATE card_names SET name_norm=? WHERE game_id=? AND oracle_id=? AND lang=? AND name=?",
+                         [(name_norm(r[3]), r[0], r[1], r[2], r[3]) for r in rows])
+    return len(rows)
+
+
+def import_sets() -> int:
+    """Coleções (código, tamanho impresso) — base da checagem de impressão impossível."""
+    r = httpx.get(f"{config.SCRYFALL_API}/sets", headers=HEADERS, timeout=60)
+    r.raise_for_status()
+    rows = [(s["code"], GAME_ID, s.get("name"), s.get("set_type"), s.get("released_at"), s.get("card_count"),
+             s.get("printed_size"), s.get("icon_svg_uri")) for s in r.json()["data"]]
+    conn = db.catalog_db()
+    with db.tx(conn):
+        conn.executemany(
+            "INSERT INTO sets (code, game_id, name, set_type, released_at, card_count, printed_size, icon_svg_uri) "
+            "VALUES (?,?,?,?,?,?,?,?) ON CONFLICT (code) DO UPDATE SET name=excluded.name, set_type=excluded.set_type, "
+            "released_at=excluded.released_at, card_count=excluded.card_count, printed_size=excluded.printed_size, "
+            "icon_svg_uri=excluded.icon_svg_uri", rows)
+    db.catalog_meta_set("mtg.sets.count", str(len(rows)))
+    return len(rows)
