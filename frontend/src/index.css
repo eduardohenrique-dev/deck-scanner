@@ -1,31 +1,124 @@
 @import "tailwindcss";
+@import "@fontsource-variable/alegreya";
+@import "@fontsource-variable/alegreya/wght-italic.css";
+@import "@fontsource/alegreya-sans/400.css";
+@import "@fontsource/alegreya-sans/500.css";
+@import "@fontsource/alegreya-sans/700.css";
+@import "@fontsource/alegreya-sans/400-italic.css";
+@import "@fontsource/alegreya-sans-sc/500.css";
+@import "@fontsource/alegreya-sans-sc/700.css";
+@import "@fontsource-variable/grenze-gotisch";
 
+/*
+  Taverna à luz de vela: madeira escura, latão, pergaminho e tinta.
+  Regra da casa: textura só onde tem função (fundo, papel), nada de brilho difuso, nada de blob.
+*/
 @theme {
-  --font-sans: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-display: "Grenze Gotisch Variable", "Alegreya Variable", Georgia, serif;
+  --font-serif: "Alegreya Variable", Georgia, "Times New Roman", serif;
+  --font-sans: "Alegreya Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-caps: "Alegreya Sans SC", "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
 
-  --color-bg: #0e1013;
-  --color-panel: #15191e;
-  --color-panel-2: #1c2128;
-  --color-panel-3: #252b33;
-  --color-line: #2c333c;
-  --color-text: #ebe8e1;
-  --color-muted: #99a2ad;
-  --color-faint: #6b7480;
-  --color-accent: #f2b544;
-  --color-accent-strong: #ffc85c;
-  --color-accent-ink: #1b1405;
-  --color-ok: #3fcf8e;
-  --color-warn: #f0b429;
-  --color-bad: #f2646f;
-  --color-info: #6fa8ff;
+  /* madeira (fundo e painéis) */
+  --color-oak-950: #0f0a07;
+  --color-oak-900: #16100c;
+  --color-oak-850: #1c1510;
+  --color-oak-800: #231a14;
+  --color-oak-750: #2b2019;
+  --color-oak-700: #36291f;
+  --color-oak-600: #4a392b;
+  --color-oak-500: #634d3a;
 
-  --color-mana-w: #f5f0d0;
-  --color-mana-u: #b9d3ee;
-  --color-mana-b: #bdb3ad;
-  --color-mana-r: #eda383;
-  --color-mana-g: #a4c79a;
-  --color-mana-c: #cfc7c3;
+  /* texto claro sobre madeira */
+  --color-cream: #efe3c8;
+  --color-cream-dim: #c8b596;
+  --color-cream-faint: #92806a;
+
+  /* latão / vela */
+  --color-brass-200: #f3d898;
+  --color-brass-300: #e8c273;
+  --color-brass-400: #d3a24b;
+  --color-brass-500: #b3843a;
+  --color-brass-600: #8a6429;
+  --color-brass-700: #5f4420;
+
+  /* pergaminho e tinta */
+  --color-parchment-50: #f7eedb;
+  --color-parchment-100: #efe2c3;
+  --color-parchment-200: #e2cfa4;
+  --color-parchment-300: #cdb584;
+  --color-ink-900: #24190f;
+  --color-ink-700: #463524;
+  --color-ink-500: #6b573f;
+
+  /* estados, em tons de terra */
+  --color-moss-300: #b5d18e;
+  --color-moss-400: #93b86b;
+  --color-moss-600: #56773a;
+  --color-amber-300: #f0c46e;
+  --color-amber-400: #e3a53e;
+  --color-amber-600: #9a6a1c;
+  --color-wine-300: #e59384;
+  --color-wine-400: #d0604f;
+  --color-wine-600: #8e3228;
+  --color-steel-300: #a9c3d8;
+  --color-steel-400: #86a6c2;
+  --color-steel-600: #4d6a85;
+
+  --radius-card: 4.6% / 3.3%;
+  --animate-rise: rise 220ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-candle: candle 3.2s ease-in-out infinite;
+  --animate-stamp: stamp 420ms cubic-bezier(0.2, 0.8, 0.25, 1.15) both;
+}
+
+@keyframes stamp {
+  0% {
+    opacity: 0;
+    transform: scale(1.6) rotate(-12deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.94) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes candle {
+  0%,
+  100% {
+    transform: scaleY(1) translateY(0);
+    opacity: 1;
+  }
+  45% {
+    transform: scaleY(1.08) translateY(-0.4px);
+    opacity: 0.92;
+  }
+  70% {
+    transform: scaleY(0.95) translateY(0.3px);
+    opacity: 0.98;
+  }
+}
+
+:root {
+  color-scheme: dark;
+  --tex-grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='520' height='260'><filter id='w'><feTurbulence type='fractalNoise' baseFrequency='0.006 0.22' numOctaves='3' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.55  0 0 0 0 0.38  0 0 0 0 0.22  0 0 0 0.09 0'/></filter><rect width='100%25' height='100%25' filter='url(%23w)'/></svg>");
+  --tex-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.3  0 0 0 0 0.2  0 0 0 0 0.1  0 0 0 0.16 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  --tex-paper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.035' numOctaves='4' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.32  0 0 0 0 0.16  0 0 0 0.14 0'/></filter><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>");
 }
 
 html,
@@ -35,15 +128,20 @@ body,
 }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-text);
+  background-color: var(--color-oak-900);
+  background-image: var(--tex-grain), var(--tex-noise);
+  background-attachment: fixed;
+  color: var(--color-cream);
   font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
-  font-variant-numeric: tabular-nums;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--color-accent) 40%, transparent);
+  background: color-mix(in oklab, var(--color-brass-400) 45%, transparent);
+  color: var(--color-parchment-50);
 }
 
 button {
@@ -54,35 +152,115 @@ button:disabled {
   cursor: not-allowed;
 }
 
+:focus-visible {
+  outline: 2px solid var(--color-brass-300);
+  outline-offset: 2px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-cream-faint);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* ---------------------------------------------------------------- superfícies */
+.board {
+  background-color: color-mix(in oklab, var(--color-oak-800) 92%, black);
+  background-image: var(--tex-noise);
+  border: 1px solid var(--color-oak-600);
+  box-shadow:
+    inset 0 1px 0 rgb(255 226 170 / 0.05),
+    0 1px 0 rgb(0 0 0 / 0.35);
+  border-radius: 6px;
+}
+
+.board-sunken {
+  background-color: var(--color-oak-950);
+  border: 1px solid var(--color-oak-700);
+  box-shadow: inset 0 2px 6px rgb(0 0 0 / 0.45);
+  border-radius: 5px;
+}
+
+.parchment {
+  background-color: var(--color-parchment-100);
+  background-image: var(--tex-paper), var(--tex-noise);
+  color: var(--color-ink-900);
+  box-shadow:
+    inset 0 0 36px rgb(120 80 30 / 0.22),
+    0 1px 0 rgb(0 0 0 / 0.45),
+    0 6px 16px rgb(0 0 0 / 0.35);
+  border-radius: 3px;
+}
+
+/* régua de latão: separador de seções e borda do cabeçalho */
+.brass-rule {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-brass-600) 12%, var(--color-brass-300) 50%, var(--color-brass-600) 88%, transparent);
+}
+
+.ruled {
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--row, 56px) - 1px), rgb(239 227 200 / 0.07) calc(var(--row, 56px) - 1px), rgb(239 227 200 / 0.07) var(--row, 56px));
+}
+
+/* título de seção em versalete com filete */
+.kicker {
+  font-family: var(--font-caps);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: var(--color-brass-300);
+}
+
+.card-img {
+  border-radius: var(--radius-card);
+}
+
+/* visor da câmera: janela com moldura dupla de latão escurecido, cantos vinhetados */
+.viewfinder {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-oak-950);
+  border: 1px solid var(--color-brass-700);
+  border-radius: 7px;
+  box-shadow:
+    0 0 0 3px var(--color-oak-850),
+    0 0 0 4px color-mix(in oklab, var(--color-brass-700) 70%, black);
+}
+
+.viewfinder::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 60px rgb(0 0 0 / 0.55);
+}
+
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-panel-3) transparent;
+  scrollbar-color: var(--color-oak-600) transparent;
 }
 
-@keyframes pop-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+/* símbolo de coleção da Scryfall pintado na cor da raridade (o SVG vira máscara) */
+.set-icon {
+  display: inline-block;
+  background-color: var(--rarity, var(--color-cream-dim));
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
 }
 
-.animate-pop {
-  animation: pop-in 220ms ease-out both;
+.mana-symbol {
+  filter: drop-shadow(-0.5px 1px 0 rgb(0 0 0 / 0.65));
 }
 
-@keyframes pulse-ring {
-  0% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-accent) 55%, transparent);
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
   }
-  100% {
-    box-shadow: 0 0 0 10px transparent;
-  }
-}
-
-.pulse-ring {
-  animation: pulse-ring 1.4s ease-out infinite;
 }

@@ -12,6 +12,7 @@ backend/.env
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/public/_test/
 
 # SO / editores
 .DS_Store

@@ -7,6 +7,8 @@ import basicSsl from "@vitejs/plugin-basic-ssl";
 // o navegador do celular só libera a câmera (getUserMedia) em contexto seguro.
 export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss(), ...(mode === "mobile" ? [basicSsl()] : [])],
+  // o worker de visão importa o OpenCV.js (UMD grande); em ES module ele pode dividir chunks
+  worker: { format: "es" },
   server: {
     port: 5190,
     host: mode === "mobile" ? true : "localhost",

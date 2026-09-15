@@ -376,6 +376,17 @@ def apply_suggestion(session_id: str, suggestion_type: str, user: User = Depends
     return json_response(session_state(session_id))
 
 
+@router.get("/sessions/{session_id}/bracket")
+def session_bracket(session_id: str, user: User = Depends(current_user)):
+    from ..collection import brackets
+
+    s = own_session(session_id, user)
+    if not brackets.applies_to(s["game_id"], s["format_id"]):
+        return json_response({"applies": False})
+    result = brackets.classify(s["game_id"], store.entries(s["deck_id"]))
+    return json_response({"applies": True, **(result or {})})
+
+
 # ------------------------------------------------------------------ exportação
 def export_items(adapter, rows: list[dict]) -> list[dict]:
     summaries = adapter.card_summaries([e["card_ref_id"] for e in rows])

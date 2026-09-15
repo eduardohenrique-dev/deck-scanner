@@ -109,9 +109,11 @@ def session_state(session_id: str) -> dict:
     validation["issues"] = issues
 
     counted = [e for e in rows if e["quantity"] > 0]
+    value_items = [{"card_ref_id": e["card_ref_id"], "finish": e["finish"], "quantity": e["quantity"]} for e in counted]
+    value = prices.valuation(s["game_id"], value_items)
     extras = {
-        "valuable": prices.valuable_finds(s["game_id"], [{"card_ref_id": e["card_ref_id"], "finish": e["finish"],
-                                                          "quantity": e["quantity"]} for e in counted]),
+        "value": {k: value[k] for k in ("total_usd", "total_brl", "fx", "unpriced")},
+        "valuable": [i for i in value["items"] if i["unit_brl"] >= prices.VALUABLE_BRL][:12],
         "owned_elsewhere": allocation.owned_elsewhere_warnings(
             s["user_id"], s["game_id"], s.get("target_deck_id") or s.get("saved_deck_id"),
             [e["oracle_id"] for e in counted]),

@@ -87,14 +87,26 @@ def run_photos(folder: Path, regen: bool) -> dict:
                     "uncovered_positions": truth["uncovered_positions"]}, started)
 
 
+def report_session(session_id: str, folder: Path) -> dict:
+    """Confere uma sessão já processada por fora (ex.: visão do navegador em tools-js/e2e-video.mjs)."""
+    truth = json.loads((folder / "truth.json").read_text())
+    db.init_all()
+    got, stats = _result_oracles(session_id)
+    return _report("video (navegador)", _truth_oracles(truth["cards"]), got, stats,
+                   {"session_id": session_id, "truth_backs": truth["backs"], "truth_tokens": truth["tokens"]}, time.time())
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
-    p.add_argument("scenario", choices=["video", "photos"])
+    p.add_argument("scenario", choices=["video", "photos", "report"])
     p.add_argument("--dir")
+    p.add_argument("--session")
     p.add_argument("--regen", action="store_true")
     args = p.parse_args()
     base = config.DATA_DIR / "synth"
-    if args.scenario == "video":
+    if args.scenario == "report":
+        report_session(args.session, Path(args.dir) if args.dir else base / "video100")
+    elif args.scenario == "video":
         run_video(Path(args.dir) if args.dir else base / "video100", args.regen)
     else:
         run_photos(Path(args.dir) if args.dir else base / "table10", args.regen)

@@ -13,8 +13,9 @@ from .scryfall_api import client as scryfall, upsert_card
 
 FTS_TOKEN = re.compile(r"\w+", re.UNICODE)
 SUMMARY_SQL = (
-    "SELECT r.*, o.names_i18n, o.name_en AS oracle_name, o.type_line AS oracle_type_line "
-    "FROM card_refs r LEFT JOIN oracle_cards o ON o.oracle_id = r.oracle_id WHERE r.id {cond}")
+    "SELECT r.*, o.names_i18n, o.name_en AS oracle_name, o.type_line AS oracle_type_line, s.icon_svg_uri AS set_icon "
+    "FROM card_refs r LEFT JOIN oracle_cards o ON o.oracle_id = r.oracle_id LEFT JOIN sets s ON s.code = r.set_code "
+    "WHERE r.id {cond}")
 FIELDS_SQL = (
     "SELECT r.id, r.oracle_id, r.name_en, r.lang, r.printed_name, r.set_code, r.collector_number, r.layout, r.kind, "
     "o.type_line, o.oracle_text, o.mana_cost, o.cmc, o.colors, o.color_identity, o.produced_mana, o.keywords, "
@@ -168,7 +169,13 @@ class MtgAdapter(GameAdapter):
         if set_code:
             order_sql.append("CASE WHEN r.set_code = ? THEN 0 ELSE 1 END")
             order_params.append(set_code)
+        # sem edição informada, prefere uma impressão comum (existe sem foil, não é promo): o "default" da Scryfall
+        # às vezes é uma versão só etched/foil e a lista importada ficaria com uma impressão impossível
         order_sql += ["CASE WHEN r.lang = 'en' THEN 0 ELSE 1 END",
+                      "CASE WHEN r.finishes LIKE '%\"nonfoil\"%' THEN 0 ELSE 1 END",
+                      "CASE WHEN r.promo = 1 THEN 1 ELSE 0 END",
+                      "CASE WHEN r.set_type IN ('core', 'expansion', 'masters', 'commander', 'draft_innovation', 'starter') "
+                      "THEN 0 ELSE 1 END",
                       "CASE WHEN r.id = o.default_ref_id THEN 0 ELSE 1 END"]
         sql = (f"SELECT r.id, r.name_en, r.lang FROM card_refs r JOIN oracle_cards o ON o.oracle_id = r.oracle_id "
                f"WHERE r.oracle_id = ? ORDER BY {', '.join(order_sql)}, r.released_at DESC LIMIT 1")
@@ -239,6 +246,7 @@ class MtgAdapter(GameAdapter):
             "lang": r["lang"],
             "set_code": r["set_code"],
             "set_name": r["set_name"],
+            "set_icon": r["set_icon"],
             "collector_number": r["collector_number"],
             "rarity": r["rarity"],
             "layout": r["layout"],

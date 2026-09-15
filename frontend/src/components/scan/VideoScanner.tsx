@@ -1,0 +1,126 @@
+import { Film, Square, Upload } from "lucide-react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
+import { formatTime } from "../../lib/format";
+import type { SessionState } from "../../lib/types";
+import { Button, cx, Meter } from "../ui";
+import ReadsStrip from "./ReadsStrip";
+import ScanOverlay from "./ScanOverlay";
+import { useScanner, visionLoaded } from "./useScanner";
+
+/** Vídeo gravado folheando o deck: lido aqui no navegador, quadro a quadro, e só as cartas vão ao servidor. */
+export default function VideoScanner({ sessionId, onState, onBusy }: { sessionId: string; onState: (s: SessionState) => void; onBusy?: (busy: boolean) => void }) {
+  const video = useRef<HTMLVideoElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [drag, setDrag] = useState(false);
+  const [size, setSize] = useState({ w: 1280, h: 720 });
+  const [done, setDone] = useState<{ name: string } | null>(null);
+  const [firstLoad] = useState(() => !visionLoaded());
+  const scanner = useScanner(sessionId, onState, { sound: false });
+  const busy = scanner.phase !== "idle" && scanner.phase !== "error";
+
+  useEffect(() => onBusy?.(busy), [busy, onBusy]);
+
+  function start(f: File) {
+    if (!f.type.startsWith("video/") && !/\.(mp4|mov|webm|m4v)$/i.test(f.name)) return;
+    setFile(f);
+    setDone(null);
+    void scanner.startVideo(f, video.current!).then(() => setDone({ name: f.name }));
+  }
+
+  function onDrop(e: DragEvent) {
+    e.preventDefault();
+    setDrag(false);
+    const f = e.dataTransfer.files[0];
+    if (f && !busy) start(f);
+  }
+
+  const duration = video.current?.duration ?? 0;
+  const at = scanner.report?.t ?? 0;
+
+  return (
+    <div className="space-y-4">
+      <div className={cx("viewfinder aspect-video w-full", !busy && "hidden")}>
+        <video ref={video} muted playsInline onLoadedMetadata={(e) => setSize({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })} className="absolute inset-0 h-full w-full object-cover" />
+        <ScanOverlay report={scanner.report} width={size.w} height={size.h} showGuide={false} />
+        {scanner.counted !== null && (
+          <span className="absolute top-3 left-3 z-10 rounded-[5px] border border-oak-600 bg-oak-950/85 px-2.5 py-1 font-serif text-[15px] text-cream">
+            <strong className="tabular text-[19px]">{scanner.counted}</strong> {scanner.counted === 1 ? "carta" : "cartas"}
+          </span>
+        )}
+      </div>
+
+      {busy ? (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-baseline justify-between gap-2 text-[14px]">
+            <span className="truncate text-cream-dim">
+              <Film className="mr-1.5 inline size-4 text-brass-400" />
+              {file?.name}
+            </span>
+            <span className="tabular text-cream-faint">
+              {scanner.phase === "loading"
+                ? firstLoad
+                  ? "preparando a lente (download único de ~13 MB)…"
+                  : "abrindo…"
+                : scanner.phase === "finishing"
+                  ? "fechando as leituras…"
+                  : `${formatTime(at)} de ${formatTime(duration)}`}
+            </span>
+          </div>
+          <Meter value={scanner.phase === "running" ? scanner.progress ?? 0 : null} label="progresso da leitura do vídeo" />
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            <Button icon={<Square className="size-4 fill-current" />} onClick={scanner.stop} disabled={scanner.phase !== "running"}>
+              parar aqui
+            </Button>
+            <p className="text-[14px] text-cream-faint">Deixe esta aba aberta até terminar. O que já foi lido fica guardado mesmo se você parar.</p>
+          </div>
+        </div>
+      ) : (
+        <label
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={onDrop}
+          className={cx(
+            "flex cursor-pointer flex-col items-center gap-2 rounded-[6px] border-2 border-dashed px-6 py-10 text-center transition-colors",
+            drag ? "border-brass-400 bg-brass-400/8" : "border-oak-600 hover:border-brass-600",
+          )}
+        >
+          <Upload className="size-8 text-brass-400" />
+          <span className="font-serif text-[20px] font-semibold text-cream">{done ? "Ler outro vídeo" : "Envie o vídeo do deck"}</span>
+          <span className="max-w-md text-[15px] text-cream-dim">
+            Grave passando uma carta por vez, cada uma parada por meio segundo, com luz boa e fundo liso. O vídeo é lido aqui mesmo; não sobe inteiro para o servidor.
+          </span>
+          <span className="mt-2 inline-flex h-11 items-center rounded-[5px] border border-brass-600/80 px-4 font-caps text-[15px] font-bold lowercase tracking-[0.03em] text-brass-300">
+            escolher vídeo
+          </span>
+          <input
+            ref={input}
+            type="file"
+            accept="video/*"
+            className="sr-only"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) start(f);
+            }}
+          />
+        </label>
+      )}
+
+      {done && !busy && !scanner.error && (
+        <p className="text-[15px] text-moss-300">
+          Vídeo lido{scanner.counted !== null ? `: ${scanner.counted} ${scanner.counted === 1 ? "carta" : "cartas"} na lista` : ""}. Confira a lista abaixo.
+        </p>
+      )}
+      {scanner.error && (
+        <p className="rounded-[5px] border border-wine-600/60 bg-wine-600/10 px-3 py-2 text-[14px] text-wine-300" role="alert">
+          {scanner.error}
+        </p>
+      )}
+      <ReadsStrip reads={scanner.reads} />
+    </div>
+  );
+}
