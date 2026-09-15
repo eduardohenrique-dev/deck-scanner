@@ -25,9 +25,16 @@ const chrome = ["C:/Program Files/Google/Chrome/Application/chrome.exe", "C:/Pro
 const port = 9300 + Math.floor(Math.random() * 500);
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), "shot-"));
 // --fake-camera: câmera sintética do Chrome (testa o fluxo da câmera ao vivo sem aparelho); --cameras 2 simula mais de uma
+// --camera-file clip.y4m: a câmera falsa mostra esse vídeo (testa a leitura ao vivo com cartas de verdade)
 const cameras = Number(opt("--cameras", "1"));
+const cameraFile = opt("--camera-file", "");
 const camera = args.includes("--fake-camera")
-  ? [`--use-fake-device-for-media-stream=device-count=${cameras}`, "--use-fake-ui-for-media-stream", "--autoplay-policy=no-user-gesture-required"]
+  ? [
+      `--use-fake-device-for-media-stream=device-count=${cameras}`,
+      ...(cameraFile ? [`--use-file-for-fake-video-capture=${path.resolve(cameraFile)}`] : []),
+      "--use-fake-ui-for-media-stream",
+      "--autoplay-policy=no-user-gesture-required",
+    ]
   : [];
 const proc = spawn(chrome, ["--headless=new", `--remote-debugging-port=${port}`, "--disable-gpu", "--hide-scrollbars", "--no-first-run", `--user-data-dir=${profile}`, ...camera, "about:blank"], { stdio: "ignore" });
 

@@ -1,6 +1,6 @@
 // Teste ponta a ponta da visão do NAVEGADOR (frontend/src/vision) com o vídeo sintético.
 //
-//   node --experimental-strip-types tools-js/e2e-video.mjs [--video caminho] [--limit N] [--no-upload]
+//   node --experimental-strip-types tools-js/e2e-video.mjs [--video caminho] [--limit N] [--no-upload] [--live]
 //
 // O Python só decodifica o vídeo (tools/dump_frames.py); detecção, agrupamento e escolha dos melhores
 // frames rodam no código TypeScript do app. As leituras vão para a API local (http://127.0.0.1:8420)
@@ -30,6 +30,8 @@ const detectDim = Number(opt("--detect-dim", "960"));
 const require = createRequire(path.join(root, "frontend", "package.json"));
 const { resolveCv } = await import("../frontend/src/vision/cv.ts");
 const { FrameProcessor } = await import("../frontend/src/vision/scanner.ts");
+const { LIVE_OPTIONS } = await import("../frontend/src/vision/grouper.ts");
+const live = args.includes("--live");
 const t0 = Date.now();
 const { cv } = await resolveCv(require("@techstark/opencv-js"));
 console.error(`OpenCV.js pronto em ${Date.now() - t0} ms`);
@@ -79,7 +81,7 @@ let session = null;
 let capture = null;
 if (upload) {
   session = await call("POST", "/api/sessions", JSON.stringify({ game_id: "mtg", format_id: "commander", mode: "video", name: "e2e vídeo (navegador)", settings: { default_language: "en" } }));
-  capture = await call("POST", `/api/sessions/${session.id}/captures`, JSON.stringify({ type: "video", original_name: path.basename(video) }));
+  capture = await call("POST", `/api/sessions/${session.id}/captures`, JSON.stringify({ type: live ? "live" : "video", original_name: path.basename(video) }));
   console.error(`sessão ${session.id}`);
 }
 
@@ -103,7 +105,8 @@ const onSighting = (s) => {
   });
 };
 
-const processor = new FrameProcessor(cv, onSighting, detectDim);
+// --live: agrupamento da câmera ao vivo (lê com a carta parada; outra carta só depois de sair ou trocar a arte)
+const processor = new FrameProcessor(cv, onSighting, detectDim, live ? LIVE_OPTIONS : {});
 
 // ------------------------------------------------------------------ frames do Python
 const child = spawn(python, ["-m", "tools.dump_frames", video, ...(limit ? ["--limit", String(limit)] : [])], { cwd: backend, stdio: ["ignore", "pipe", "inherit"] });

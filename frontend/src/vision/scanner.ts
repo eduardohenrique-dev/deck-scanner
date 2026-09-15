@@ -6,7 +6,7 @@
 import { release, toRaw, type CV, type Mat, type RawImage } from "./cv.ts";
 import { detectPrimaryCard, warpCard, type CardKind } from "./detect.ts";
 import { type Quad } from "./geometry.ts";
-import { Group, TemporalGrouper, type FrameObs, type Gap, type Transition } from "./grouper.ts";
+import { Group, TemporalGrouper, type FrameObs, type Gap, type GrouperOptions, type Transition } from "./grouper.ts";
 import { artSignatures } from "./hash.ts";
 import { frameQuality, type FrameQuality } from "./quality.ts";
 
@@ -31,6 +31,8 @@ export interface SightingMeta {
 export interface Sighting {
   meta: SightingMeta;
   frames: { card: RawImage; context: RawImage }[];
+  /** assinatura da arte do melhor frame (a página compara leituras seguidas da mesma carta) */
+  sig: number[];
 }
 
 /** O que a câmera está vendo agora (para o contorno e as dicas na tela). */
@@ -43,6 +45,8 @@ export interface FrameReport {
   quality: FrameQuality | null;
   /** frame aceito como estável (entra na leitura da carta atual) */
   stable: boolean;
+  /** a carta no quadro já virou leitura (ao vivo) */
+  emitted: boolean;
   group: number | null;
   groupFrames: number;
   groups: number;
@@ -64,18 +68,24 @@ export class FrameProcessor {
   private readonly detectMaxDim: number;
   private framesSeen = 0;
 
-  constructor(cv: CV, onSighting: (s: Sighting) => void, detectMaxDim = 960) {
+  constructor(cv: CV, onSighting: (s: Sighting) => void, detectMaxDim = 960, options: GrouperOptions = {}) {
     this.cv = cv;
     this.onSighting = onSighting;
     this.detectMaxDim = detectMaxDim;
     this.grouper = new TemporalGrouper<Payload>(
       (g) => this.closed(g),
       (obs) => this.releasePayload(obs),
+      options,
     );
   }
 
   get groups(): number {
     return this.grouper.seq;
+  }
+
+  /** Ao vivo: tenta ler de novo a carta que continua no quadro. */
+  rearm(seq: number): boolean {
+    return this.grouper.rearm(seq);
   }
 
   /** Recebe a posse do Mat RGBA (liberado aqui quando não for mais necessário). */
@@ -102,6 +112,7 @@ export class FrameProcessor {
       // carta saindo do quadro: vale para agrupar, mas não como melhor frame
       if (card.kind === "edge") obs.q.score = round(obs.q.score * 0.6, 4);
     }
+    // lidos antes: ao vivo o próprio frame pode virar leitura (e ser liberado) dentro do push
     const w = frame.cols;
     const h = frame.rows;
     this.grouper.push(obs);
@@ -119,7 +130,8 @@ export class FrameProcessor {
       kind: card?.kind ?? null,
       quality: obs.q ?? null,
       stable,
-      group: current?.seq ?? null,
+      emitted: !!current?.emitted,
+      group: current?.seq || null,
       groupFrames: current?.frames.length ?? 0,
       groups: this.grouper.seq,
       transition: this.grouper.transition,
@@ -171,6 +183,6 @@ export class FrameProcessor {
       obs.retained = false;
       this.releasePayload(obs);
     });
-    this.onSighting({ meta, frames });
+    this.onSighting({ meta, frames, sig: Array.from(best.sig ?? []) });
   }
 }

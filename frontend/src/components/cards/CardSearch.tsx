@@ -13,13 +13,17 @@ export default function CardSearch({
   placeholder = "Nome da carta (português ou inglês)",
   lang = "pt",
   className,
+  dropUp,
 }: {
   onPick: (card: CardSummary) => void;
   autoFocus?: boolean;
   placeholder?: string;
   lang?: string;
   className?: string;
+  /** abre a lista para cima (campo encostado no rodapé da tela) */
+  dropUp?: boolean;
 }) {
+  const place = dropUp ? "bottom-full mb-1" : "top-full mt-1";
   const [text, setText] = useState("");
   const [results, setResults] = useState<CardSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -104,7 +108,7 @@ export default function CardSearch({
         <ul
           id={listId}
           role="listbox"
-          className="board scrollbar-thin absolute inset-x-0 top-full z-30 mt-1 max-h-80 overflow-y-auto p-1 shadow-[0_12px_24px_rgb(0_0_0/0.5)]"
+          className={cx("board scrollbar-thin absolute inset-x-0 z-30 max-h-80 overflow-y-auto p-1 shadow-[0_12px_24px_rgb(0_0_0/0.5)]", place)}
         >
           {results.map((card, i) => (
             <li
@@ -136,7 +140,7 @@ export default function CardSearch({
         </ul>
       )}
       {open && query.length >= 2 && !loading && results.length === 0 && (
-        <p className="absolute inset-x-0 top-full z-30 mt-1 rounded-[5px] border border-oak-600 bg-oak-850 px-3 py-2 text-[14px] text-cream-faint">
+        <p className={cx("absolute inset-x-0 z-30 rounded-[5px] border border-oak-600 bg-oak-850 px-3 py-2 text-[14px] text-cream-faint", place)}>
           Nenhuma carta com esse nome.
         </p>
       )}

@@ -6,7 +6,8 @@ import { Lens } from "../icons";
 import { Button, cx, IconButton, Select } from "../ui";
 import ReadsStrip from "./ReadsStrip";
 import ScanOverlay, { guidance } from "./ScanOverlay";
-import { prepareVision, useScanner, visionLoaded } from "./useScanner";
+import CardSearch from "../cards/CardSearch";
+import { prepareVision, useScanner, visionLoaded, type Miss } from "./useScanner";
 
 type CameraState = "off" | "opening" | "on" | "denied" | "unsupported" | "failed";
 
@@ -36,6 +37,17 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
   const busy = scanner.phase !== "idle" && scanner.phase !== "error";
 
   useEffect(() => onBusy?.(busy), [busy, onBusy]);
+
+  // borda verde/vermelha: fica montada pelo tempo da animação (e vibra no celular)
+  const [flash, setFlash] = useState(scanner.flash);
+  useEffect(() => {
+    const f = scanner.flash;
+    if (!f) return;
+    setFlash(f);
+    navigator.vibrate?.(f.tone === "ok" ? 35 : [70, 60, 70]);
+    const timer = window.setTimeout(() => setFlash((cur) => (cur?.id === f.id ? null : cur)), 780);
+    return () => window.clearTimeout(timer);
+  }, [scanner.flash]);
 
   const closeCamera = useCallback(() => {
     stream.current?.getTracks().forEach((t) => t.stop());
@@ -172,6 +184,7 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
         {camera === "on" ? (
           <>
             <ScanOverlay report={running ? scanner.report : null} width={size.w} height={size.h} showGuide />
+            {flash && <div key={flash.id} className="edge-flash" data-tone={flash.tone} aria-hidden="true" />}
             <div className="absolute top-[max(env(safe-area-inset-top),12px)] right-3 left-3 z-10 flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
                 {immersive && !busy && (
@@ -261,10 +274,14 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
                 : scanner.pending > 0
                   ? `enviando ${scanner.pending} ${scanner.pending === 1 ? "leitura" : "leituras"}…`
                   : running
-                    ? "Segure cada carta parada por meio segundo."
+                    ? "Segure cada carta parada até piscar verde; tire do quadro antes da próxima."
                     : null}
             </p>
           </div>
+        )}
+
+        {scanner.miss && camera === "on" && (
+          <MissPanel key={scanner.miss.detectionId} miss={scanner.miss} dropUp={immersive} onPick={scanner.resolveMiss} onDismiss={scanner.dismissMiss} />
         )}
 
         {scanner.error && (
@@ -274,6 +291,49 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
         )}
 
         <ReadsStrip reads={scanner.reads} />
+      </div>
+    </div>
+  );
+}
+
+/** A câmera não reconheceu a carta: mostrar de novo (automático) ou dizer o nome. */
+function MissPanel({ miss, dropUp, onPick, onDismiss }: { miss: Miss; dropUp: boolean; onPick: (cardRefId: string) => Promise<void>; onDismiss: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  return (
+    // z-20: a animação cria um contexto de empilhamento; sem isso a lista de nomes fica atrás das dicas do visor
+    <div className="animate-rise relative z-20 flex gap-3 rounded-[6px] border border-wine-600/70 bg-wine-600/10 p-2.5" role="alert">
+      <img src={miss.preview} alt="" className="card-img aspect-[488/680] w-12 shrink-0 self-start border border-wine-600/60 object-cover sm:w-14" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="font-serif text-[16px] leading-tight font-semibold text-cream">
+              {miss.reason === "back" ? "Esse é o verso da carta" : "Não reconheci essa carta"}
+            </p>
+            <p className="text-[13px] leading-snug text-cream-dim">
+              {miss.reason === "back" ? "Vire a carta e mostre de novo, ou digite o nome." : "Mostre de novo mais perto e sem reflexo, ou digite o nome."}
+            </p>
+          </div>
+          <IconButton label="Deixar para a revisão" title="Deixar para a revisão" onClick={onDismiss} className="-mt-1 -mr-1 shrink-0">
+            <X className="size-4" />
+          </IconButton>
+        </div>
+        <CardSearch
+          dropUp={dropUp}
+          placeholder="Qual carta é? Digite o nome…"
+          onPick={async (card) => {
+            setBusy(true);
+            setErr(null);
+            try {
+              await onPick(card.id);
+            } catch (e) {
+              setErr(e instanceof Error ? e.message : String(e));
+              setBusy(false);
+            }
+          }}
+        />
+        {busy && <p className="text-[13px] text-cream-faint">anotando…</p>}
+        {err && <p className="text-[13px] text-wine-300">{err}</p>}
       </div>
     </div>
   );

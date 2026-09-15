@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../../lib/api";
 import type { Detection, SessionState } from "../../lib/types";
+import { SAME_THRESH } from "../../vision/grouper";
+import { hamming } from "../../vision/hash";
 import type { FrameReport, SightingMeta, WorkerIn, WorkerOut } from "../../vision/protocol";
 
 export type ScanPhase = "idle" | "loading" | "running" | "finishing" | "error";
@@ -12,7 +14,15 @@ export type ReadItem = {
   preview: string;
   detection?: Detection;
   merged?: boolean;
+  /** leitura falha substituída por uma nova leitura da mesma carta */
+  replaced?: boolean;
 };
+
+/** Pisca na borda do visor: verde para carta anotada, vermelho para carta não reconhecida. */
+export type Flash = { tone: "ok" | "bad"; id: number };
+
+/** Carta que a câmera não reconheceu: mostrar de novo ou dizer o nome. */
+export type Miss = { key: string; detectionId: string; preview: string; reason: "unknown" | "back" };
 
 /** ~10 leituras por segundo, como na calibração do agrupamento. */
 const FRAME_INTERVAL_MS = 100;
@@ -97,7 +107,12 @@ export function chime() {
   }
 }
 
-type Run = { captureId: string; stop: boolean };
+type Run = { captureId: string; stop: boolean; live: boolean; worker: Worker };
+
+/** Falha e acerto seguidos com a mesma arte são a mesma carta mostrada de novo. */
+const RESHOW_WINDOW_MS = 30_000;
+
+type Failed = { key: string; detectionId: string; sig: number[]; at: number };
 
 /**
  * Captura por câmera ao vivo ou arquivo de vídeo: frames vão para o worker de visão,
@@ -112,6 +127,9 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
   const [counted, setCounted] = useState<number | null>(null);
   const [pending, setPending] = useState(0);
   const [fps, setFps] = useState(0);
+  const [flash, setFlash] = useState<Flash | null>(null);
+  const [miss, setMiss] = useState<Miss | null>(null);
+  const failed = useRef<Failed | null>(null);
   const run = useRef<Run | null>(null);
   const uploads = useRef<Promise<void>>(Promise.resolve());
   const onStateRef = useRef(onState);
@@ -145,8 +163,40 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
     };
   }, []);
 
+  const blink = useCallback((tone: Flash["tone"]) => setFlash({ tone, id: performance.now() }), []);
+
+  /** O que a leitura respondida significa para quem está com a carta na mão (só ao vivo). */
+  const judge = useCallback(
+    (token: Run, group: number, key: string, preview: string, sig: number[], detection: Detection, merged: boolean) => {
+      const status = detection.status;
+      // a mesma carta mostrada de novo depois de uma falha: a leitura que falhou sai da revisão
+      const prev = failed.current;
+      if (prev && status !== "noise" && performance.now() - prev.at < RESHOW_WINDOW_MS && sig.length
+        && prev.sig.length === sig.length && hamming(Uint8Array.from(prev.sig), Uint8Array.from(sig)) <= SAME_THRESH) {
+        failed.current = null;
+        setReads((r) => r.map((x) => (x.key === prev.key ? { ...x, replaced: true } : x)));
+        setMiss((m) => (m?.detectionId === prev.detectionId ? null : m));
+        void api.setStatus(prev.detectionId, "ignored").then(() => refreshSoon(), () => undefined);
+      }
+      if (status === "identified" || status === "token") {
+        if (merged) return;
+        blink("ok");
+        setMiss((m) => (m && failed.current?.detectionId === m.detectionId ? m : null));
+        if (soundRef.current) chime();
+      } else if (status === "unidentified" || status === "back") {
+        blink("bad");
+        failed.current = { key, detectionId: detection.id, sig, at: performance.now() };
+        setMiss({ key, detectionId: detection.id, preview, reason: status === "back" ? "back" : "unknown" });
+        // carta ainda parada no quadro: mais uma leitura com frames novos (o worker confere se é a mesma)
+        if (status === "unidentified" && !token.stop) token.worker.postMessage({ type: "rearm", group } satisfies WorkerIn);
+      }
+    },
+    [blink, refreshSoon],
+  );
+
   const enqueue = useCallback(
-    (captureId: string, meta: SightingMeta, cards: Blob[], contexts: Blob[]) => {
+    (token: Run, meta: SightingMeta, cards: Blob[], contexts: Blob[], sig: number[]) => {
+      const captureId = token.captureId;
       const key = `${captureId}:${meta.group}`;
       const preview = URL.createObjectURL(cards[0]);
       previews.current.add(preview);
@@ -166,7 +216,8 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
             const res = await api.postSighting(sessionId, { ...meta, capture_id: captureId }, cards.map((card, i) => ({ card, context: contexts[i] ?? null })));
             update({ status: "done", detection: res.detection, merged: res.merged });
             setCounted(res.physical_cards);
-            if (soundRef.current && res.detection.status === "identified" && !res.merged) chime();
+            if (token.live) judge(token, meta.group, key, preview, sig, res.detection, res.merged);
+            else if (soundRef.current && res.detection.status === "identified" && !res.merged) chime();
             refreshSoon();
             break;
           } catch (e) {
@@ -181,7 +232,7 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
         setPending((n) => n - 1);
       });
     },
-    [sessionId, refreshSoon],
+    [sessionId, refreshSoon, judge],
   );
 
   /** Liga o worker a esta captura; devolve funções para mandar frames e fechar. */
@@ -195,7 +246,7 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
           waiting?.resolve(msg.report);
           waiting = null;
         } else if (msg.type === "sighting") {
-          enqueue(token.captureId, msg.meta, msg.cards, msg.contexts);
+          enqueue(token, msg.meta, msg.cards, msg.contexts, msg.sig);
         } else if (msg.type === "flushed") {
           flushed?.();
         } else if (msg.type === "error") {
@@ -231,9 +282,11 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
         const { worker, ready } = visionWorker();
         await ready;
         const capture = await api.createCapture(sessionId, type, name);
-        const token: Run = { captureId: capture.id, stop: false };
+        const token: Run = { captureId: capture.id, stop: false, live: type === "live", worker };
         run.current = token;
-        worker.postMessage({ type: "start", detectMaxDim: detectDim } satisfies WorkerIn);
+        worker.postMessage({ type: "start", detectMaxDim: detectDim, live: type === "live" } satisfies WorkerIn);
+        failed.current = null;
+        setMiss(null);
         setCounted(null);
         setPhase("running");
         return { worker, token, link: connect(worker, token) };
@@ -356,5 +409,29 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
     setPhase((p) => (p === "error" ? "idle" : p));
   }, []);
 
-  return { phase, error, report, reads, progress, counted, pending, fps, startLive, startVideo, stop, clearError };
+  /** Deixa a carta não reconhecida para a revisão depois. */
+  const dismissMiss = useCallback(() => {
+    setMiss(null);
+    failed.current = null;
+  }, []);
+
+  /** A pessoa disse qual carta era. */
+  const resolveMiss = useCallback(
+    async (cardRefId: string) => {
+      const m = miss;
+      if (!m) return;
+      const state = await api.identify(m.detectionId, cardRefId);
+      generation.current++;
+      onStateRef.current(state);
+      const d = state.detections.find((x) => x.id === m.detectionId);
+      if (d) setReads((r) => r.map((x) => (x.key === m.key ? { ...x, detection: d } : x)));
+      if (failed.current?.detectionId === m.detectionId) failed.current = null;
+      setMiss(null);
+      blink("ok");
+      if (soundRef.current) chime();
+    },
+    [miss, blink],
+  );
+
+  return { phase, error, report, reads, progress, counted, pending, fps, flash, miss, startLive, startVideo, stop, clearError, dismissMiss, resolveMiss };
 }

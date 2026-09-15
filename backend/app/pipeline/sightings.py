@@ -108,9 +108,13 @@ def record_sighting(session_id: str, capture_id: str, frames: list[Frame], meta:
 
 
 def finish_capture(session_id: str, capture_id: str) -> None:
+    cap = store.get_capture(capture_id)
     with db.lease_lock(f"consolidate:{capture_id}"):
         consolidate(session_id, capture_id, final=True)
-        infer_hidden_copies(session_id, capture_id)
+        # ao vivo cada carta só vira outra leitura depois de sair do quadro: segurar a carta por muito
+        # tempo (ou girá-la na mão) não é sinal de uma segunda cópia escondida, como no vídeo
+        if not cap or cap.get("type") != "live":
+            infer_hidden_copies(session_id, capture_id)
     store.update_capture(capture_id, status="done", progress=1)
     deck.rebuild(session_id)
 

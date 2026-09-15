@@ -7,6 +7,10 @@
  * - depois de "empty"/"fast" começa OUTRA carta física, mesmo com a mesma arte (básicos seguidos);
  * - depois de transição leve continua a mesma carta se a assinatura e a posição conferem;
  * - com a carta parada, assinatura muito diferente = carta trocada no lugar.
+ *
+ * Modo ao vivo (opções `live`), no estilo dos apps de scanner de celular: a leitura sai assim que a carta
+ * fica parada alguns frames, sem esperar ela sair; tremida, reposicionamento e falhas curtas do detector
+ * NÃO abrem outra carta — só a carta sumir do quadro por um tempo ou uma arte diferente no lugar.
  */
 import { dist, longAxisAngle, median, pointInPolygon, polygonArea, quadIou, quadWidth, centroid, type Quad } from "./geometry.ts";
 import { hamming } from "./hash.ts";
@@ -38,14 +42,32 @@ export interface Gap {
   frames: number;
 }
 
+export interface GrouperOptions {
+  /** emite a leitura quando a carta completa N frames estáveis, com ela ainda no quadro */
+  emitAfter?: number;
+  /** frames seguidos sem carta para considerar que ela saiu (padrão 2) */
+  emptyToClose?: number;
+  /** movimento rápido/instável separa cartas (vídeo); ao vivo só a assinatura ou a saída separam */
+  splitOnMotion?: boolean;
+  /** grupos com menos frames estáveis são descartados sem virar leitura */
+  minFrames?: number;
+}
+
+export const LIVE_OPTIONS: GrouperOptions = { emitAfter: 4, emptyToClose: 6, splitOnMotion: false, minFrames: 4 };
+
 export class Group<P> {
   frames: FrameObs<P>[] = [];
   best: FrameObs<P>[] = [];
-  readonly seq: number;
+  /** número da leitura (definido ao emitir, para não deixar buracos quando um grupo é descartado) */
+  seq = 0;
+  /** já virou leitura: os frames seguintes só acompanham a carta */
+  emitted = false;
+  /** frames contados a partir de quando a leitura foi (re)armada */
+  armedAt = 0;
+  retries = 0;
   readonly gapBefore: Gap;
   readonly prevLastPts: Quad | null;
-  constructor(seq: number, gapBefore: Gap, prevLastPts: Quad | null) {
-    this.seq = seq;
+  constructor(gapBefore: Gap, prevLastPts: Quad | null) {
     this.gapBefore = gapBefore;
     this.prevLastPts = prevLastPts;
   }
@@ -61,6 +83,7 @@ export class Group<P> {
   /** Retorna os frames que saíram da lista dos melhores (a imagem deles pode ser liberada). */
   add(obs: FrameObs<P>): FrameObs<P>[] {
     this.frames.push(obs);
+    if (this.emitted) return []; // só acompanha: a imagem do frame pode ser liberada
     obs.retained = true;
     this.best.push(obs);
     this.best.sort((a, b) => b.q!.score - a.q!.score);
@@ -81,14 +104,39 @@ export class TemporalGrouper<P> {
   lastStablePts: Quad | null = null;
   private prevPts: Quad | null = null;
   private lastClosedPts: Quad | null = null;
+  /** ao vivo: frame com arte diferente esperando confirmação */
+  private candidate: FrameObs<P> | null = null;
   private areas: number[] = [];
   private sharps: number[] = [];
   private readonly onClose: (g: Group<P>) => void;
   private readonly onDrop: (obs: FrameObs<P>) => void;
+  private readonly emitAfter: number | null;
+  private readonly emptyToClose: number;
+  private readonly splitOnMotion: boolean;
+  private readonly minFrames: number;
 
-  constructor(onClose: (g: Group<P>) => void, onDrop: (obs: FrameObs<P>) => void) {
+  /** `onClose` recebe cada grupo que vira leitura (no fechamento ou, ao vivo, ao completar `emitAfter`). */
+  constructor(onClose: (g: Group<P>) => void, onDrop: (obs: FrameObs<P>) => void, options: GrouperOptions = {}) {
     this.onClose = onClose;
     this.onDrop = onDrop;
+    this.emitAfter = options.emitAfter ?? null;
+    this.emptyToClose = options.emptyToClose ?? 2;
+    this.splitOnMotion = options.splitOnMotion ?? true;
+    this.minFrames = options.minFrames ?? 1;
+  }
+
+  /**
+   * Ao vivo: pede outra leitura da carta que continua no quadro (a leitura `seq` não foi reconhecida).
+   * Não faz nada se ela já saiu, se outra carta tomou o lugar ou se as tentativas acabaram.
+   */
+  rearm(seq: number, maxRetries = 1): boolean {
+    const g = this.current;
+    if (!g || !g.emitted || g.seq !== seq || g.retries >= maxRetries) return false;
+    g.retries += 1;
+    g.emitted = false;
+    g.best = [];
+    g.armedAt = g.frames.length;
+    return true;
   }
 
   private mark(kind: Exclude<Transition, null>) {
@@ -100,7 +148,7 @@ export class TemporalGrouper<P> {
     if (!obs.pts) {
       this.prevPts = null;
       this.mark("empty");
-      if (this.current && this.transitionFrames >= 2) this.close();
+      if (this.current && this.transitionFrames >= this.emptyToClose) this.close();
       return;
     }
     const area = polygonArea(obs.pts);
@@ -128,19 +176,29 @@ export class TemporalGrouper<P> {
     }
 
     const gap: Gap = { event: this.transition, frames: this.transitionFrames };
+    const ref = this.current ? this.current.ref ?? this.current.frames[this.current.frames.length - 1] : null;
     if (!this.current) {
       this.open(obs, gap);
-    } else if (this.transition === "empty" || this.transition === "fast") {
+    } else if (this.splitOnMotion && (this.transition === "empty" || this.transition === "fast")) {
       this.close();
       this.open(obs, gap);
-    } else if (sigDist(obs, this.current.ref) > SAME_THRESH) {
+    } else if (ref?.sig && sigDist(obs, ref) > SAME_THRESH && (this.splitOnMotion || !this.matchesRecent(obs))) {
+      // ao vivo um frame só (borrado, carta entrando) não troca a carta: o seguinte precisa confirmar
+      if (!this.splitOnMotion && !(this.candidate?.sig && sigDist(obs, this.candidate) <= SAME_THRESH)) {
+        this.candidate = obs;
+        this.mark("unstable");
+        return;
+      }
+      this.candidate = null;
       this.close(); // carta trocada sem sair do lugar
       this.open(obs, gap);
-    } else if (this.transition === "unstable" && this.lastStablePts && quadIou(obs.pts, this.lastStablePts) < 0.7) {
+    } else if (this.splitOnMotion && this.transition === "unstable" && this.lastStablePts && quadIou(obs.pts, this.lastStablePts) < 0.7) {
       this.close();
       this.open(obs, gap);
     } else {
+      this.candidate = null;
       this.current.add(obs).forEach(this.onDrop);
+      this.maybeEmit();
     }
     this.areas.push(area);
     this.sharps.push(sharpness);
@@ -149,12 +207,31 @@ export class TemporalGrouper<P> {
     this.lastStablePts = obs.pts;
   }
 
+  /** Ao vivo: a assinatura oscila entre frames da mesma carta (reflexo, foco); vale qualquer frame recente. */
+  private matchesRecent(obs: FrameObs<P>): boolean {
+    const frames = this.current?.frames ?? [];
+    return frames.slice(-8).some((f) => f.sig && sigDist(obs, f) <= SAME_THRESH);
+  }
+
   private open(obs: FrameObs<P>, gap: Gap) {
-    this.seq += 1;
-    this.current = new Group<P>(this.seq, gap, this.lastClosedPts);
+    this.current = new Group<P>(gap, this.lastClosedPts);
     this.current.add(obs);
     this.areas = [];
     this.sharps = [];
+    this.maybeEmit();
+  }
+
+  private maybeEmit() {
+    const g = this.current;
+    if (this.emitAfter === null || !g || g.emitted || g.frames.length - g.armedAt < this.emitAfter) return;
+    this.emit(g);
+  }
+
+  private emit(g: Group<P>) {
+    this.seq += 1;
+    g.seq = this.seq;
+    g.emitted = true;
+    this.onClose(g);
   }
 
   private close() {
@@ -162,7 +239,17 @@ export class TemporalGrouper<P> {
     this.current = null;
     if (!g) return;
     this.lastClosedPts = g.frames[g.frames.length - 1].pts;
-    this.onClose(g);
+    if (g.emitted) return;
+    if (g.frames.length - g.armedAt < this.minFrames || !g.best.length) {
+      // passou rápido demais para ser uma carta mostrada de propósito
+      g.best.forEach((obs) => {
+        obs.retained = false;
+        this.onDrop(obs);
+      });
+      g.best = [];
+      return;
+    }
+    this.emit(g);
   }
 
   flush(): void {

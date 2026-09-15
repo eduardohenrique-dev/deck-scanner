@@ -24,7 +24,7 @@ function describe(r: ReadItem): { label: string; tone: Tone; icon: ReactNode } {
 
 /** Fita com as últimas cartas lidas (a leitura repetida da mesma carta some da fita). */
 export default function ReadsStrip({ reads, className }: { reads: ReadItem[]; className?: string }) {
-  const visible = reads.filter((r) => !r.merged && r.detection?.status !== "noise");
+  const visible = reads.filter((r) => !r.merged && !r.replaced && r.detection?.status !== "noise");
   if (!visible.length) return null;
   return (
     <div className={className}>

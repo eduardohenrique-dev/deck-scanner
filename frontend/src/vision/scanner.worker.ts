@@ -5,6 +5,7 @@
 import cvModule from "@techstark/opencv-js";
 import { release, resolveCv, type CV, type Mat, type RawImage } from "./cv.ts";
 import type { WorkerIn, WorkerOut } from "./protocol.ts";
+import { LIVE_OPTIONS } from "./grouper.ts";
 import { FrameProcessor, type Sighting } from "./scanner.ts";
 
 const scope = self as unknown as {
@@ -29,7 +30,7 @@ function onSighting(s: Sighting) {
   encoding = encoding.then(async () => {
     const cards = await Promise.all(s.frames.map((f) => jpeg(f.card, 0.88)));
     const contexts = await Promise.all(s.frames.map((f) => jpeg(f.context, 0.85)));
-    post({ type: "sighting", meta: s.meta, cards, contexts });
+    post({ type: "sighting", meta: s.meta, cards, contexts, sig: s.sig });
   });
 }
 
@@ -59,7 +60,10 @@ scope.onmessage = async (e) => {
       }
       case "start":
         processor?.dispose();
-        processor = new FrameProcessor(cv!, onSighting, msg.detectMaxDim);
+        processor = new FrameProcessor(cv!, onSighting, msg.detectMaxDim, msg.live ? LIVE_OPTIONS : {});
+        break;
+      case "rearm":
+        processor?.rearm(msg.group);
         break;
       case "frame": {
         if (!processor || !cv) {

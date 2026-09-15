@@ -21,8 +21,8 @@ export function guidance(r: FrameReport | null, running: boolean): Guidance {
     if (r.quality && r.quality.sharpness < 22) return { text: "Imagem tremida — segure firme", tone: "warn" };
     return { text: "Segure firme…", tone: "neutral" };
   }
+  if (r.emitted) return { text: "Lida. Tire a carta do quadro e mostre a próxima", tone: "ok" };
   if (r.quality && r.quality.glare > 0.03) return { text: "Reflexo na carta — incline um pouco", tone: "warn" };
-  if (r.groupFrames >= 3) return { text: "Anotada. Pode passar a próxima", tone: "ok" };
   return { text: "Lendo a carta…", tone: "brass" };
 }
 
@@ -32,7 +32,9 @@ export function guidance(r: FrameReport | null, running: boolean): Guidance {
  */
 export default function ScanOverlay({ report, width, height, showGuide }: { report: FrameReport | null; width: number; height: number; showGuide: boolean }) {
   const quad = report?.quad;
-  const state = !quad ? null : report!.kind === "edge" ? "edge" : !report!.stable ? "moving" : report!.groupFrames >= 3 ? "captured" : "steady";
+  // ao vivo (com guia) a carta está "anotada" quando já virou leitura; no vídeo, depois de 3 frames estáveis
+  const captured = report?.emitted || (!showGuide && report?.stable && report.groupFrames >= 3);
+  const state = !quad ? null : report!.kind === "edge" ? "edge" : captured ? "captured" : !report!.stable ? "moving" : "steady";
   const stroke = Math.max(3, width / 240);
   const gh = Math.min(height * 0.74, (width * 0.78 * 88) / 63);
   const gw = (gh * 63) / 88;
