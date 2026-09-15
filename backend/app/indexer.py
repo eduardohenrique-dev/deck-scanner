@@ -13,7 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 
-from . import db
+from . import config, db
 from .games.mtg import hash_build, scryfall_import
 from .vision.hashindex import build_index_file
 
@@ -67,6 +67,9 @@ def main() -> None:
         print(json.dumps(build_index_file()))
     if args.cmd == "backfill":
         print(f"name_norm preenchido em {scryfall_import.backfill_name_norm()} nomes")
+        bulks = sorted(config.SCRYFALL_DIR.glob("default-cards-*.jsonl.gz"))[-1:] + \
+            sorted(config.SCRYFALL_DIR.glob("all-cards-*.jsonl.gz"))[-1:]
+        print(f"image_status lido de {scryfall_import.backfill_image_status(bulks)} impressões")
     if args.cmd == "status":
         conn = db.catalog_db()
         out = {

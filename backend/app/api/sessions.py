@@ -5,7 +5,7 @@ import asyncio
 
 import cv2
 import orjson
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 
@@ -107,7 +107,7 @@ def _ndjson(event: dict) -> bytes:
 @router.post("/sessions/{session_id}/photos")
 async def upload_photo(session_id: str, file: UploadFile = File(...), user: User = Depends(current_user)):
     """Uma foto por requisição; a resposta traz, linha a linha, as cartas conforme são identificadas."""
-    s = own_session(session_id, user)
+    own_session(session_id, user)
     if sum(1 for c in store.captures(session_id) if c["type"] == "image") >= MAX_PHOTOS:
         raise HTTPException(400, f"máximo de {MAX_PHOTOS} fotos por sessão")
     data = await file.read()

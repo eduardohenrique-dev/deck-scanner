@@ -534,6 +534,7 @@ CREATE TABLE IF NOT EXISTS card_refs (
   frame TEXT, frame_effects TEXT, border_color TEXT, full_art INTEGER, promo INTEGER, oversized INTEGER,
   artist TEXT, illustration_id TEXT, highres INTEGER,
   image_small TEXT, image_normal TEXT, image_large TEXT,
+  image_status TEXT,               -- highres_scan | lowres | placeholder | missing (placeholder não é scan do idioma)
   faces TEXT,                      -- json [{name, printed_name, mana_cost, type_line, oracle_text, image_small, image_normal, illustration_id}]
   prices TEXT, arena_id INTEGER, game_changer INTEGER
 );
@@ -587,7 +588,7 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX IF NOT EXISTS idx_names_trgm ON card_names USING gin (name_norm gin_trgm_ops);
 """
 
-SCHEMA_VERSION = "2"
+SCHEMA_VERSION = "3"
 
 # colunas adicionadas depois da versão 1 (bancos SQLite já existentes)
 APP_MIGRATIONS: dict[str, dict[str, str]] = {
@@ -603,6 +604,7 @@ APP_MIGRATIONS: dict[str, dict[str, str]] = {
 }
 CATALOG_MIGRATIONS: dict[str, dict[str, str]] = {
     "card_names": {"name_norm": "TEXT"},
+    "card_refs": {"image_status": "TEXT"},
 }
 
 

@@ -17,7 +17,7 @@ from .. import config
 from ..games.base import GameAdapter, RawCard
 from ..vision import hashing, verify
 from ..vision.hashindex import Candidate, get_index
-from . import vlm
+from . import printresolve, vlm
 
 # Calibrados com cenas sintéticas (tools/calibrate.py). A margem para o melhor candidato de OUTRA
 # carta separa acerto de erro muito melhor que a distância absoluta: nos erros ela fica ≤ ~6.
@@ -91,9 +91,24 @@ def _finalize(result: IdentifyResult, adapter: GameAdapter, default_language: st
     return result
 
 
+def _apply_print(result: IdentifyResult, card_bgr: np.ndarray, context_bgr: np.ndarray | None,
+                 ordered: list[Candidate], adapter: GameAdapter, default_language: str) -> None:
+    """Idioma e coleção exatos a partir da imagem (a arte já foi reconhecida)."""
+    res = printresolve.resolve(card_bgr, context_bgr, ordered, adapter, default_language=default_language)
+    result.card_ref_id = res.card_ref_id
+    result.language = res.language
+    result.notes += res.notes
+    if res.alternatives:
+        result.raw["alt_prints"] = res.alternatives[:6]
+    result.raw["print_confident"] = res.print_confident
+    result.raw["language_confident"] = res.language_confident
+    if res.metrics:
+        result.metrics["print"] = res.metrics
+
+
 def identify(card_bgr: np.ndarray, *, adapter: GameAdapter, context_bgr: np.ndarray | None = None,
              default_language: str = "en", session_id: str | None = None, allow_vlm: bool = True,
-             allow_orb: bool = True, user_id: str | None = None) -> IdentifyResult:
+             allow_orb: bool = True, user_id: str | None = None, resolve_print: bool = True) -> IdentifyResult:
     index = get_index()
     qh = hashing.compute_query_hashes(card_bgr, context_bgr)
     result = IdentifyResult(hashes=qh[0])
@@ -118,8 +133,10 @@ def identify(card_bgr: np.ndarray, *, adapter: GameAdapter, context_bgr: np.ndar
             result.card_ref_id, result.oracle_id, result.face = best.card_ref_id, best.oracle_id, best.face
             result.confidence = round(conf, 3)
             result.source = "learned" if best.learned else "phash"
-            if same_oracle:
-                result.notes.append("impressão incerta: mesma arte em outras coleções")
+            if resolve_print and not best.learned:
+                _apply_print(result, card_bgr, context_bgr, cands, adapter, default_language)
+            elif same_oracle:
+                result.notes.append(printresolve.NOTE_PRINT)
                 result.raw["alt_prints"] = [c.card_ref_id for c in same_oracle[:6]]
             return _finalize(result, adapter, default_language)
 
@@ -136,6 +153,9 @@ def identify(card_bgr: np.ndarray, *, adapter: GameAdapter, context_bgr: np.ndar
                 result.card_ref_id, result.oracle_id, result.face = c.card_ref_id, c.oracle_id, c.face
                 result.confidence = round(max(conf, min(0.95, 0.7 + n / 150)), 3)
                 result.source = "phash+orb"
+                if resolve_print:
+                    _apply_print(result, card_bgr, context_bgr, [c] + [x for x in cands if x is not c], adapter,
+                                 default_language)
                 return _finalize(result, adapter, default_language)
 
     if allow_vlm and vlm.enabled():

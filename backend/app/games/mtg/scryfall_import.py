@@ -23,7 +23,7 @@ CARD_COLUMNS = (
     "oracle_text", "colors", "color_identity", "produced_mana", "keywords", "legalities", "finishes",
     "games", "frame", "frame_effects", "border_color", "full_art", "promo", "oversized", "artist",
     "illustration_id", "highres", "image_small", "image_normal", "image_large", "faces", "prices",
-    "arena_id", "game_changer",
+    "arena_id", "game_changer", "image_status",
 )
 UPSERT_CARD_SQL = (
     f"INSERT INTO card_refs ({', '.join(CARD_COLUMNS)}) VALUES ({', '.join('?' for _ in CARD_COLUMNS)}) "
@@ -195,6 +195,7 @@ def card_row(c: dict) -> tuple:
         "prices": db.dumps(c.get("prices") or {}),
         "arena_id": c.get("arena_id"),
         "game_changer": int(bool(c.get("game_changer"))),
+        "image_status": c.get("image_status"),
     }
     return tuple(values[k] for k in CARD_COLUMNS)
 
@@ -338,6 +339,20 @@ def rebuild_name_index() -> None:
     conn = db.catalog_db()
     if conn.dialect == "sqlite":
         conn.execute("INSERT INTO card_names_fts(card_names_fts) VALUES('rebuild')")
+
+
+def backfill_image_status(paths: list[Path]) -> int:
+    """Preenche image_status (placeholder = sem scan do idioma) a partir dos arquivos bulk já baixados."""
+    conn = db.catalog_db()
+    rows = []
+    for path in paths:
+        for c in iter_jsonl_gz(path):
+            if c.get("image_status"):
+                rows.append((c["image_status"], c["id"]))
+    with db.tx(conn):
+        for part in db.chunks(rows, 5000):
+            conn.executemany("UPDATE card_refs SET image_status=? WHERE id=? AND image_status IS NULL", part)
+    return len(rows)
 
 
 def backfill_name_norm() -> int:
