@@ -63,7 +63,10 @@ _sem = threading.Semaphore(config.VLM_MAX_CONCURRENCY)
 
 
 def enabled() -> bool:
-    return config.VLM_ENABLED
+    if not config.VLM_ENABLED:
+        return False
+    # gateway sem chave: depende do token OIDC que a Vercel entrega junto das requisições
+    return config.VLM_PROVIDER != "gateway" or bool(config.AI_GATEWAY_API_KEY or os.environ.get("VERCEL_OIDC_TOKEN"))
 
 
 GATEWAY_URL = "https://ai-gateway.vercel.sh"

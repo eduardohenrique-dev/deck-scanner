@@ -1,14 +1,22 @@
 import { Mail } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrandMark } from "../components/icons";
-import { Button, Field, Input } from "../components/ui";
-import { signInAnonymously, signInWithEmail, signInWithGoogle } from "../lib/auth";
+import { Button, cx, Field, Input } from "../components/ui";
+import { loadConfig, signInAnonymously, signInWithEmail, signInWithGoogle } from "../lib/auth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [providers, setProviders] = useState<string[]>(["email"]);
+  useEffect(() => {
+    loadConfig()
+      .then((c) => setProviders(c.auth_providers ?? ["email"]))
+      .catch(() => undefined);
+  }, []);
+  const google = providers.includes("google");
+  const anonymous = providers.includes("anonymous");
 
   async function run(kind: string, fn: () => Promise<void>) {
     setBusy(kind);
@@ -78,24 +86,32 @@ export default function Login() {
               </Button>
             </form>
           )}
-          <div className="my-4 flex items-center gap-3 text-[13px] text-ink-500">
-            <span className="h-px flex-1 bg-ink-500/30" /> ou <span className="h-px flex-1 bg-ink-500/30" />
-          </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <button
-              onClick={() => void run("google", signInWithGoogle)}
-              className="h-11 rounded-[5px] border border-ink-500/40 bg-parchment-50 font-caps text-[15px] font-bold lowercase text-ink-900 hover:bg-white/60"
-            >
-              {busy === "google" ? "abrindo…" : "entrar com Google"}
-            </button>
-            <button
-              onClick={() => void run("anon", signInAnonymously)}
-              className="h-11 rounded-[5px] border border-ink-500/40 font-caps text-[15px] font-bold lowercase text-ink-700 hover:bg-white/40"
-              title="Dá para criar a conta depois sem perder o que foi escaneado"
-            >
-              {busy === "anon" ? "entrando…" : "só dar uma olhada"}
-            </button>
-          </div>
+          {(google || anonymous) && (
+            <>
+              <div className="my-4 flex items-center gap-3 text-[13px] text-ink-500">
+                <span className="h-px flex-1 bg-ink-500/30" /> ou <span className="h-px flex-1 bg-ink-500/30" />
+              </div>
+              <div className={cx("grid gap-2", google && anonymous && "sm:grid-cols-2")}>
+                {google && (
+                  <button
+                    onClick={() => void run("google", signInWithGoogle)}
+                    className="h-11 rounded-[5px] border border-ink-500/40 bg-parchment-50 font-caps text-[15px] font-bold lowercase text-ink-900 hover:bg-white/60"
+                  >
+                    {busy === "google" ? "abrindo…" : "entrar com Google"}
+                  </button>
+                )}
+                {anonymous && (
+                  <button
+                    onClick={() => void run("anon", signInAnonymously)}
+                    className="h-11 rounded-[5px] border border-ink-500/40 font-caps text-[15px] font-bold lowercase text-ink-700 hover:bg-white/40"
+                    title="Dá para criar a conta depois sem perder o que foi escaneado"
+                  >
+                    {busy === "anon" ? "entrando…" : "só dar uma olhada"}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
           {error && <p className="mt-3 text-[15px] text-wine-600" role="alert">{error}</p>}
         </div>
       </div>

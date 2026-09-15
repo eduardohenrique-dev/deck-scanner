@@ -12,8 +12,11 @@ let clientPromise: Promise<SupabaseClient | null> | null = null;
 export function loadConfig(): Promise<AppConfig> {
   if (!configPromise) {
     configPromise = fetch("/api/config")
-      .then((r) => {
-        if (!r.ok) throw new Error(`servidor respondeu ${r.status}`);
+      .then(async (r) => {
+        if (!r.ok) {
+          const body = await r.json().catch(() => null);
+          throw new Error(typeof body?.detail === "string" ? body.detail : `servidor respondeu ${r.status}`);
+        }
         return r.json() as Promise<AppConfig>;
       })
       .catch((e) => {

@@ -29,6 +29,7 @@ def public_config():
         "auth": config.AUTH_MODE,
         "supabase_url": config.SUPABASE_URL if config.AUTH_MODE == "supabase" else None,
         "supabase_publishable_key": config.SUPABASE_PUBLISHABLE_KEY if config.AUTH_MODE == "supabase" else None,
+        "auth_providers": config.AUTH_PROVIDERS,
         "hosted": config.SERVERLESS or bool(config.DATABASE_URL),
         "vlm": vlm.enabled(),
         "spellbook": config.SPELLBOOK_ENABLED,

@@ -50,6 +50,8 @@ SUPABASE_PUBLISHABLE_KEY = _env("SUPABASE_PUBLISHABLE_KEY")   # pública (vai pa
 SUPABASE_SECRET_KEY = _env("SUPABASE_SECRET_KEY")             # só no servidor (Storage)
 SUPABASE_JWT_SECRET = _env("SUPABASE_JWT_SECRET")             # projetos com chave JWT legada (HS256)
 AUTH_MODE = _env("DECKSCANNER_AUTH") or ("supabase" if SUPABASE_URL else "local")
+# formas de entrar mostradas na tela de login; google e anonymous precisam estar ativados no painel do Supabase
+AUTH_PROVIDERS = [p.strip() for p in _env("DECKSCANNER_AUTH_PROVIDERS", "email").split(",") if p.strip()]
 DEFAULT_USER_ID = "local"
 DEFAULT_GAME_ID = "mtg"
 
@@ -70,11 +72,15 @@ PRICE_TTL = 24 * 3600
 # ---------------------------------------------------------------- modelo multimodal (etapa 3)
 ANTHROPIC_API_KEY = _env("ANTHROPIC_API_KEY")
 AI_GATEWAY_API_KEY = _env("AI_GATEWAY_API_KEY")
+_VLM_SWITCH = _env("DECKSCANNER_VLM")  # "1" liga, "0" desliga; vazio = liga só com chave configurada
+# Na Vercel o AI Gateway aceita o token OIDC da própria função (chega a cada requisição), mas isso gera custo
+# na conta: sem chave explícita o modelo só é usado com DECKSCANNER_VLM=1.
 VLM_PROVIDER = _env("DECKSCANNER_VLM_PROVIDER") or (
-    "anthropic" if ANTHROPIC_API_KEY else "gateway" if (AI_GATEWAY_API_KEY or _env("VERCEL_OIDC_TOKEN")) else "")
+    "anthropic" if ANTHROPIC_API_KEY else
+    "gateway" if (AI_GATEWAY_API_KEY or _env("VERCEL_OIDC_TOKEN") or (SERVERLESS and _VLM_SWITCH == "1")) else "")
 VLM_MODEL = _env("DECKSCANNER_VLM_MODEL", "claude-opus-5")
 VLM_EFFORT = _env("DECKSCANNER_VLM_EFFORT", "low")  # leitura de carta é tarefa simples
-VLM_ENABLED = bool(VLM_PROVIDER) and _env("DECKSCANNER_VLM", "1") != "0"
+VLM_ENABLED = bool(VLM_PROVIDER) and _VLM_SWITCH != "0"
 VLM_MAX_CONCURRENCY = int(_env("DECKSCANNER_VLM_CONCURRENCY", "4"))
 
 # Verificação geométrica (ORB) baixa a imagem oficial do candidato; pode ser desligada offline.

@@ -7,6 +7,10 @@ __pycache__/
 # dados gerados localmente (catálogo, hashes, uploads, cache de imagens, cenas sintéticas)
 backend/data/
 backend/.env
+backend/.env.*
+.env*
+!**/.env.example
+.vercel/
 
 # Frontend
 frontend/node_modules/

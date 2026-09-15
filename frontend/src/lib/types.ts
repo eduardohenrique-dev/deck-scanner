@@ -43,6 +43,7 @@ export type AppConfig = {
   auth: "local" | "supabase";
   supabase_url: string | null;
   supabase_publishable_key: string | null;
+  auth_providers?: string[];
   hosted: boolean;
   vlm: boolean;
   spellbook: boolean;

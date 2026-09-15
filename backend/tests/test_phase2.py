@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import config, db
-from app.collection import brackets, condition, decks as saved, prices, prints, spellbook
+from app.collection import brackets, condition, prices, prints, spellbook
 from app.games.mtg import importers
 from app.main import app
 from app.pipeline import deck as deck_pipeline
