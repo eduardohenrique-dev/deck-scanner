@@ -12,6 +12,7 @@ import cv2
 import numpy as np
 
 from .. import db
+from ..collection import condition, prints
 from ..events import bus
 from ..games import registry
 from ..jobs import identify_pool
@@ -175,9 +176,25 @@ def _publish(session_id: str, det_id: str, adapter) -> None:
 
 
 def _store_result(session_id: str, det_id: str, result: identify.IdentifyResult, warped: np.ndarray) -> None:
+    oriented = cv2.rotate(warped, cv2.ROTATE_180) if result.orientation == 180 else warped
     if result.orientation == 180:
-        store.save_crop(session_id, det_id, cv2.rotate(warped, cv2.ROTATE_180))
+        store.save_crop(session_id, det_id, oriented)
     raw = result.raw or {}
+    det = store.get_detection(det_id) or {}
+    det_quality = det.get("quality") or {}
+    extra: dict = {}
+    if result.status == "identified" and result.card_ref_id:
+        session = store.get_session(session_id)
+        summary = registry.get(session["game_id"]).card_summary(result.card_ref_id) or {}
+        try:
+            extra["condition"] = condition.estimate(oriented, summary.get("border_color"), det_quality)
+        except Exception:  # noqa: BLE001 — estimativa opcional nunca derruba a identificação
+            pass
+        if raw.get("set_code") and raw.get("collector_number"):
+            extra["print_check"] = prints.check(session["game_id"], raw.get("set_code"), raw.get("collector_number"),
+                                                raw.get("language"), raw.get("finish"), raw.get("name_en"))
+    if result.metrics:
+        extra["quality"] = {**det_quality, "match": result.metrics}
     store.update_detection(
         det_id, status=result.status, card_ref_id=result.card_ref_id, oracle_id=result.oracle_id, face=result.face,
         confidence=result.confidence, source=result.source, language=result.language, finish=result.finish,
@@ -185,10 +202,8 @@ def _store_result(session_id: str, det_id: str, result: identify.IdentifyResult,
         art_phash=result.hashes.art_hex() if result.hashes is not None else None,
         full_phash=result.hashes.full_hex() if result.hashes is not None else None,
         raw_name=raw.get("name_en") or raw.get("printed_name"), raw_set=raw.get("set_code"),
-        raw_number=raw.get("collector_number"), raw_language=raw.get("language"), raw_finish=raw.get("finish"))
-    if result.metrics:
-        det = store.get_detection(det_id)
-        store.update_detection(det_id, quality={**(det.get("quality") or {}), "match": result.metrics})
+        raw_number=raw.get("collector_number"), raw_language=raw.get("language"), raw_finish=raw.get("finish"),
+        **extra)
 
 
 def _update_neighbors(session_id: str, capture_id: str) -> None:

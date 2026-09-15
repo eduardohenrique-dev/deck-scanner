@@ -87,6 +87,11 @@ class GameAdapter(ABC):
         path = self.rules_dir / "data" / name
         return self._json.load(path) if path.exists() else None
 
+    def rules_file(self, name: str) -> Any:
+        """Regras extras do jogo (ex.: brackets.json), recarregadas quando o arquivo muda."""
+        path = self.rules_dir / name
+        return self._json.load(path) if path.exists() else None
+
     # ---------- integrações específicas do jogo ----------
     @abstractmethod
     def resolve_card(self, raw: RawCard) -> ResolvedCard | None:

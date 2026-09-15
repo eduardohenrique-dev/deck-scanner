@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from ..auth import User, current_user
+from ..collection import prints
 from ..games import registry
 from ..pipeline import deck, store
 from .common import json_response, own_entry, session_state
@@ -85,7 +86,13 @@ def patch_entry(entry_id: str, body: EntryPatch, user: User = Depends(current_us
                     learn_from_correction(d, session, det_fields["card_ref_id"], det_fields["oracle_id"])
                 store.update_detection(d["id"], **det_fields)
     refresh(deck_row)
-    return json_response(state_for_deck(deck_row))
+    state = state_for_deck(deck_row)
+    if body.language or body.finish or body.card_ref_id:
+        updated = store.get_entry(entry_id) or e
+        # escolha explícita da pessoa: aqui o idioma também é conferido contra o registro oficial
+        state["print_warning"] = prints.check_card_ref(deck_row["game_id"], updated["card_ref_id"],
+                                                       updated["language"], updated["finish"])
+    return json_response(state)
 
 
 @router.delete("/entries/{entry_id}")

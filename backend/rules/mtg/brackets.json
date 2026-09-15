@@ -1,0 +1,65 @@
+{
+  "version": "2025-10",
+  "source": "Commander Brackets (Wizards of the Coast) — regras como dados; ajuste aqui quando a Wizards atualizar",
+  "formats": ["commander"],
+  "tags": {
+    "game_changer": {
+      "label": "Game Changers",
+      "list": "game_changers.json"
+    },
+    "mass_land_denial": {
+      "label": "Destruição de terrenos em massa",
+      "list": "mass_land_denial.json"
+    },
+    "extra_turn": {
+      "label": "Turnos extras",
+      "match": { "match": "oracle_text_regex", "value": "(?i)\\btakes? (?:an|one|two|three|\\d+) extra turns?\\b" }
+    },
+    "tutor": {
+      "label": "Tutores",
+      "informational": true,
+      "match": {
+        "match": "all",
+        "of": [
+          { "match": "oracle_text_regex", "value": "(?i)search your library for (?:a|an|up to one|one) (?!basic land|land card|basic)" },
+          { "match": "not", "of": { "match": "type_line_contains", "value": "Land" } }
+        ]
+      }
+    }
+  },
+  "combos": {
+    "source": "commander_spellbook",
+    "label": "Combos infinitos de 2 cartas",
+    "count_arguable": true,
+    "early_game_tags": ["R"],
+    "attribution": "Combos: Commander Spellbook",
+    "attribution_url": "https://commanderspellbook.com"
+  },
+  "brackets": [
+    {
+      "id": 1, "name": "Exibição", "name_en": "Exhibition", "needs_intent": true,
+      "description": "Ultra casual: deck temático ou para a história da mesa, não para vencer.",
+      "limits": { "game_changer": 0, "mass_land_denial": 0, "extra_turn": 0, "two_card_combo": 0 }
+    },
+    {
+      "id": 2, "name": "Básico", "name_en": "Core",
+      "description": "Nível de deck pré-construído atual; jogos longos e interativos.",
+      "limits": { "game_changer": 0, "mass_land_denial": 0, "extra_turn": 2, "two_card_combo": 0 }
+    },
+    {
+      "id": 3, "name": "Aprimorado", "name_en": "Upgraded",
+      "description": "Deck melhorado, com cartas fortes, mas sem combos de 2 cartas no início do jogo.",
+      "limits": { "game_changer": 3, "mass_land_denial": 0, "extra_turn": 2, "early_two_card_combo": 0 }
+    },
+    {
+      "id": 4, "name": "Otimizado", "name_en": "Optimized",
+      "description": "Alta potência: sem restrições além da banlist.",
+      "limits": {}
+    },
+    {
+      "id": 5, "name": "cEDH", "name_en": "cEDH", "needs_intent": true,
+      "description": "Competitivo, pensado para o metagame de torneio. Depende da intenção, não só das cartas.",
+      "limits": {}
+    }
+  ]
+}

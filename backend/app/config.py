@@ -83,6 +83,8 @@ ORB_VERIFY_ENABLED = _env("DECKSCANNER_ORB_VERIFY", "1") != "0"
 # ---------------------------------------------------------------- integrações da Fase 2
 SPELLBOOK_API = "https://backend.commanderspellbook.com"
 SPELLBOOK_ENABLED = _env("DECKSCANNER_SPELLBOOK", "1") != "0"
+FALLBACK_USD_BRL = float(_env("DECKSCANNER_USD_BRL", "5.40"))   # só sem acesso à cotação PTAX
+VALUABLE_BRL = float(_env("DECKSCANNER_VALUABLE_BRL", "50"))    # a partir de quanto uma carta vira "achado valioso"
 
 # Vídeo (arquivo processado no servidor: só ferramentas de teste; no app o vídeo é lido no navegador)
 VIDEO_SAMPLE_FPS = float(_env("DECKSCANNER_VIDEO_FPS", "10"))

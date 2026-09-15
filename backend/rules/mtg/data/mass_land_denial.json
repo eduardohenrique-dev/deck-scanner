@@ -1,0 +1,20 @@
+{
+  "version": "2025-10",
+  "source": "Definição de Mass Land Denial das Commander Brackets: destrói, exila ou devolve terrenos em massa, mantém terrenos virados ou muda a mana de quatro ou mais terrenos por jogador sem repor",
+  "note": "Lista editável. Além dos nomes, o motor aplica os padrões de texto abaixo.",
+  "cards": [
+    "Apocalypse", "Armageddon", "Back to Basics", "Blood Moon", "Boil", "Catastrophe", "Choke", "Contamination",
+    "Death Cloud", "Decree of Annihilation", "Destructive Force", "Devastation", "Epicenter", "Global Ruin",
+    "Hokori, Dust Drinker", "Impending Disaster", "Jokulhaups", "Keldon Firebombers", "Magus of the Moon",
+    "Myojin of Infinite Rage", "Numot, the Devastator", "Obliterate", "Ravages of War", "Rising Waters", "Ruination",
+    "Static Orb", "Stasis", "Sunder", "Tectonic Break", "Thoughts of Ruin", "Wildfire", "Winter Orb", "Worldfire"
+  ],
+  "patterns": [
+    "(?i)\\bdestroy all lands\\b",
+    "(?i)\\bexile all lands\\b",
+    "(?i)\\breturn all lands to their owners'? hands\\b",
+    "(?i)\\beach player sacrifices (?:all|four|five|six|seven|\\d+) lands\\b",
+    "(?i)\\blands don't untap during their controllers' untap steps\\b",
+    "(?i)\\bnonbasic lands are (?:mountains|islands|swamps|plains|forests)\\b"
+  ]
+}

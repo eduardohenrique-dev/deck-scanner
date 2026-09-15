@@ -75,6 +75,8 @@ def session_stats(session_id: str, dets: list[dict]) -> dict:
 
 
 def session_state(session_id: str) -> dict:
+    from ..collection import allocation, check, prices, prints  # Fase 2 (import tardio evita ciclo)
+
     s = store.get_session(session_id)
     if s is None:
         raise HTTPException(404, "sessão não encontrada")
@@ -85,6 +87,37 @@ def session_state(session_id: str) -> dict:
     rows = store.entries(s["deck_id"])
     ctx = Context.build(adapter, captures=caps, detections=dets, entries=rows)
     dets_by_id = {d["id"]: d for d in dets}
+    validation = {k: v for k, v in report.items() if k != "entries"}
+
+    # impressão impossível: leitura do modelo (set/número/idioma) ou idioma/acabamento escolhidos na revisão
+    issues = list(validation.get("issues") or [])
+    ids = {d["id"] for d in dets}
+    for d in dets:
+        if d.get("dup_of") and d["dup_of"] in ids:
+            continue
+        pc = d.get("print_check")
+        if pc:
+            issues.append({"severity": "warning", "code": "impossible_print", "message": pc["message"],
+                           "entry_ids": [], "data": {**pc.get("data", {}), "detection_id": d["id"]}})
+    for e in rows:
+        # só o acabamento: o idioma da lista pode vir do padrão da sessão, não de uma leitura da carta
+        pc = prints.check_card_ref(s["game_id"], e["card_ref_id"], None, e["finish"],
+                                   ctx.summaries.get(e["card_ref_id"])) if e["quantity"] else None
+        if pc:
+            issues.append({"severity": "warning", "code": "impossible_print", "message": pc["message"],
+                           "entry_ids": [e["id"]], "data": pc.get("data", {})})
+    validation["issues"] = issues
+
+    counted = [e for e in rows if e["quantity"] > 0]
+    extras = {
+        "valuable": prices.valuable_finds(s["game_id"], [{"card_ref_id": e["card_ref_id"], "finish": e["finish"],
+                                                          "quantity": e["quantity"]} for e in counted]),
+        "owned_elsewhere": allocation.owned_elsewhere_warnings(
+            s["user_id"], s["game_id"], s.get("target_deck_id") or s.get("saved_deck_id"),
+            [e["oracle_id"] for e in counted]),
+    }
+    if s.get("purpose") == "check":
+        extras["check"] = check.result(s)
     return {
         "session": s,
         "format": adapter.format(s["format_id"]),
@@ -92,6 +125,7 @@ def session_state(session_id: str) -> dict:
         "captures": [capture_public(c, ctx) for c in caps],
         "detections": [detection_public(d, adapter, ctx) for d in dets],
         "entries": [entry_public(e, adapter, report, dets_by_id, ctx) for e in rows],
-        "validation": {k: v for k, v in report.items() if k != "entries"},
+        "validation": validation,
         "stats": session_stats(session_id, dets),
+        **extras,
     }
