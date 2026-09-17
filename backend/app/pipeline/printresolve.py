@@ -204,7 +204,7 @@ def resolve(card_bgr: np.ndarray, context_bgr: np.ndarray | None, cands: list[Ca
         if img is not None:
             refs[pid] = img
 
-    chosen = best.card_ref_id
+    chosen = hinted[0]["id"] if hinted else best.card_ref_id
     if multiple_sets:
         ranked = matcher.rank({p["id"]: refs[p["id"]] for p in prints if p["id"] in refs},
                               printmatch.PRINT_REGIONS, blur=0.9)
