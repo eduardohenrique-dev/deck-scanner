@@ -63,8 +63,11 @@ ação demorar.
 1. **Nova mesa:** montar lista (formato obrigatório), conferir um deck salvo ou guardar na coleção.
 2. **Captura** — misture à vontade na mesma sessão:
    - *Câmera ao vivo:* a visão roda **no navegador** (OpenCV.js num Web Worker): contorno da carta, dicas
-     ("segure firme", "reflexo na carta"), aviso sonoro a cada leitura, lanterna, tela sempre acesa; no celular ocupa
-     a tela inteira. Só os melhores recortes de cada carta sobem para o servidor.
+     ("segure firme", "reflexo na carta"), borda que pisca verde (anotada), vermelha (não reconhecida, com busca pelo
+     nome ali mesmo) ou dourada (carta acima do valor escolhido), escolha de câmera, lanterna, tela sempre acesa; no
+     celular ocupa a tela inteira. Só os melhores recortes de cada carta sobem para o servidor.
+   - *Antes de escanear:* a coleção destas cartas (resolve reimpressão de arte igual) e o valor a partir do qual
+     avisar que a carta é cara.
    - *Vídeo gravado:* lido quadro a quadro no navegador, com progresso; o arquivo não é enviado inteiro.
    - *Fotos da mesa:* várias cartas por foto, checagem de nitidez/reflexo no aparelho, redução antes do envio e
      progresso da leitura em tempo real.
@@ -138,6 +141,13 @@ Correções na revisão gravam o pHash do recorte apontando para a carta certa, 
 Agrupamento temporal por **estabilidade**: só frames com a carta parada formam grupos; carta sumindo ou movimento de
 retirada separa cópias físicas (inclusive básicos idênticos seguidos). Os três melhores frames (nitidez, reflexo,
 frontalidade) de cada grupo viram uma *leitura*; o servidor identifica e consolida fragmentos da mesma exibição.
+
+Na **câmera ao vivo** valem regras próprias (`LIVE_OPTIONS`): a leitura sai com a carta ainda no quadro (4 frames
+parados), tremida e falha curta do detector não abrem outra carta, e outra carta só depois de ela sair do quadro ou
+de uma arte diferente confirmada. Antes disso, `vision/cardness.ts` pergunta *isso é mesmo uma carta?* pelo layout
+(linhas da moldura, linhas de texto, detalhe): fundo, mão, tela e a caixa de arte da própria carta não contam, e o
+que fica na faixa do "talvez" precisa de bem mais frames. Calibração em `tools-js/cardness-eval.mjs`; leitura ao vivo
+medida em `tools-js/e2e-video.mjs --live`.
 A mesma lógica existe em Python (`pipeline/video.py`, referência) e em TypeScript (`frontend/src/vision`).
 
 ### Regras são dados
