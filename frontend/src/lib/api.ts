@@ -125,6 +125,7 @@ export const api = {
     target_deck_id?: string;
   }) => request<Session>("/api/sessions", { method: "POST", body: json(body) }),
   session: (id: string) => request<SessionState>(`/api/sessions/${id}`),
+  sets: (text?: string, limit = 40) => request<import("./types").SetSummary[]>(`/api/sets${q({ q: text, limit })}`),
   patchSession: (id: string, body: { format_id?: string; name?: string; settings?: Record<string, unknown> }) =>
     request<SessionState>(`/api/sessions/${id}`, { method: "PATCH", body: json(body) }),
   deleteSession: (id: string) => request<{ ok: boolean }>(`/api/sessions/${id}`, { method: "DELETE" }),

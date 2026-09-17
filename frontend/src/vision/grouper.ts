@@ -29,6 +29,8 @@ export interface FrameObs<P> {
   t: number;
   idx: number;
   pts: Quad | null;
+  /** carta cortada pela borda do quadro */
+  edge?: boolean;
   sig?: Uint8Array;
   sig180?: Uint8Array;
   q?: FrameQuality;
@@ -45,6 +47,16 @@ export interface Gap {
 export interface GrouperOptions {
   /** emite a leitura quando a carta completa N frames estáveis, com ela ainda no quadro */
   emitAfter?: number;
+  /** quando a "cara de carta" fica na faixa do talvez, exige esta quantidade maior de frames */
+  emitAfterUnsure?: number;
+  /** abaixo disso o frame nem conta: não é carta (mesa, mão, caixa de arte, tela) */
+  minCardness?: number;
+  /** a partir daqui a leitura sai no tempo normal */
+  sureCardness?: number;
+  /** fração mínima do quadro ocupada pela carta (perto o bastante para ler) */
+  minSize?: number;
+  /** recusa carta cortada pela borda do quadro */
+  rejectEdge?: boolean;
   /** frames seguidos sem carta para considerar que ela saiu (padrão 2) */
   emptyToClose?: number;
   /** movimento rápido/instável separa cartas (vídeo); ao vivo só a assinatura ou a saída separam */
@@ -53,7 +65,17 @@ export interface GrouperOptions {
   minFrames?: number;
 }
 
-export const LIVE_OPTIONS: GrouperOptions = { emitAfter: 4, emptyToClose: 6, splitOnMotion: false, minFrames: 4 };
+export const LIVE_OPTIONS: GrouperOptions = {
+  emitAfter: 4,
+  emitAfterUnsure: 12,
+  emptyToClose: 6,
+  splitOnMotion: false,
+  minFrames: 4,
+  minCardness: 0.5,
+  sureCardness: 0.7,
+  minSize: 0.045,
+  rejectEdge: true,
+};
 
 export class Group<P> {
   frames: FrameObs<P>[] = [];
@@ -114,6 +136,11 @@ export class TemporalGrouper<P> {
   private readonly emptyToClose: number;
   private readonly splitOnMotion: boolean;
   private readonly minFrames: number;
+  private readonly emitAfterUnsure: number;
+  private readonly minCardness: number;
+  private readonly sureCardness: number;
+  private readonly minSize: number;
+  private readonly rejectEdge: boolean;
 
   /** `onClose` recebe cada grupo que vira leitura (no fechamento ou, ao vivo, ao completar `emitAfter`). */
   constructor(onClose: (g: Group<P>) => void, onDrop: (obs: FrameObs<P>) => void, options: GrouperOptions = {}) {
@@ -123,6 +150,18 @@ export class TemporalGrouper<P> {
     this.emptyToClose = options.emptyToClose ?? 2;
     this.splitOnMotion = options.splitOnMotion ?? true;
     this.minFrames = options.minFrames ?? 1;
+    this.emitAfterUnsure = options.emitAfterUnsure ?? options.emitAfter ?? 0;
+    this.minCardness = options.minCardness ?? 0;
+    this.sureCardness = options.sureCardness ?? 0;
+    this.minSize = options.minSize ?? 0;
+    this.rejectEdge = options.rejectEdge ?? false;
+  }
+
+  /** Frame que não tem cara de carta (ou está longe/cortado) nem entra na contagem. */
+  private looksLikeCard(obs: FrameObs<P>): boolean {
+    if (this.rejectEdge && obs.edge) return false;
+    if (this.minSize && (obs.q?.size ?? 0) < this.minSize) return false;
+    return (obs.q?.card ?? 1) >= this.minCardness;
   }
 
   /**
@@ -149,6 +188,12 @@ export class TemporalGrouper<P> {
       this.prevPts = null;
       this.mark("empty");
       if (this.current && this.transitionFrames >= this.emptyToClose) this.close();
+      return;
+    }
+    if (!this.looksLikeCard(obs)) {
+      // pode ser a mão, a mesa, a caixa de arte da própria carta: trata como instabilidade
+      this.prevPts = null;
+      this.mark("unstable");
       return;
     }
     const area = polygonArea(obs.pts);
@@ -221,9 +266,17 @@ export class TemporalGrouper<P> {
     this.maybeEmit();
   }
 
+  /**
+   * Ao vivo a leitura só sai com certeza: com a "cara de carta" alta, os frames normais bastam;
+   * na faixa do talvez (moldura estranha, carta de arte completa, luz ruim) exige bem mais frames.
+   */
   private maybeEmit() {
     const g = this.current;
-    if (this.emitAfter === null || !g || g.emitted || g.frames.length - g.armedAt < this.emitAfter) return;
+    if (this.emitAfter === null || !g || g.emitted) return;
+    const frames = g.frames.length - g.armedAt;
+    if (frames < this.emitAfter) return;
+    const sure = median(g.frames.slice(g.armedAt).map((f) => f.q?.card ?? 1)) >= this.sureCardness;
+    if (!sure && frames < this.emitAfterUnsure) return;
     this.emit(g);
   }
 

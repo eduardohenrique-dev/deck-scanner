@@ -1,5 +1,6 @@
 import { Camera, Flashlight, FlashlightOff, Play, Square, SwitchCamera, Volume2, VolumeX, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { brl } from "../../lib/format";
 import { useMediaQuery, usePersistentState } from "../../lib/hooks";
 import type { SessionState } from "../../lib/types";
 import { Lens } from "../icons";
@@ -7,6 +8,7 @@ import { Button, cx, IconButton, Select } from "../ui";
 import ReadsStrip from "./ReadsStrip";
 import ScanOverlay, { guidance } from "./ScanOverlay";
 import CardSearch from "../cards/CardSearch";
+import { ALERT_KEY } from "./ScanOptions";
 import { prepareVision, useScanner, visionLoaded, type Miss } from "./useScanner";
 
 type CameraState = "off" | "opening" | "on" | "denied" | "unsupported" | "failed";
@@ -21,7 +23,18 @@ const DOT: Record<string, string> = {
 };
 
 /** Câmera ao vivo: passe uma carta por vez; cada carta parada vira uma leitura enviada ao servidor. */
-export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId: string; onState: (s: SessionState) => void; onBusy?: (busy: boolean) => void }) {
+export default function LiveScanner({
+  sessionId,
+  onState,
+  onBusy,
+  fx,
+}: {
+  sessionId: string;
+  onState: (s: SessionState) => void;
+  onBusy?: (busy: boolean) => void;
+  /** dólar do dia, para o aviso de carta valiosa */
+  fx?: number | null;
+}) {
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
   const [camera, setCamera] = useState<CameraState>("off");
@@ -32,7 +45,8 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [firstLoad] = useState(() => !visionLoaded());
-  const scanner = useScanner(sessionId, onState, { sound });
+  const [alertBrl] = usePersistentState(ALERT_KEY, 0);
+  const scanner = useScanner(sessionId, onState, { sound, alertBrl, fx });
   const running = scanner.phase === "running";
   const busy = scanner.phase !== "idle" && scanner.phase !== "error";
 
@@ -44,7 +58,7 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
     const f = scanner.flash;
     if (!f) return;
     setFlash(f);
-    navigator.vibrate?.(f.tone === "ok" ? 35 : [70, 60, 70]);
+    navigator.vibrate?.(f.tone === "bad" ? [70, 60, 70] : f.tone === "gold" ? [30, 40, 30, 40, 30] : 35);
     const timer = window.setTimeout(() => setFlash((cur) => (cur?.id === f.id ? null : cur)), 780);
     return () => window.clearTimeout(timer);
   }, [scanner.flash]);
@@ -268,6 +282,11 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
                 </Select>
               </label>
             )}
+            {!immersive && size.w > 0 && (
+              <span className="tabular text-[13px] text-cream-faint" title="resolução que a câmera está entregando">
+                {size.w}×{size.h}
+              </span>
+            )}
             <p className={cx("text-[14px] text-cream-faint", immersive && "basis-full text-center")}>
               {scanner.phase === "loading" && firstLoad
                 ? "Na primeira vez o leitor de imagem é baixado (cerca de 13 MB)."
@@ -277,6 +296,19 @@ export default function LiveScanner({ sessionId, onState, onBusy }: { sessionId:
                     ? "Segure cada carta parada até piscar verde; tire do quadro antes da próxima."
                     : null}
             </p>
+          </div>
+        )}
+
+        {scanner.treasure && camera === "on" && (
+          <div className="animate-rise relative z-20 flex items-center gap-3 rounded-[6px] border border-brass-500/80 bg-brass-500/12 p-2.5" role="status">
+            <img src={scanner.treasure.preview} alt="" className="card-img aspect-[488/680] w-11 shrink-0 border border-brass-600/60 object-cover" />
+            <p className="min-w-0 flex-1 text-[15px] text-cream">
+              <span className="font-serif font-semibold">{scanner.treasure.name}</span>
+              <span className="block text-[14px] text-brass-200">carta valiosa · {brl(scanner.treasure.brl)}</span>
+            </p>
+            <IconButton label="Fechar aviso" onClick={scanner.dismissTreasure} className="shrink-0">
+              <X className="size-4" />
+            </IconButton>
           </div>
         )}
 

@@ -8,6 +8,8 @@ export interface FrameQuality {
   frontal: number;
   size: number;
   score: number;
+  /** o quanto o recorte tem cara de carta de Magic (cardness.ts); ausente no modo vídeo */
+  card?: number;
 }
 
 const round = (v: number, digits: number) => {

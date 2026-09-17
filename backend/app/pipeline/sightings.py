@@ -54,6 +54,7 @@ def record_sighting(session_id: str, capture_id: str, frames: list[Frame], meta:
     session = store.get_session(session_id)
     adapter = registry.get(session["game_id"])
     lang = (session.get("settings") or {}).get("default_language", "en")
+    sets = store.preferred_sets(session)
     user_id = session["user_id"]
 
     existing = db.app_db().execute(
@@ -66,7 +67,7 @@ def record_sighting(session_id: str, capture_id: str, frames: list[Frame], meta:
     chosen = None
     for fr in frames:
         r = identify.identify(fr.card, adapter=adapter, context_bgr=fr.context, default_language=lang,
-                              session_id=session_id, allow_vlm=False, user_id=user_id)
+                              session_id=session_id, allow_vlm=False, user_id=user_id, preferred_sets=sets)
         tries.append((r, fr))
         if r.status == "back" or (r.status in ("identified", "token") and r.confidence >= identify.HASH_ACCEPT):
             chosen = (r, fr)
@@ -78,7 +79,8 @@ def record_sighting(session_id: str, capture_id: str, frames: list[Frame], meta:
         if chosen[0].status == "unidentified" and allow_vlm and vlm.enabled():
             fr = frames[0]
             chosen = (identify.identify(fr.card, adapter=adapter, context_bgr=fr.context, default_language=lang,
-                                        session_id=session_id, allow_orb=False, user_id=user_id), fr)
+                                        session_id=session_id, allow_orb=False, user_id=user_id,
+                                        preferred_sets=sets), fr)
     result, fr = chosen
     if meta.frame_count <= 1 and result.status == "unidentified":
         result.status = "noise"

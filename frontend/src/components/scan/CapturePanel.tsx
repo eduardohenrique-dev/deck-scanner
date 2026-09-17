@@ -4,6 +4,7 @@ import type { SessionState } from "../../lib/types";
 import { Board, Segmented, SectionTitle } from "../ui";
 import LiveScanner from "./LiveScanner";
 import PhotoUploader from "./PhotoUploader";
+import ScanOptions from "./ScanOptions";
 import VideoScanner from "./VideoScanner";
 
 type Mode = "live" | "photo" | "video";
@@ -42,8 +43,9 @@ export default function CapturePanel({ state, onState, onBusyChange }: { state: 
       >
         mesa de captura
       </SectionTitle>
-      <Board className="p-3 sm:p-4">
-        {mode === "live" && <LiveScanner sessionId={sessionId} onState={onState} onBusy={onBusy} />}
+      <Board className="space-y-3 p-3 sm:p-4">
+        {!busy && <ScanOptions state={state} onState={onState} />}
+        {mode === "live" && <LiveScanner sessionId={sessionId} onState={onState} onBusy={onBusy} fx={state.value?.fx?.rate ?? null} />}
         {mode === "photo" && <PhotoUploader sessionId={sessionId} onState={onState} onBusy={onBusy} />}
         {mode === "video" && <VideoScanner sessionId={sessionId} onState={onState} onBusy={onBusy} />}
       </Board>

@@ -29,6 +29,7 @@ LANG_SPLIT = 0.06
 LANG_CONFIDENCE = 0.05
 LANG_MIN_EVIDENCE = 0.45    # a melhor correlação de texto precisa passar disso para a decisão valer
 NOTE_PRINT = "impressão incerta: mesma arte em outras coleções"
+NOTE_SET_HINT = "coleção {set_code} definida para esta sessão"
 NOTE_LANG = "idioma não confirmado pela imagem"
 NOTE_NO_PT = "não existe impressão em português desta carta com esta arte — registrada em inglês"
 
@@ -65,6 +66,17 @@ def query_image(card_bgr: np.ndarray, context_bgr: np.ndarray | None, variant: i
 
 
 SCANNED = "(image_status IS NULL OR image_status NOT IN ('placeholder', 'missing'))"
+
+
+def _print_in_sets(oracle_id: str | None, sets: set[str], lang: str) -> str | None:
+    """Impressão desta carta em uma das coleções informadas pela pessoa (a mais recente com imagem)."""
+    if not oracle_id or not sets:
+        return None
+    marks = ",".join("?" * len(sets))
+    row = db.catalog_db().execute(
+        f"SELECT id FROM card_refs WHERE oracle_id=? AND lang=? AND LOWER(set_code) IN ({marks}) AND {SCANNED} "
+        "ORDER BY released_at DESC, id LIMIT 1", (oracle_id, lang, *sorted(sets))).fetchone()
+    return row["id"] if row else None
 
 
 def portuguese_prints(prints: list[dict]) -> tuple[list[tuple[str, str | None]], list[str]]:
@@ -122,9 +134,14 @@ def _region_votes(pt: printmatch.RegionScore, en: printmatch.RegionScore, min_di
 
 
 def resolve(card_bgr: np.ndarray, context_bgr: np.ndarray | None, cands: list[Candidate], adapter,
-            default_language: str = "en", enabled: bool = True, source_height: float | None = None) -> PrintResolution:
-    """`source_height`: altura da carta, em pixels, na foto/frame original (texto pequeno demais não decide)."""
+            default_language: str = "en", enabled: bool = True, source_height: float | None = None,
+            preferred_sets: set[str] | None = None) -> PrintResolution:
+    """`source_height`: altura da carta, em pixels, na foto/frame original (texto pequeno demais não decide).
+
+    `preferred_sets`: a pessoa disse de qual coleção são as cartas desta sessão. Entre impressões da mesma
+    arte, a dessa coleção ganha sem depender da comparação de imagem — é o que resolve a reimpressão."""
     best = cands[0]
+    preferred_sets = {s.lower() for s in preferred_sets} if preferred_sets else None
     summaries = adapter.card_summaries([c.card_ref_id for c in cands[:16]])
     base = summaries.get(best.card_ref_id) or {}
     base_lang = base.get("lang") or "en"
@@ -139,6 +156,24 @@ def resolve(card_bgr: np.ndarray, context_bgr: np.ndarray | None, cands: list[Ca
     result.alternatives = [p["id"] for p in prints[1:]]
     multiple_sets = len({(p["set_code"], p["collector_number"]) for p in prints}) > 1
     pt_prints, pt_unscanned = portuguese_prints(prints) if base_lang == "en" else ([], [])
+
+    hinted = [p for p in prints if preferred_sets and (p.get("set_code") or "").lower() in preferred_sets]
+    if not hinted and preferred_sets:
+        # a impressão da coleção informada pode nem estar entre as candidatas do hash: busca no catálogo
+        other = _print_in_sets(best.oracle_id, preferred_sets, base_lang)
+        if other:
+            summary = adapter.card_summaries([other]).get(other)
+            if summary:
+                hinted = [{"id": other, **summary}]
+    if hinted:
+        # a coleção da sessão manda: sobra decidir só o idioma
+        result.card_ref_id = hinted[0]["id"]
+        result.print_confident = True
+        result.notes.append(NOTE_SET_HINT.format(set_code=(hinted[0].get("set_code") or "").upper()))
+        result.metrics["print_set_hint"] = 1
+        prints = hinted[:1]
+        multiple_sets = False
+        pt_prints, pt_unscanned = portuguese_prints(prints) if base_lang == "en" else ([], [])
 
     def by_default() -> PrintResolution:
         """Existe versão em português, mas não dá para comparar pela imagem: vale o idioma da sessão."""

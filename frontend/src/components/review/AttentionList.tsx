@@ -1,12 +1,22 @@
-import { CopyCheck, CopyX, Eye, HelpCircle, Layers, SearchCheck } from "lucide-react";
+import { CopyCheck, CopyX, Eye, HelpCircle, Layers, SearchCheck, Sparkles } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { api } from "../../lib/api";
-import { cardName, positionLabel } from "../../lib/format";
+import { brl, cardName, positionLabel } from "../../lib/format";
 import { toast, toastError } from "../../lib/toast";
 import type { Capture, Detection, SessionState } from "../../lib/types";
 import CardSearch from "../cards/CardSearch";
+import { ALERT_KEY } from "../scan/ScanOptions";
 import { ArtThumb, CardImage } from "../mtg";
 import { Button, SectionTitle, Tag } from "../ui";
+
+/** Preço em reais da impressão detectada, com o dólar do dia da sessão. */
+function cardBrl(d: Detection, fx: number): number | null {
+  const p = d.card?.prices;
+  if (!p) return null;
+  const foil = d.finish && d.finish !== "nonfoil";
+  const usd = Number((foil ? p.usd_foil || p.usd_etched : p.usd) || p.usd || 0);
+  return usd > 0 ? usd * fx : null;
+}
 
 const NOTE_COPY = "mesma carta do grupo anterior — contada como outra cópia";
 const NOTE_LONG = "exibição longa: podem ser 2 cópias seguidas — confira a quantidade";
@@ -59,8 +69,14 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
   }, [active, byId]);
   const repeats = active.filter((d) => d.status === "identified" && !dismissed.has(d.id) && d.notes.some((n) => n === NOTE_COPY || n === NOTE_LONG || n === NOTE_SPLIT));
   const impossible = active.filter((d) => d.print_check && !dismissed.has(`print:${d.id}`));
+  // cartas caras: aceitas na hora, mas pedem um olhar antes de virar deck ou coleção
+  const alertBrl = Number(localStorage.getItem(ALERT_KEY) ?? 0) || 0;
+  const fx = state.value?.fx?.rate ?? 0;
+  const valuable = alertBrl && fx
+    ? active.filter((d) => d.status === "identified" && !dismissed.has(`valor:${d.id}`) && (cardBrl(d, fx) ?? 0) >= alertBrl)
+    : [];
 
-  const total = unidentified.length + pairs.length + repeats.length + impossible.length;
+  const total = unidentified.length + pairs.length + repeats.length + impossible.length + valuable.length;
   if (!total) return null;
 
   async function run(fn: () => Promise<SessionState>, done?: string) {
@@ -83,6 +99,28 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
         </span>
       </SectionTitle>
       <ul className="space-y-3">
+        {valuable.map((d) => {
+          const cap = capById.get(d.capture_id);
+          return (
+            <Case key={`valor:${d.id}`} image={d.crop_url} title={<><Sparkles className="size-4 text-brass-300" /> Carta valiosa: confira a edição</>}>
+              <p className="text-[15px] text-cream">
+                {cardName(d.card)} <span className="text-cream-faint">· {d.card?.set_code?.toUpperCase()}</span>
+              </p>
+              <p className="text-[14px] text-brass-200">{brl(cardBrl(d, fx) ?? 0)}</p>
+              <div className="flex flex-wrap gap-1.5">
+                <Button size="xs" variant="ghost" onClick={() => dismiss(`valor:${d.id}`)}>
+                  está certa
+                </Button>
+                {cap?.image_url && (
+                  <Button size="xs" variant="ghost" onClick={() => onShowCapture(cap, d.id)}>
+                    ver na foto
+                  </Button>
+                )}
+              </div>
+              <CardSearch onPick={(c) => run(() => api.identify(d.id, c.id), `Trocada para ${cardName(c)}`)} placeholder="Trocar por outra carta ou edição…" />
+            </Case>
+          );
+        })}
         {unidentified.map((d) => {
           const cap = capById.get(d.capture_id);
           return (

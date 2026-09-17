@@ -48,3 +48,20 @@ def test_manual_deck_validation_and_export(client):
 def test_search_portuguese_name(client):
     results = client.get("/api/cards/search", params={"q": "desertos calc"}).json()
     assert results and results[0]["name_en"] == "Scoured Barrens"
+
+
+def test_sets_search_and_session_hint(client):
+    """Seletor "estas cartas são da coleção X": busca de coleção e gravação na sessão."""
+    found = client.get("/api/sets", params={"q": "duskmourn", "limit": 5}).json()
+    assert found and found[0]["code"] == "dsk"  # a coleção principal vem antes de tokens e digitais
+    assert all(s["card_count"] > 0 for s in found)
+
+    s = client.post("/api/sessions", json={"game_id": "mtg", "format_id": "commander", "mode": "video"}).json()
+    try:
+        state = client.patch(f"/api/sessions/{s['id']}", json={"settings": {"set_codes": ["dsk"]}}).json()
+        assert state["session"]["settings"]["set_codes"] == ["dsk"]
+        from app.pipeline import store
+
+        assert store.preferred_sets(store.get_session(s["id"])) == {"dsk"}
+    finally:
+        client.delete(f"/api/sessions/{s['id']}")

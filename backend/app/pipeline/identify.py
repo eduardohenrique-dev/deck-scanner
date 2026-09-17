@@ -92,9 +92,11 @@ def _finalize(result: IdentifyResult, adapter: GameAdapter, default_language: st
 
 
 def _apply_print(result: IdentifyResult, card_bgr: np.ndarray, context_bgr: np.ndarray | None,
-                 ordered: list[Candidate], adapter: GameAdapter, default_language: str) -> None:
+                 ordered: list[Candidate], adapter: GameAdapter, default_language: str,
+                 preferred_sets: set[str] | None = None) -> None:
     """Idioma e coleção exatos a partir da imagem (a arte já foi reconhecida)."""
-    res = printresolve.resolve(card_bgr, context_bgr, ordered, adapter, default_language=default_language)
+    res = printresolve.resolve(card_bgr, context_bgr, ordered, adapter, default_language=default_language,
+                               preferred_sets=preferred_sets)
     result.card_ref_id = res.card_ref_id
     result.language = res.language
     result.notes += res.notes
@@ -108,7 +110,8 @@ def _apply_print(result: IdentifyResult, card_bgr: np.ndarray, context_bgr: np.n
 
 def identify(card_bgr: np.ndarray, *, adapter: GameAdapter, context_bgr: np.ndarray | None = None,
              default_language: str = "en", session_id: str | None = None, allow_vlm: bool = True,
-             allow_orb: bool = True, user_id: str | None = None, resolve_print: bool = True) -> IdentifyResult:
+             allow_orb: bool = True, user_id: str | None = None, resolve_print: bool = True,
+             preferred_sets: set[str] | None = None) -> IdentifyResult:
     index = get_index()
     qh = hashing.compute_query_hashes(card_bgr, context_bgr)
     result = IdentifyResult(hashes=qh[0])
@@ -134,7 +137,7 @@ def identify(card_bgr: np.ndarray, *, adapter: GameAdapter, context_bgr: np.ndar
             result.confidence = round(conf, 3)
             result.source = "learned" if best.learned else "phash"
             if resolve_print and not best.learned:
-                _apply_print(result, card_bgr, context_bgr, cands, adapter, default_language)
+                _apply_print(result, card_bgr, context_bgr, cands, adapter, default_language, preferred_sets)
             elif same_oracle:
                 result.notes.append(printresolve.NOTE_PRINT)
                 result.raw["alt_prints"] = [c.card_ref_id for c in same_oracle[:6]]
@@ -155,7 +158,7 @@ def identify(card_bgr: np.ndarray, *, adapter: GameAdapter, context_bgr: np.ndar
                 result.source = "phash+orb"
                 if resolve_print:
                     _apply_print(result, card_bgr, context_bgr, [c] + [x for x in cands if x is not c], adapter,
-                                 default_language)
+                                 default_language, preferred_sets)
                 return _finalize(result, adapter, default_language)
 
     if allow_vlm and vlm.enabled():

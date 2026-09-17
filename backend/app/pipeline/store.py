@@ -235,3 +235,10 @@ def delete_entry(entry_id: str) -> None:
 
 def get_deck(deck_id: str) -> dict | None:
     return db.row_to_dict(db.app_db().execute("SELECT * FROM decks WHERE id=?", (deck_id,)).fetchone())
+
+
+def preferred_sets(session: dict | None) -> set[str] | None:
+    """Coleções que a pessoa definiu para a sessão ("estas cartas são da coleção X")."""
+    raw = ((session or {}).get("settings") or {}).get("set_codes") or []
+    codes = {str(c).strip().lower() for c in raw if str(c).strip()}
+    return codes or None

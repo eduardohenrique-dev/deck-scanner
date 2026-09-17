@@ -8,6 +8,7 @@ import { detectPrimaryCard, warpCard, type CardKind } from "./detect.ts";
 import { type Quad } from "./geometry.ts";
 import { Group, TemporalGrouper, type FrameObs, type Gap, type GrouperOptions, type Transition } from "./grouper.ts";
 import { artSignatures } from "./hash.ts";
+import { cardness } from "./cardness.ts";
 import { frameQuality, type FrameQuality } from "./quality.ts";
 
 export const PROCESS_MAX_SIDE = 1280;
@@ -66,12 +67,14 @@ export class FrameProcessor {
   private readonly grouper: TemporalGrouper<Payload>;
   private readonly onSighting: (s: Sighting) => void;
   private readonly detectMaxDim: number;
+  private readonly checkCardness: boolean;
   private framesSeen = 0;
 
   constructor(cv: CV, onSighting: (s: Sighting) => void, detectMaxDim = 960, options: GrouperOptions = {}) {
     this.cv = cv;
     this.onSighting = onSighting;
     this.detectMaxDim = detectMaxDim;
+    this.checkCardness = !!options.minCardness;
     this.grouper = new TemporalGrouper<Payload>(
       (g) => this.closed(g),
       (obs) => this.releasePayload(obs),
@@ -106,9 +109,11 @@ export class FrameProcessor {
     if (card) {
       const warped = warpCard(cv, frame, card.pts);
       obs.pts = card.pts;
+      obs.edge = card.kind === "edge";
       obs.payload = { frame, warped };
       [obs.sig, obs.sig180] = artSignatures(cv, warped);
       obs.q = frameQuality(cv, warped, card.pts, frame.cols, frame.rows);
+      if (this.checkCardness) obs.q.card = cardness(cv, warped).score;
       // carta saindo do quadro: vale para agrupar, mas não como melhor frame
       if (card.kind === "edge") obs.q.score = round(obs.q.score * 0.6, 4);
     }

@@ -39,6 +39,14 @@ export type CardSummary = {
   prints?: CardSummary[];
 };
 
+export type SetSummary = {
+  code: string;
+  name: string;
+  released_at: string | null;
+  card_count: number;
+  icon_svg_uri: string | null;
+};
+
 export type AppConfig = {
   auth: "local" | "neon";
   neon_auth_url: string | null;
@@ -233,7 +241,8 @@ export type Session = {
   saved_deck_id: string | null;
   name: string | null;
   status: "capturing" | "processing" | "review" | "saved" | "error";
-  settings: { default_language?: string; intent?: "collection" } | null;
+  /** `set_codes`: a pessoa disse de qual coleção são as cartas desta sessão */
+  settings: { default_language?: string; intent?: "collection"; set_codes?: string[] } | null;
   deck_id: string;
   created_at: string;
   updated_at: string;

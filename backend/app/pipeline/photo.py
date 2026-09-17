@@ -49,6 +49,7 @@ def process_photo(session_id: str, capture_id: str, img: np.ndarray | None = Non
         return
     adapter = registry.get(session["game_id"])
     lang = (session.get("settings") or {}).get("default_language", "en")
+    sets = store.preferred_sets(session)
     store.update_capture(capture_id, status="processing", progress=0)
     store.update_session(session_id, status="processing")
     bus.publish(session_id, {"type": "capture", "capture": capture_public(store.get_capture(capture_id))})
@@ -73,7 +74,8 @@ def process_photo(session_id: str, capture_id: str, img: np.ndarray | None = Non
     def quick_identify(pts: np.ndarray):
         w_, c_ = _warps(img, pts)
         return w_, identify.identify(w_, adapter=adapter, context_bgr=c_, default_language=lang,
-                                     session_id=session_id, allow_orb=False, allow_vlm=False, user_id=user_id)
+                                     session_id=session_id, allow_orb=False, allow_vlm=False, user_id=user_id,
+                                     preferred_sets=sets)
 
     pending: list[tuple[str, detect.CardQuad]] = []
     for q in quads:
@@ -130,7 +132,7 @@ def process_photo(session_id: str, capture_id: str, img: np.ndarray | None = Non
                     else:
                         ctx = _warps(img, pts)[1]
                         r = identify.identify(w_, adapter=adapter, context_bgr=ctx, default_language=lang,
-                                              session_id=session_id, user_id=user_id)
+                                              session_id=session_id, user_id=user_id, preferred_sets=sets)
                 r.notes.append(HYPOTHESIS_NOTES.get(label, "carta parcialmente coberta"))
                 fields = {"bbox": _norm_quad(pts, W, H), "quality": {
                     **quality.frame_quality(w_, pts, img.shape), "kind": kind, "hypothesis": label}}
@@ -155,7 +157,8 @@ def process_photo(session_id: str, capture_id: str, img: np.ndarray | None = Non
             _store_result(session_id, det_id, first, warped)
         else:
             result = identify.identify(warped, adapter=adapter, context_bgr=_warps(img, q.pts)[1],
-                                       default_language=lang, session_id=session_id, user_id=user_id)
+                                       default_language=lang, session_id=session_id, user_id=user_id,
+                                       preferred_sets=sets)
             if q.kind == "partial":
                 result.notes.append("carta parcialmente visível")
                 if result.status == "identified":

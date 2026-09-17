@@ -16,6 +16,11 @@ export function guidance(r: FrameReport | null, running: boolean): Guidance {
   if (!r) return { text: "Preparando…", tone: "neutral" };
   if (!r.quad) return { text: "Mostre uma carta por vez, no centro", tone: "neutral" };
   if (r.kind === "edge") return { text: "A carta está saindo do quadro", tone: "warn" };
+  if (r.quality?.card !== undefined && r.quality.card < 0.5)
+    return r.quality.size > 0.12
+      ? { text: "Parece o verso da carta — vire para a frente", tone: "warn" }
+      : { text: "Isso não parece uma carta — enquadre a carta inteira", tone: "warn" };
+  if (r.quality && r.quality.size < 0.045) return { text: "Aproxime a carta da câmera", tone: "warn" };
   if (!r.stable) {
     if (r.transition === "fast") return { text: "Carta em movimento…", tone: "neutral" };
     if (r.quality && r.quality.sharpness < 22) return { text: "Imagem tremida — segure firme", tone: "warn" };

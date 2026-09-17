@@ -18,8 +18,11 @@ export type ReadItem = {
   replaced?: boolean;
 };
 
-/** Pisca na borda do visor: verde para carta anotada, vermelho para carta não reconhecida. */
-export type Flash = { tone: "ok" | "bad"; id: number };
+/** Pisca na borda do visor: verde anotada, vermelho não reconhecida, dourado carta cara. */
+export type Flash = { tone: "ok" | "bad" | "gold"; id: number };
+
+/** Carta acima do valor que a pessoa definiu para ser avisada. */
+export type Treasure = { key: string; name: string; brl: number; preview: string };
 
 /** Carta que a câmera não reconheceu: mostrar de novo ou dizer o nome. */
 export type Miss = { key: string; detectionId: string; preview: string; reason: "unknown" | "back" };
@@ -86,16 +89,16 @@ function seek(video: HTMLVideoElement, t: number): Promise<void> {
 }
 
 let audio: AudioContext | null = null;
-/** "Tim" curto de confirmação de leitura. */
-export function chime() {
+/** "Tim" curto de confirmação de leitura; `rich` toca o aviso de carta valiosa (sobe em vez de descer). */
+export function chime(rich = false) {
   try {
     audio ??= new AudioContext();
     const t = audio.currentTime;
     const osc = audio.createOscillator();
     const gain = audio.createGain();
     osc.type = "triangle";
-    osc.frequency.setValueAtTime(1320, t);
-    osc.frequency.exponentialRampToValueAtTime(990, t + 0.12);
+    osc.frequency.setValueAtTime(rich ? 880 : 1320, t);
+    osc.frequency.exponentialRampToValueAtTime(rich ? 1760 : 990, t + 0.12);
     gain.gain.setValueAtTime(0.0001, t);
     gain.gain.exponentialRampToValueAtTime(0.18, t + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
@@ -118,7 +121,16 @@ type Failed = { key: string; detectionId: string; sig: number[]; at: number };
  * Captura por câmera ao vivo ou arquivo de vídeo: frames vão para o worker de visão,
  * cada carta vira uma leitura enviada ao servidor em ordem, e no fim a captura é fechada.
  */
-export function useScanner(sessionId: string, onState: (s: SessionState) => void, opts: { sound?: boolean } = {}) {
+/** Preço em reais da impressão lida (foil quando for o caso). */
+function priceBrl(detection: Detection, fx: number | null): number | null {
+  const prices = detection.card?.prices;
+  if (!prices || !fx) return null;
+  const foil = detection.finish && detection.finish !== "nonfoil";
+  const usd = Number((foil ? prices.usd_foil || prices.usd_etched : prices.usd) || prices.usd || 0);
+  return usd > 0 ? usd * fx : null;
+}
+
+export function useScanner(sessionId: string, onState: (s: SessionState) => void, opts: { sound?: boolean; alertBrl?: number; fx?: number | null } = {}) {
   const [phase, setPhase] = useState<ScanPhase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<FrameReport | null>(null);
@@ -129,6 +141,11 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
   const [fps, setFps] = useState(0);
   const [flash, setFlash] = useState<Flash | null>(null);
   const [miss, setMiss] = useState<Miss | null>(null);
+  const [treasure, setTreasure] = useState<Treasure | null>(null);
+  const alertRef = useRef(opts.alertBrl ?? 0);
+  const fxRef = useRef(opts.fx ?? null);
+  alertRef.current = opts.alertBrl ?? 0;
+  fxRef.current = opts.fx ?? null;
   const failed = useRef<Failed | null>(null);
   const run = useRef<Run | null>(null);
   const uploads = useRef<Promise<void>>(Promise.resolve());
@@ -180,9 +197,12 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
       }
       if (status === "identified" || status === "token") {
         if (merged) return;
-        blink("ok");
+        const brl = priceBrl(detection, fxRef.current);
+        const rich = !!alertRef.current && brl !== null && brl >= alertRef.current;
+        blink(rich ? "gold" : "ok");
+        if (rich) setTreasure({ key, name: detection.card?.name_pt || detection.card?.name_en || "carta", brl: brl!, preview });
         setMiss((m) => (m && failed.current?.detectionId === m.detectionId ? m : null));
-        if (soundRef.current) chime();
+        if (soundRef.current) chime(rich);
       } else if (status === "unidentified" || status === "back") {
         blink("bad");
         failed.current = { key, detectionId: detection.id, sig, at: performance.now() };
@@ -433,5 +453,7 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
     [miss, blink],
   );
 
-  return { phase, error, report, reads, progress, counted, pending, fps, flash, miss, startLive, startVideo, stop, clearError, dismissMiss, resolveMiss };
+  const dismissTreasure = useCallback(() => setTreasure(null), []);
+
+  return { phase, error, report, reads, progress, counted, pending, fps, flash, miss, treasure, startLive, startVideo, stop, clearError, dismissMiss, resolveMiss, dismissTreasure };
 }
