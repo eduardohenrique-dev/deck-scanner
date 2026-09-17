@@ -45,7 +45,18 @@ const IDLE_MS = 4 * 60_000;
 const SLOW_MS = 1500;
 let lastResponseAt = 0;
 
+/** 503 é o banco acordando: uma segunda chance evita mostrar erro para quem só chegou primeiro. */
 async function raw(path: string, init: RequestInit = {}): Promise<Response> {
+  try {
+    return await attempt(path, init);
+  } catch (e) {
+    if (!(e instanceof ApiError) || e.status !== 503 || init.body instanceof FormData) throw e;
+    await new Promise((r) => window.setTimeout(r, 2500));
+    return attempt(path, init);
+  }
+}
+
+async function attempt(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = await authHeaders(init.headers);
   if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
   const mayBeWaking = !(init.body instanceof FormData) && Date.now() - lastResponseAt > IDLE_MS;

@@ -44,6 +44,10 @@ app = FastAPI(title="Deck Scanner", version="0.2.0", lifespan=lifespan)
 
 MISCONFIGURED = config.SERVERLESS and (not config.DATABASE_URL or config.AUTH_MODE != "neon" or config.STORAGE_BACKEND != "s3")
 
+# Rotas que não dependem do banco: a tela de login precisa abrir mesmo com o Postgres dormindo
+# (/wake acorda o banco por conta própria e trata o erro; /client-error só escreve no log).
+NO_DB_PATHS = {"/api/health", "/api/config", "/api/wake", "/api/client-error"}
+
 
 @app.middleware("http")
 async def _ready_middleware(request: Request, call_next):
@@ -53,11 +57,12 @@ async def _ready_middleware(request: Request, call_next):
     oidc = request.headers.get("x-vercel-oidc-token")
     if oidc:  # token da função para o AI Gateway; usado também pelas threads de identificação
         os.environ["VERCEL_OIDC_TOKEN"] = oidc
-    if request.url.path.startswith("/api") and not _ready.is_set():
+    if request.url.path.startswith("/api") and request.url.path not in NO_DB_PATHS and not _ready.is_set():
         try:
             ensure_ready()
         except Exception as exc:  # noqa: BLE001 — banco fora do ar: resposta clara em vez de 500 genérico
-            return JSONResponse({"detail": f"banco indisponível: {type(exc).__name__}"}, status_code=503)
+            return JSONResponse({"detail": f"o banco está acordando ({type(exc).__name__}) — tente de novo em alguns segundos"},
+                                status_code=503)
     return await call_next(request)
 
 

@@ -4,7 +4,8 @@ from __future__ import annotations
 import mimetypes
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+import orjson
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response
 
 from .. import config, db
@@ -45,6 +46,20 @@ def public_config():
         "vlm": vlm.enabled(),
         "spellbook": config.SPELLBOOK_ENABLED,
     }
+
+
+@router.post("/client-error")
+async def client_error(request: Request):
+    """Falha de login no navegador de quem não conseguiu entrar — vira linha de log para diagnóstico."""
+    raw = (await request.body())[:2000]
+    try:
+        data = orjson.loads(raw) if raw else {}
+    except orjson.JSONDecodeError:
+        data = {"message": raw.decode("utf-8", "replace")}
+    fields = {k: str(data.get(k))[:300] for k in ("step", "message", "url") if data.get(k)}
+    client = request.client.host if request.client else "?"
+    print(f"[cliente] {client} ua={request.headers.get('user-agent', '?')[:160]} {fields}", flush=True)
+    return {"ok": True}
 
 
 @router.get("/status")

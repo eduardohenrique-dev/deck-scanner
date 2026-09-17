@@ -21,22 +21,52 @@ type AuthClient = {
   signOut: () => Promise<Result<unknown>>;
 };
 
+const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+
+/**
+ * Tenta de novo antes de desistir: no servidor sem uso a primeira resposta demora (função e banco
+ * acordando) e uma falha de rede no celular é comum. Só o erro da última tentativa chega à tela.
+ */
+async function retrying<T>(what: string, fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let last: unknown;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      last = e;
+      if (i < attempts) await sleep(700 * i);
+    }
+  }
+  report(what, last);
+  throw last;
+}
+
 export function loadConfig(): Promise<AppConfig> {
   if (!configPromise) {
-    configPromise = fetch("/api/config")
-      .then(async (r) => {
-        if (!r.ok) {
-          const body = await r.json().catch(() => null);
-          throw new Error(typeof body?.detail === "string" ? body.detail : `servidor respondeu ${r.status}`);
-        }
-        return r.json() as Promise<AppConfig>;
-      })
-      .catch((e) => {
-        configPromise = null;
-        throw e;
-      });
+    configPromise = retrying("config", async () => {
+      const r = await fetch("/api/config", { cache: "no-store" });
+      if (!r.ok) {
+        const body = await r.json().catch(() => null);
+        throw new Error(typeof body?.detail === "string" ? body.detail : `servidor respondeu ${r.status}`);
+      }
+      return (await r.json()) as AppConfig;
+    }).catch((e) => {
+      configPromise = null;
+      throw e;
+    });
   }
   return configPromise;
+}
+
+/** Conta ao servidor o que falhou no navegador de quem não conseguiu entrar (aparece no log da Vercel). */
+function report(step: string, error: unknown) {
+  try {
+    const body = JSON.stringify({ step, message: error instanceof Error ? error.message : String(error), url: location.href });
+    if (!navigator.sendBeacon?.("/api/client-error", new Blob([body], { type: "application/json" })))
+      void fetch("/api/client-error", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => undefined);
+  } catch {
+    /* diagnóstico é opcional */
+  }
 }
 
 function authClient(): Promise<AuthClient | null> {
@@ -65,7 +95,7 @@ export type AuthUser = SessionData["user"];
 
 export type AuthState =
   | { status: "loading" }
-  | { status: "error"; message: string }
+  | { status: "error"; message: string; step: "config" | "session" }
   | { status: "local"; config: AppConfig }
   | { status: "signed-out"; config: AppConfig }
   | { status: "signed-in"; config: AppConfig; user: AuthUser };
@@ -75,17 +105,23 @@ export function useAuth(): AuthState {
   useEffect(() => {
     let cancelled = false;
     const refresh = async () => {
+      let step: "config" | "session" = "config";
       try {
         const config = await loadConfig();
         const client = await authClient();
         if (cancelled) return;
         if (!client) return setState({ status: "local", config });
+        step = "session";
         // na volta do login com Google a biblioteca troca o código da URL pela sessão aqui
-        const { data } = await client.getSession();
+        const { data } = await retrying("session", async () => {
+          const r = await client.getSession();
+          if (r.error && !r.error.status) throw new Error(r.error.message || "sem resposta do login");
+          return r;
+        });
         if (cancelled) return;
         setState(data?.user ? { status: "signed-in", config, user: data.user } : { status: "signed-out", config });
       } catch (e) {
-        if (!cancelled) setState({ status: "error", message: (e as Error).message });
+        if (!cancelled) setState({ status: "error", message: (e as Error).message, step });
       }
     };
     void refresh();
@@ -111,11 +147,27 @@ function fail(error: Result<unknown>["error"]): never {
   throw new Error(MESSAGES[code] ?? (error?.status === 429 ? "Muitas tentativas. Espere um minuto e tente de novo." : error?.message || "Não deu certo, tente de novo."));
 }
 
+/** O login guarda a sessão num cookie do servidor da Neon; alguns navegadores bloqueiam esse cookie. */
+const COOKIES_BLOCKED =
+  "Seu navegador bloqueou o cookie que mantém você conectado. No iPhone: Ajustes → Safari → desligue “Impedir rastreamento entre sites”. " +
+  "Em aba anônima ou no Brave, libere os cookies deste site — ou use outro navegador.";
+
+/** Entrar só vale se a sessão ficar de pé: sem isso a pessoa voltaria para esta tela sem explicação. */
+async function confirmSession(): Promise<void> {
+  const client = await authClient();
+  const { data } = (await client!.getSession().catch(() => ({ data: null }))) as { data: SessionData | null };
+  if (!data?.user) {
+    report("cookie", new Error("sessão não persistiu após entrar"));
+    throw new Error(COOKIES_BLOCKED);
+  }
+}
+
 export async function signInWithPassword(email: string, password: string): Promise<void> {
   const client = await authClient();
   if (!client) return;
   const { error } = await client.signIn.email({ email, password });
   if (error) fail(error);
+  await confirmSession();
   changed();
 }
 
@@ -124,6 +176,7 @@ export async function signUpWithPassword(name: string, email: string, password: 
   if (!client) return;
   const { error } = await client.signUp.email({ name, email, password });
   if (error) fail(error);
+  await confirmSession();
   changed();
 }
 

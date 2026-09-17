@@ -1,7 +1,7 @@
 import { LogOut } from "lucide-react";
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { BrandMark, Candle, Chest, Lens, Tankard, Tome } from "./components/icons";
-import { cx, IconButton, Spinner } from "./components/ui";
+import { Button, cx, IconButton, Spinner } from "./components/ui";
 import { signOut, useAuth } from "./lib/auth";
 import { Link, matchRoute, useLocation } from "./lib/router";
 import { Toaster } from "./lib/toast";
@@ -44,9 +44,17 @@ export default function App() {
   if (auth.status === "error")
     return (
       <FullScreen>
-        <div className="max-w-sm space-y-2 text-center">
+        <div className="max-w-md space-y-3 text-center">
           <p className="font-serif text-[21px] text-cream">A taverna está fechada</p>
-          <p className="text-cream-dim">Não consegui falar com o servidor ({auth.message}). Tente recarregar a página em instantes.</p>
+          <p className="text-cream-dim">
+            {auth.step === "session"
+              ? "Não consegui falar com o serviço de login. Se você usa bloqueador de anúncios ou uma rede do trabalho, ele pode estar barrando o acesso a neon.tech."
+              : "Não consegui falar com o servidor. Ele pode estar acordando: espere alguns segundos e tente de novo."}
+          </p>
+          <p className="text-[14px] text-cream-faint">detalhe: {auth.message}</p>
+          <Button variant="brass" onClick={() => location.reload()}>
+            tentar de novo
+          </Button>
         </div>
       </FullScreen>
     );
