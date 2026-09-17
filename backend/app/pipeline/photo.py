@@ -16,9 +16,11 @@ from ..collection import condition, prints
 from ..events import bus
 from ..games import registry
 from ..jobs import identify_pool
-from ..vision import detect, hashing, quality
+from ..vision import cardness, detect, hashing, quality
 from . import dedup, deck, identify, store
 from .serialize import capture_public, detection_public
+
+NOTE_NOT_CARD = "não tem a estrutura de uma carta (nome, arte, linha de tipo e caixa de texto)"
 
 HYPOTHESIS_NOTES = {
     "split": "cartas encostadas separadas",
@@ -163,6 +165,14 @@ def process_photo(session_id: str, capture_id: str, img: np.ndarray | None = Non
                 result.notes.append("carta parcialmente visível")
                 if result.status == "identified":
                     result.confidence = round(result.confidence * 0.85, 3)
+            if result.status == "unidentified":
+                # nada reconhecido e sem a estrutura de uma carta (nome/arte/tipo/texto): é a mesa, a mão,
+                # a moldura de outra coisa — vai para o ruído em vez de pedir revisão humana
+                cn = cardness.cardness(warped)
+                result.metrics["cardness"] = cn
+                if cn["score"] < cardness.CARD_MIN:
+                    result.status = "noise"
+                    result.notes.append(NOTE_NOT_CARD)
             _store_result(session_id, det_id, result, warped)
         _publish(session_id, det_id, adapter)
 
