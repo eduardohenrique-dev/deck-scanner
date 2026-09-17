@@ -21,13 +21,14 @@ def sets(game: str = "mtg", q: str | None = None, limit: int = 40):
     where = "game_id=?"
     params: list = [game]
     if q:
-        where += " AND (name LIKE ? OR code LIKE ?)"
-        params += [f"%{q}%", f"{q}%"]
+        # LOWER dos dois lados: no Postgres o LIKE é sensível a maiúsculas, no SQLite não
+        where += " AND (LOWER(name) LIKE ? OR LOWER(code) LIKE ?)"
+        params += [f"%{q.lower()}%", f"{q.lower()}%"]
     # a coleção "de verdade" primeiro: sigla exata, depois nome que começa pela busca, depois a maior
     order = "released_at DESC, name"
     if q:
-        params = [*params, q, f"{q}%"]
-        order = ("CASE WHEN LOWER(code)=LOWER(?) THEN 0 WHEN name LIKE ? THEN 1 ELSE 2 END, "
+        params = [*params, q.lower(), f"{q.lower()}%"]
+        order = ("CASE WHEN LOWER(code)=? THEN 0 WHEN LOWER(name) LIKE ? THEN 1 ELSE 2 END, "
                  "CASE WHEN set_type IN ('expansion','core','commander','draft_innovation','masters') THEN 0 ELSE 1 END, "
                  "LENGTH(name), card_count DESC")
     rows = db.catalog_db().execute(
