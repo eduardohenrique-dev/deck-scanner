@@ -46,7 +46,9 @@ MISCONFIGURED = config.SERVERLESS and (not config.DATABASE_URL or config.AUTH_MO
 
 # Rotas que não dependem do banco: a tela de login precisa abrir mesmo com o Postgres dormindo
 # (/wake acorda o banco por conta própria e trata o erro; /client-error só escreve no log).
-NO_DB_PATHS = {"/api/health", "/api/config", "/api/wake", "/api/client-error"}
+NO_DB_PATHS = {"/api/health", "/api/config", "/api/wake", "/api/client-error",
+               "/api/auth/password/sign-in", "/api/auth/password/sign-up", "/api/auth/session",
+               "/api/auth/sign-out", "/api/auth/google/start", "/api/auth/google/callback"}
 
 
 @app.middleware("http")

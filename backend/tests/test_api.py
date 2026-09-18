@@ -65,3 +65,10 @@ def test_sets_search_and_session_hint(client):
         assert store.preferred_sets(store.get_session(s["id"])) == {"dsk"}
     finally:
         client.delete(f"/api/sessions/{s['id']}")
+
+
+def test_auth_proxy_only_when_hosted(client):
+    """No modo local não há login: as rotas do login pelo nosso domínio respondem 404."""
+    r = client.post("/api/auth/password/sign-in", json={"email": "a@b.co", "password": "12345678"})
+    assert r.status_code == 404
+    assert client.get("/api/auth/session").status_code in (401, 404)

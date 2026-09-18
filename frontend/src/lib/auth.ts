@@ -2,24 +2,17 @@ import { useEffect, useState } from "react";
 import type { AppConfig } from "./types";
 
 /**
- * Login só existe no modo hospedado (Neon Auth). No modo local o app abre direto, com um usuário só.
- * O cliente de login é carregado sob demanda: quem roda local não baixa esse código.
- * A API recebe o JWT da sessão (válido por 15 min; a biblioteca renova sozinha antes de expirar).
+ * Login só existe no modo hospedado. No modo local o app abre direto, com um usuário só.
+ *
+ * Tudo passa pelo NOSSO domínio (`/api/auth/*`): o servidor conversa com o Neon Auth e guarda a sessão num
+ * cookie nosso. É o que faz o login funcionar no iPhone, no Brave e em aba anônima, que bloqueiam cookies de
+ * outro site. Aqui só ficam o usuário e o JWT de 15 minutos usado nas chamadas da API.
  */
 let configPromise: Promise<AppConfig> | null = null;
-let clientPromise: Promise<AuthClient | null> | null = null;
 
-type Result<T> = { data: T | null; error: { message?: string; code?: string; status?: number } | null };
-type SessionData = { session: { token?: string; expiresAt?: string }; user: { id: string; email: string; name?: string | null; image?: string | null } };
-type AuthClient = {
-  getSession: () => Promise<Result<SessionData>>;
-  signIn: {
-    email: (body: { email: string; password: string; callbackURL?: string }) => Promise<Result<unknown>>;
-    social: (body: { provider: "google"; callbackURL?: string }) => Promise<Result<unknown>>;
-  };
-  signUp: { email: (body: { email: string; password: string; name: string; callbackURL?: string }) => Promise<Result<unknown>> };
-  signOut: () => Promise<Result<unknown>>;
-};
+type SessionReply = { user: AuthUser; token: string; expires_at?: number };
+
+export type AuthUser = { id: string; email: string; name?: string | null; image?: string | null };
 
 const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
 
@@ -27,7 +20,7 @@ const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
  * Tenta de novo antes de desistir: no servidor sem uso a primeira resposta demora (função e banco
  * acordando) e uma falha de rede no celular é comum. Só o erro da última tentativa chega à tela.
  */
-async function retrying<T>(what: string, fn: () => Promise<T>, attempts: number = 3): Promise<T> {
+async function retrying<T>(what: string, fn: () => Promise<T>, attempts = 3): Promise<T> {
   let last: unknown;
   for (let i = 1; i <= attempts; i++) {
     try {
@@ -69,29 +62,47 @@ function report(step: string, error: unknown) {
   }
 }
 
-function authClient(): Promise<AuthClient | null> {
-  if (!clientPromise) {
-    clientPromise = loadConfig().then(async (cfg) => {
-      if (cfg.auth !== "neon" || !cfg.neon_auth_url) return null;
-      const { createAuthClient } = await import("@neondatabase/auth");
-      return createAuthClient(cfg.neon_auth_url) as unknown as AuthClient;
-    });
-  }
-  return clientPromise;
+async function post(path: string, body?: unknown): Promise<any> {
+  const r = await fetch(path, {
+    method: "POST",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await r.json().catch(() => null);
+  if (!r.ok) throw new Error(friendly(typeof data?.detail === "string" ? data.detail : `erro ${r.status}`));
+  return data;
+}
+
+/** Sessão em memória: o cookie é do servidor, aqui fica só o JWT curto que vai nas chamadas da API. */
+let cached: { user: AuthUser; token: string; expiresAt: number } | null = null;
+let loading: Promise<SessionReply | null> | null = null;
+
+async function fetchSession(): Promise<SessionReply | null> {
+  const r = await fetch("/api/auth/session", { cache: "no-store" });
+  if (r.status === 401) return null;
+  if (!r.ok) throw new Error(`o serviço de login respondeu ${r.status}`);
+  return (await r.json()) as SessionReply;
+}
+
+async function loadSession(force = false): Promise<AuthUser | null> {
+  if (!force && cached && cached.expiresAt - Date.now() > 60_000) return cached.user;
+  loading ??= fetchSession().finally(() => (loading = null));
+  const data = await loading;
+  cached = data ? { user: data.user, token: data.token, expiresAt: (data.expires_at ?? 0) * 1000 || Date.now() + 10 * 60_000 } : null;
+  return cached?.user ?? null;
+}
+
+export async function accessToken(): Promise<string | null> {
+  const cfg = await loadConfig();
+  if (cfg.auth !== "neon") return null;
+  if (cached && cached.expiresAt - Date.now() > 60_000) return cached.token;
+  await loadSession(true);
+  return cached?.token ?? null;
 }
 
 function changed() {
   window.dispatchEvent(new Event("auth:changed"));
 }
-
-export async function accessToken(): Promise<string | null> {
-  const client = await authClient();
-  if (!client) return null;
-  const { data } = await client.getSession();
-  return data?.session?.token ?? null;
-}
-
-export type AuthUser = SessionData["user"];
 
 export type AuthState =
   | { status: "loading" }
@@ -100,25 +111,18 @@ export type AuthState =
   | { status: "signed-out"; config: AppConfig; warning?: string }
   | { status: "signed-in"; config: AppConfig; user: AuthUser };
 
-/** Código de uso único que o login devolve na URL quando o navegador não guarda o cookie dele. */
-const VERIFIER_PARAM = "neon_auth_session_verifier";
-
-/** Tira o código da URL: sem isso, cada recarga tenta de novo o mesmo código já gasto. */
-function clearVerifier(): boolean {
+/** O servidor manda `?login=falhou` quando a volta do Google não fechou a sessão. */
+function loginFailedInUrl(): boolean {
   try {
     const url = new URL(location.href);
-    if (!url.searchParams.has(VERIFIER_PARAM)) return false;
-    url.searchParams.delete(VERIFIER_PARAM);
-    history.replaceState(history.state, "", url.href.replace(/#$/, ""));
+    if (url.searchParams.get("login") !== "falhou") return false;
+    url.searchParams.delete("login");
+    history.replaceState(history.state, "", url.href.replace(/\?$/, ""));
     return true;
   } catch {
     return false;
   }
 }
-
-const GOOGLE_BLOCKED =
-  "Não consegui concluir a entrada com o Google neste navegador: ele bloqueia os cookies do serviço de login. " +
-  "Entre com e-mail e senha.";
 
 export function useAuth(): AuthState {
   const [state, setState] = useState<AuthState>({ status: "loading" });
@@ -128,31 +132,21 @@ export function useAuth(): AuthState {
       let step: "config" | "session" = "config";
       try {
         const config = await loadConfig();
-        const client = await authClient();
         if (cancelled) return;
-        if (!client) return setState({ status: "local", config });
+        if (config.auth !== "neon") return setState({ status: "local", config });
         step = "session";
-        // na volta do login com Google a biblioteca troca o código da URL pela sessão aqui — e ele é de uso
-        // único, então essa chamada não pode ser repetida
-        const returning = new URLSearchParams(location.search).has(VERIFIER_PARAM);
-        const attempts = returning ? 1 : 3;
-        let data: SessionData | null = null;
+        const failed = loginFailedInUrl();
+        let user: AuthUser | null = null;
         try {
-          const r = await retrying("session", async () => {
-            const res = await client.getSession();
-            if (res.error && !res.error.status) throw new Error(res.error.message || "sem resposta do login");
-            return res;
-          }, attempts);
-          data = r.data;
+          user = await retrying("session", () => loadSession(true));
         } catch (e) {
-          // sem sessão o app continua: mostra a tela de entrada em vez de um beco sem saída
+          // sem sessão o app continua: tela de entrada em vez de um beco sem saída
           if (cancelled) return;
-          const hadVerifier = clearVerifier();
-          return setState({ status: "signed-out", config, warning: hadVerifier ? GOOGLE_BLOCKED : (e as Error).message });
+          return setState({ status: "signed-out", config, warning: (e as Error).message });
         }
         if (cancelled) return;
-        if (!data?.user && clearVerifier()) return setState({ status: "signed-out", config, warning: GOOGLE_BLOCKED });
-        setState(data?.user ? { status: "signed-in", config, user: data.user } : { status: "signed-out", config });
+        if (user) return setState({ status: "signed-in", config, user });
+        setState({ status: "signed-out", config, warning: failed ? "Não consegui concluir a entrada com o Google. Tente de novo ou use e-mail e senha." : undefined });
       } catch (e) {
         if (!cancelled) setState({ status: "error", message: (e as Error).message, step });
       }
@@ -175,53 +169,39 @@ const MESSAGES: Record<string, string> = {
   INVALID_EMAIL: "Esse e-mail não parece válido.",
 };
 
-function fail(error: Result<unknown>["error"]): never {
-  const code = error?.code ?? "";
-  throw new Error(MESSAGES[code] ?? (error?.status === 429 ? "Muitas tentativas. Espere um minuto e tente de novo." : error?.message || "Não deu certo, tente de novo."));
-}
-
-/** O login guarda a sessão num cookie do servidor da Neon; alguns navegadores bloqueiam esse cookie. */
-const COOKIES_BLOCKED =
-  "Seu navegador bloqueou o cookie que mantém você conectado. No iPhone: Ajustes → Safari → desligue “Impedir rastreamento entre sites”. " +
-  "Em aba anônima ou no Brave, libere os cookies deste site — ou use outro navegador.";
-
-/** Entrar só vale se a sessão ficar de pé: sem isso a pessoa voltaria para esta tela sem explicação. */
-async function confirmSession(): Promise<void> {
-  const client = await authClient();
-  const { data } = (await client!.getSession().catch(() => ({ data: null }))) as { data: SessionData | null };
-  if (!data?.user) {
-    report("cookie", new Error("sessão não persistiu após entrar"));
-    throw new Error(COOKIES_BLOCKED);
-  }
+/** As mensagens do serviço de login vêm em inglês; as conhecidas ganham texto nosso. */
+function friendly(detail: string): string {
+  const key = detail.toUpperCase().replace(/[^A-Z]+/g, "_");
+  for (const [code, text] of Object.entries(MESSAGES)) if (key.includes(code)) return text;
+  if (/INVALID.*(EMAIL|PASSWORD)|CREDENTIAL/i.test(detail)) return MESSAGES.INVALID_EMAIL_OR_PASSWORD;
+  if (/EXIST/i.test(detail)) return MESSAGES.USER_ALREADY_EXISTS;
+  if (/SHORT|LENGTH/i.test(detail)) return MESSAGES.PASSWORD_TOO_SHORT;
+  return detail;
 }
 
 export async function signInWithPassword(email: string, password: string): Promise<void> {
-  const client = await authClient();
-  if (!client) return;
-  const { error } = await client.signIn.email({ email, password });
-  if (error) fail(error);
-  await confirmSession();
+  await post("/api/auth/password/sign-in", { email, password });
+  await loadSession(true);
   changed();
 }
 
 export async function signUpWithPassword(name: string, email: string, password: string): Promise<void> {
-  const client = await authClient();
-  if (!client) return;
-  const { error } = await client.signUp.email({ name, email, password });
-  if (error) fail(error);
-  await confirmSession();
+  await post("/api/auth/password/sign-up", { name, email, password });
+  await loadSession(true);
   changed();
 }
 
 export async function signInWithGoogle(): Promise<void> {
-  const client = await authClient();
-  if (!client) return;
-  const { error } = await client.signIn.social({ provider: "google", callbackURL: location.origin });
-  if (error) fail(error);
+  location.href = `/api/auth/google/start?next=${encodeURIComponent(location.pathname + location.search)}`;
+  await sleep(4000); // a navegação assume; o await só mantém o botão ocupado
 }
 
 export async function signOut(): Promise<void> {
-  const client = await authClient();
-  await client?.signOut();
+  cached = null;
+  try {
+    await post("/api/auth/sign-out");
+  } catch {
+    /* sessão já inválida: sai do mesmo jeito */
+  }
   changed();
 }

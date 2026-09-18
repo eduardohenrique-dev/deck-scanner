@@ -15,7 +15,6 @@
     "@fontsource-variable/grenze-gotisch": "^5.3.0",
     "@fontsource/alegreya-sans": "^5.3.0",
     "@fontsource/alegreya-sans-sc": "^5.3.0",
-    "@neondatabase/auth": "^0.5.0-beta",
     "@techstark/opencv-js": "^5.0.0-release.1",
     "lucide-react": "^1.46.0",
     "react": "^19.3.0",

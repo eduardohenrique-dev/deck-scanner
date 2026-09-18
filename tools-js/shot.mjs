@@ -28,6 +28,8 @@ const profile = fs.mkdtempSync(path.join(os.tmpdir(), "shot-"));
 // --camera-file clip.y4m: a câmera falsa mostra esse vídeo (testa a leitura ao vivo com cartas de verdade)
 const cameras = Number(opt("--cameras", "1"));
 const cameraFile = opt("--camera-file", "");
+// --no-3p-cookies: bloqueia cookies de outro site, como o Safari do iPhone e o Brave fazem
+const privacy = args.includes("--no-3p-cookies") ? ["--test-third-party-cookie-phaseout", "--block-third-party-cookies"] : [];
 const camera = args.includes("--fake-camera")
   ? [
       `--use-fake-device-for-media-stream=device-count=${cameras}`,
@@ -36,7 +38,7 @@ const camera = args.includes("--fake-camera")
       "--autoplay-policy=no-user-gesture-required",
     ]
   : [];
-const proc = spawn(chrome, ["--headless=new", `--remote-debugging-port=${port}`, "--disable-gpu", "--hide-scrollbars", "--no-first-run", `--user-data-dir=${profile}`, ...camera, "about:blank"], { stdio: "ignore" });
+const proc = spawn(chrome, ["--headless=new", `--remote-debugging-port=${port}`, "--disable-gpu", "--hide-scrollbars", "--no-first-run", `--user-data-dir=${profile}`, ...privacy, ...camera, "about:blank"], { stdio: "ignore" });
 
 let target;
 for (let i = 0; i < 60 && !target; i++) {

@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from . import cards, collection, decks, entries, sessions, system
+from . import auth_proxy, cards, collection, decks, entries, sessions, system
 
 router = APIRouter(prefix="/api")
-for module in (system, sessions, entries, cards, decks, collection):
+for module in (system, auth_proxy, sessions, entries, cards, decks, collection):
     router.include_router(module.router)
