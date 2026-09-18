@@ -58,7 +58,7 @@ export default function App() {
         </div>
       </FullScreen>
     );
-  if (auth.status === "signed-out") return <Login />;
+  if (auth.status === "signed-out") return <Login warning={auth.warning} />;
 
   const route = matchRoute(path);
   const email = auth.status === "signed-in" ? auth.user.email : null;

@@ -27,7 +27,7 @@ const sleep = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
  * Tenta de novo antes de desistir: no servidor sem uso a primeira resposta demora (função e banco
  * acordando) e uma falha de rede no celular é comum. Só o erro da última tentativa chega à tela.
  */
-async function retrying<T>(what: string, fn: () => Promise<T>, attempts = 3): Promise<T> {
+async function retrying<T>(what: string, fn: () => Promise<T>, attempts: number = 3): Promise<T> {
   let last: unknown;
   for (let i = 1; i <= attempts; i++) {
     try {
@@ -97,8 +97,28 @@ export type AuthState =
   | { status: "loading" }
   | { status: "error"; message: string; step: "config" | "session" }
   | { status: "local"; config: AppConfig }
-  | { status: "signed-out"; config: AppConfig }
+  | { status: "signed-out"; config: AppConfig; warning?: string }
   | { status: "signed-in"; config: AppConfig; user: AuthUser };
+
+/** Código de uso único que o login devolve na URL quando o navegador não guarda o cookie dele. */
+const VERIFIER_PARAM = "neon_auth_session_verifier";
+
+/** Tira o código da URL: sem isso, cada recarga tenta de novo o mesmo código já gasto. */
+function clearVerifier(): boolean {
+  try {
+    const url = new URL(location.href);
+    if (!url.searchParams.has(VERIFIER_PARAM)) return false;
+    url.searchParams.delete(VERIFIER_PARAM);
+    history.replaceState(history.state, "", url.href.replace(/#$/, ""));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const GOOGLE_BLOCKED =
+  "Não consegui concluir a entrada com o Google neste navegador: ele bloqueia os cookies do serviço de login. " +
+  "Entre com e-mail e senha.";
 
 export function useAuth(): AuthState {
   const [state, setState] = useState<AuthState>({ status: "loading" });
@@ -112,13 +132,26 @@ export function useAuth(): AuthState {
         if (cancelled) return;
         if (!client) return setState({ status: "local", config });
         step = "session";
-        // na volta do login com Google a biblioteca troca o código da URL pela sessão aqui
-        const { data } = await retrying("session", async () => {
-          const r = await client.getSession();
-          if (r.error && !r.error.status) throw new Error(r.error.message || "sem resposta do login");
-          return r;
-        });
+        // na volta do login com Google a biblioteca troca o código da URL pela sessão aqui — e ele é de uso
+        // único, então essa chamada não pode ser repetida
+        const returning = new URLSearchParams(location.search).has(VERIFIER_PARAM);
+        const attempts = returning ? 1 : 3;
+        let data: SessionData | null = null;
+        try {
+          const r = await retrying("session", async () => {
+            const res = await client.getSession();
+            if (res.error && !res.error.status) throw new Error(res.error.message || "sem resposta do login");
+            return res;
+          }, attempts);
+          data = r.data;
+        } catch (e) {
+          // sem sessão o app continua: mostra a tela de entrada em vez de um beco sem saída
+          if (cancelled) return;
+          const hadVerifier = clearVerifier();
+          return setState({ status: "signed-out", config, warning: hadVerifier ? GOOGLE_BLOCKED : (e as Error).message });
+        }
         if (cancelled) return;
+        if (!data?.user && clearVerifier()) return setState({ status: "signed-out", config, warning: GOOGLE_BLOCKED });
         setState(data?.user ? { status: "signed-in", config, user: data.user } : { status: "signed-out", config });
       } catch (e) {
         if (!cancelled) setState({ status: "error", message: (e as Error).message, step });

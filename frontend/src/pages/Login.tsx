@@ -8,7 +8,7 @@ type Mode = "entrar" | "criar";
 
 const PARCHMENT_INPUT = "border-ink-500/40 bg-parchment-50 text-ink-900 shadow-none placeholder:text-ink-500 focus:border-brass-600";
 
-export default function Login() {
+export default function Login({ warning }: { warning?: string }) {
   const [mode, setMode] = useState<Mode>("entrar");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -56,6 +56,12 @@ export default function Login() {
         <div className="parchment px-6 py-6">
           <h2 className="font-serif text-[22px] font-semibold text-ink-900">Livro de hóspedes</h2>
           <p className="mb-4 text-[15px] text-ink-700">Assine para guardar decks, coleção e histórico entre aparelhos.</p>
+
+          {warning && (
+            <p className="mb-4 rounded-[5px] border border-wine-600/50 bg-wine-600/10 px-3 py-2 text-[14px] text-ink-900" role="alert">
+              {warning}
+            </p>
+          )}
 
           {google && (
             <button
