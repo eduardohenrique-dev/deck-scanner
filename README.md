@@ -52,6 +52,13 @@ gratuitos: o catálogo enxuto ocupa 231 MB dos 0,5 GB da Neon.
 Testar a API local contra a Neon antes de publicar: `python -m tools.serve_hosted`. Sem banco, login e bucket
 configurados, a API hospedada responde 503 em vez de abrir sem autenticação.
 
+**Login pelo nosso domínio:** o navegador nunca fala com o domínio do Neon Auth. Entrar, criar conta, sair e a volta
+do Google passam por `/api/auth/*` (`backend/app/api/auth_proxy.py`): o servidor guarda a sessão do Neon dentro de um
+cookie nosso (HttpOnly, SameSite=Lax) e `GET /api/auth/session` devolve o usuário e o JWT de 15 min que as demais
+rotas já validavam. Sem isso, Safari no iPhone, Brave e abas anônimas bloqueiam o cookie do outro domínio: a sessão
+não gruda e o Google falha com `SESSION_CHALLENGE_COOKIE_NOT_FOUND`. Teste: `node tools-js/shot.mjs <url> out.png
+--no-3p-cookies`.
+
 **Banco dormindo:** a Neon desliga o processador após 5 minutos parado e religa em centenas de milissegundos. O app
 chama `/api/wake` ao abrir, a conexão é testada antes de cada uso e a tela avisa "acordando a taverna…" se a primeira
 ação demorar.
@@ -109,6 +116,7 @@ backend/
     db.py          mesmo SQL em SQLite (local) e Postgres (hospedado)
     storage.py     disco local ou bucket S3/R2 (assinatura AWS V4 própria, testada com os exemplos da AWS)
     auth.py        usuário local ou JWT do Neon Auth (EdDSA via JWKS)
+    api/auth_proxy.py  login pelo nosso domínio: o servidor fala com o Neon Auth e a sessão vira cookie nosso
   rules/           DADOS: formatos, mensagens, brackets, Game Changers
   tools/           cenas sintéticas, calibração, e2e, avaliação de idioma, preparação da hospedagem
   tests/           pytest
