@@ -46,6 +46,11 @@ def refresh(deck_row: dict) -> None:
 @router.patch("/entries/{entry_id}")
 def patch_entry(entry_id: str, body: EntryPatch, user: User = Depends(current_user)):
     e, deck_row = own_entry(entry_id, user)
+    if body.quantity_override == 0 and not body.reset_quantity:
+        # quantidade zero é tirar a carta: some da lista em vez de ficar apagada com "0"
+        _remove(e, deck_row)
+        refresh(deck_row)
+        return json_response(state_for_deck(deck_row))
     adapter = registry.get(deck_row["game_id"])
     fields: dict = {}
     if body.reset_quantity:
@@ -95,12 +100,19 @@ def patch_entry(entry_id: str, body: EntryPatch, user: User = Depends(current_us
     return json_response(state)
 
 
+def _remove(e: dict, deck_row: dict) -> None:
+    """Tira a carta de vez: numa lista de scan, as leituras dela viram descarte para a câmera não recolocá-la."""
+    if deck_row["kind"] == "draft" and deck_row.get("session_id") and e.get("quantity_detected"):
+        phys = set(e.get("allocated_physical_ids") or [])
+        for d in store.detections(deck_row["session_id"]):
+            if d["id"] in phys or d.get("dup_of") in phys:
+                store.update_detection(d["id"], status="ignored")
+    store.delete_entry(e["id"])
+
+
 @router.delete("/entries/{entry_id}")
 def delete_entry(entry_id: str, user: User = Depends(current_user)):
     e, deck_row = own_entry(entry_id, user)
-    if deck_row["kind"] != "draft" or (e["manual"] and not e["quantity_detected"]):
-        store.delete_entry(entry_id)
-    else:
-        store.update_entry(entry_id, quantity_override=0)  # cópias detectadas não somem: ficam fora do deck
+    _remove(e, deck_row)
     refresh(deck_row)
     return json_response(state_for_deck(deck_row))

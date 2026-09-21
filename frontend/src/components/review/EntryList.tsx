@@ -39,6 +39,7 @@ export default function EntryList({ entries, detections = [], format, game, onSt
   const sections = useMemo(() => {
     const q = norm(query.trim());
     const list = entries.filter((e) => {
+      if (e.quantity <= 0) return false; // carta tirada: não fica na lista apagada
       if (onlyReview && !entryNeedsReview(e)) return false;
       if (!q) return true;
       const c = e.card;
