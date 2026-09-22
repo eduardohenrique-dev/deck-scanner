@@ -122,20 +122,22 @@ export default function PhotoUploader({ sessionId, onState, onBusy }: { sessionI
         }}
         onDragLeave={() => setDrag(false)}
         onDrop={onDrop}
-        className={cx("rounded-[6px] border-2 border-dashed px-5 py-8 text-center transition-colors", drag ? "border-brass-400 bg-brass-400/8" : "border-oak-600")}
+        className={cx("rounded-lg border-2 border-dashed px-5 py-10 text-center transition-[background-color,border-color] duration-200", drag ? "border-brass-400 bg-brass-400/8" : "border-cream/12")}
       >
-        <ImagePlus className="mx-auto size-8 text-brass-400" />
-        <p className="mt-2 font-serif text-[20px] font-semibold text-cream">Fotos da mesa</p>
-        <p className="mx-auto mt-1 max-w-md text-[15px] text-cream-dim">
+        <span className="mx-auto grid size-16 place-items-center rounded-full bg-brass-300/10 text-brass-300 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.2)]">
+          <ImagePlus className="size-7" />
+        </span>
+        <p className="mt-4 font-display text-title-2 font-semibold text-cream">Fotos da mesa</p>
+        <p className="mx-auto mt-1 max-w-md text-subhead text-cream-dim">
           Até 9 cartas por foto, lado a lado e sem sobrepor, fotografadas de cima. Arraste as fotos para cá ou escolha abaixo.
         </p>
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
-          <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-[5px] border border-brass-700 bg-[linear-gradient(180deg,var(--color-brass-300),var(--color-brass-500))] px-4 font-caps text-[15px] font-bold lowercase tracking-[0.03em] text-ink-900 shadow-[inset_0_1px_0_rgb(255_244_210/0.55),0_1px_0_rgb(0_0_0/0.5)] focus-within:outline-2 focus-within:outline-brass-300">
-            <ImagePlus className="size-4" /> escolher fotos
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <label className="btn btn-primary cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brass-300">
+            <ImagePlus className="size-4" /> Escolher fotos
             <input type="file" accept="image/*" multiple className="sr-only" onChange={pick} />
           </label>
-          <label className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-[5px] border border-brass-600/80 bg-oak-900/40 px-4 font-caps text-[15px] font-bold lowercase tracking-[0.03em] text-brass-300 focus-within:outline-2 focus-within:outline-brass-300 sm:hidden">
-            <Camera className="size-4" /> tirar foto
+          <label className="btn btn-secondary cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brass-300 sm:hidden">
+            <Camera className="size-4" /> Tirar foto
             <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={pick} />
           </label>
         </div>
@@ -144,26 +146,26 @@ export default function PhotoUploader({ sessionId, onState, onBusy }: { sessionI
       {items.length > 0 && (
         <ul className="grid gap-2 sm:grid-cols-2">
           {items.map((item) => (
-            <li key={item.id} className="board-sunken flex items-center gap-3 p-2">
+            <li key={item.id} className="well flex items-center gap-3 p-2 pr-1">
               {item.thumb ? (
-                <img src={item.thumb} alt="" className="h-14 w-14 shrink-0 rounded-[3px] object-cover" />
+                <img src={item.thumb} alt="" className="size-14 shrink-0 rounded-xs object-cover" />
               ) : (
-                <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[3px] bg-oak-800 text-cream-faint">
+                <span className="grid size-14 shrink-0 place-items-center rounded-xs bg-oak-800 text-cream-faint">
                   <ImagePlus className="size-5" />
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[14px] text-cream">{item.file.name || "foto"}</p>
-                <p className={cx("flex items-center gap-1.5 text-[13px]", item.status === "error" ? "text-wine-300" : item.status === "done" ? "text-moss-300" : "text-cream-faint")}>
-                  {item.status === "queued" && "na fila"}
+                <p className="truncate text-subhead text-cream">{item.file.name || "Foto"}</p>
+                <p className={cx("flex items-center gap-1.5 text-footnote", item.status === "error" ? "text-wine-300" : item.status === "done" ? "text-moss-300" : "text-cream-faint")}>
+                  {item.status === "queued" && "Na fila"}
                   {item.status === "sending" && (
                     <>
-                      <Loader2 className="size-3.5 animate-spin" /> enviando…
+                      <Loader2 className="size-3.5 animate-spin" /> Enviando…
                     </>
                   )}
                   {item.status === "reading" && (
                     <>
-                      <Loader2 className="size-3.5 animate-spin" /> lendo · {item.cards} {item.cards === 1 ? "carta" : "cartas"}
+                      <Loader2 className="size-3.5 animate-spin" /> Lendo · {item.cards} {item.cards === 1 ? "carta" : "cartas"}
                     </>
                   )}
                   {item.status === "done" && (
@@ -171,10 +173,10 @@ export default function PhotoUploader({ sessionId, onState, onBusy }: { sessionI
                       <Check className="size-3.5" /> {item.cards} {item.cards === 1 ? "carta" : "cartas"}
                     </>
                   )}
-                  {item.status === "error" && (item.error ?? "falhou")}
+                  {item.status === "error" && (item.error ?? "Falhou")}
                 </p>
                 {item.issues.length > 0 && item.status !== "error" && (
-                  <p className="flex items-center gap-1 text-[12px] text-amber-300" title={item.issues.map((i) => ISSUE_TEXT[i]).join(" · ")}>
+                  <p className="flex items-center gap-1 text-caption text-ember-300" title={item.issues.map((i) => ISSUE_TEXT[i]).join(" · ")}>
                     <TriangleAlert className="size-3.5 shrink-0" />
                     <span className="truncate">{ISSUE_TEXT[item.issues[0]]}</span>
                   </p>

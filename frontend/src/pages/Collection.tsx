@@ -32,10 +32,10 @@ export default function Collection() {
   const current = all.find((l) => l.id === locationId) ?? null;
   const groups = useMemo(
     () => [
-      { label: "sem lugar", items: all.filter((l) => l.type === "loose") },
-      { label: "pastas", items: all.filter((l) => l.type === "binder") },
-      { label: "caixas", items: all.filter((l) => l.type === "box") },
-      { label: "decks", items: all.filter((l) => l.type === "deck") },
+      { label: "Sem lugar", items: all.filter((l) => l.type === "loose") },
+      { label: "Pastas", items: all.filter((l) => l.type === "binder") },
+      { label: "Caixas", items: all.filter((l) => l.type === "box") },
+      { label: "Decks", items: all.filter((l) => l.type === "deck") },
     ],
     [all],
   );
@@ -62,27 +62,27 @@ export default function Collection() {
       <button
         onClick={() => setLocationId("")}
         aria-current={!locationId ? "page" : undefined}
-        className={cx("flex w-full items-center justify-between rounded-[5px] px-3 py-2 text-left font-serif text-[17px]", !locationId ? "bg-brass-400/12 text-brass-200" : "text-cream hover:bg-oak-800")}
+        className={cx("flex min-h-11 w-full items-center justify-between rounded-sm px-3 text-left text-headline font-semibold transition-colors", !locationId ? "bg-brass-300/12 text-brass-200 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.2)]" : "text-cream hover:bg-cream/5")}
       >
         Tudo
-        <span className="tabular text-[14px] text-cream-faint">{all.reduce((n, l) => n + l.card_count, 0)}</span>
+        <span className="tabular text-footnote text-cream-faint">{all.reduce((n, l) => n + l.card_count, 0)}</span>
       </button>
       {groups.map(
         (g) =>
           g.items.length > 0 && (
             <div key={g.label}>
-              <p className="kicker mb-1 px-3 text-[12px] text-cream-faint">{g.label}</p>
+              <p className="eyebrow mb-1 px-3">{g.label}</p>
               <ul>
                 {g.items.map((l) => (
                   <li key={l.id}>
                     <button
                       onClick={() => setLocationId(l.id)}
                       aria-current={locationId === l.id ? "page" : undefined}
-                      className={cx("flex w-full items-center gap-2 rounded-[5px] px-3 py-1.5 text-left text-[15px]", locationId === l.id ? "bg-brass-400/12 text-brass-200" : "text-cream-dim hover:bg-oak-800 hover:text-cream")}
+                      className={cx("flex min-h-10 w-full items-center gap-2 rounded-sm px-3 text-left text-subhead transition-colors", locationId === l.id ? "bg-brass-300/12 text-brass-200 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.2)]" : "text-cream-dim hover:bg-cream/5 hover:text-cream")}
                     >
                       {l.type === "deck" ? <Tome size={15} className="shrink-0 text-cream-faint" /> : <Chest size={15} className="shrink-0 text-cream-faint" />}
                       <span className="min-w-0 flex-1 truncate">{locName(l)}</span>
-                      <span className="tabular text-[13px] text-cream-faint">{l.card_count}</span>
+                      <span className="tabular text-footnote text-cream-faint">{l.card_count}</span>
                     </button>
                   </li>
                 ))}
@@ -90,12 +90,12 @@ export default function Collection() {
             </div>
           ),
       )}
-      <div className="flex flex-wrap gap-1.5 px-1">
-        <Button size="xs" variant="ghost" icon={<FolderPlus className="size-3.5" />} onClick={() => setCreating("binder")}>
-          nova pasta
+      <div className="flex flex-wrap gap-2 px-1">
+        <Button size="sm" variant="tertiary" icon={<FolderPlus className="size-4" />} onClick={() => setCreating("binder")}>
+          Nova pasta
         </Button>
-        <Button size="xs" variant="ghost" icon={<PackagePlus className="size-3.5" />} onClick={() => setCreating("box")}>
-          nova caixa
+        <Button size="sm" variant="tertiary" icon={<PackagePlus className="size-4" />} onClick={() => setCreating("box")}>
+          Nova caixa
         </Button>
       </div>
     </nav>
@@ -104,17 +104,17 @@ export default function Collection() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageTitle kicker="o baú" title="Coleção">
+        <PageTitle title="Coleção">
           Cada carta física e onde ela está: solta, numa pasta, numa caixa ou dentro de um deck.
         </PageTitle>
-        <Button variant="brass" icon={<Plus className="size-4" />} onClick={() => setAdding(true)}>
-          adicionar carta
+        <Button variant="primary" icon={<Plus className="size-4" />} onClick={() => setAdding(true)}>
+          Adicionar carta
         </Button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[250px_minmax(0,1fr)]">
         <aside className="max-lg:hidden">
-          <Board className="sticky top-24 p-2">{locations.loading ? <Skeleton className="h-40" /> : sidebar}</Board>
+          <Board className="sticky top-24 p-2">{locations.loading ? <Skeleton className="h-40 rounded-md" /> : sidebar}</Board>
         </aside>
 
         <div className="min-w-0 space-y-4">
@@ -124,26 +124,28 @@ export default function Collection() {
               <button
                 key={l.id || "all"}
                 onClick={() => setLocationId(l.id)}
-                className={cx("h-9 shrink-0 rounded-full border px-3.5 text-[14px] whitespace-nowrap", locationId === l.id ? "border-brass-400 bg-brass-400/15 text-brass-200" : "border-oak-600 text-cream-dim")}
+                type="button"
+                aria-pressed={locationId === l.id}
+                className="chip chip-pill shrink-0"
               >
-                {l.id ? locName(l) : "Tudo"} <span className="text-cream-faint">{l.card_count}</span>
+                {l.id ? locName(l) : "Tudo"} <span className="tabular opacity-70">{l.card_count}</span>
               </button>
             ))}
-            <button onClick={() => setCreating("binder")} className="h-9 shrink-0 rounded-full border border-dashed border-oak-600 px-3.5 text-[14px] text-cream-faint">
-              + pasta
+            <button type="button" onClick={() => setCreating("binder")} className="chip chip-pill shrink-0 border border-dashed border-cream/20 bg-none text-cream-dim shadow-none">
+              <Plus className="size-4" /> Pasta
             </button>
           </div>
 
           {current && current.type !== "loose" && (
-            <Board className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+            <Board className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
               <div className="min-w-0">
-                <p className="kicker text-[12px] text-cream-faint">{LOCATION_LABEL[current.type]}</p>
+                <p className="eyebrow">{LOCATION_LABEL[current.type]}</p>
                 {current.type === "deck" ? (
-                  <Link to={`/decks/${current.deck_id}`} className="font-serif text-[21px] font-semibold text-cream hover:text-brass-200">
+                  <Link to={`/decks/${current.deck_id}`} className="font-serif text-title-3 font-semibold text-cream hover:text-brass-200">
                     {current.name}
                   </Link>
                 ) : (
-                  <p className="font-serif text-[21px] font-semibold text-cream">
+                  <p className="font-serif text-title-3 font-semibold text-cream">
                     <InlineEdit
                       label="Nome do lugar"
                       value={current.name}
@@ -159,28 +161,28 @@ export default function Collection() {
               </div>
               {current.type !== "deck" && (
                 <Button size="sm" variant="danger" icon={<Trash2 className="size-4" />} onClick={() => setConfirmDelete(true)}>
-                  apagar {current.type === "binder" ? "pasta" : "caixa"}
+                  Apagar {current.type === "binder" ? "pasta" : "caixa"}
                 </Button>
               )}
             </Board>
           )}
 
           <div className="grid grid-cols-3 gap-2">
-            <Stat label="cartas" value={data.data?.total_cards.toLocaleString("pt-BR")} />
-            <Stat label="diferentes" value={data.data?.unique.toLocaleString("pt-BR")} />
-            <Stat label="valor" value={data.data ? <Money brl={data.data.value.total_brl} /> : undefined} />
+            <Stat label="Cartas" value={data.data?.total_cards.toLocaleString("pt-BR")} />
+            <Stat label="Diferentes" value={data.data?.unique.toLocaleString("pt-BR")} />
+            <Stat label="Valor" value={data.data ? <Money brl={data.data.value.total_brl} /> : undefined} />
           </div>
 
           <div className="flex flex-wrap gap-2">
             <div className="relative min-w-[200px] flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-cream-faint" />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar carta (português ou inglês)" className="h-10 pl-9" aria-label="Buscar na coleção" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar carta (português ou inglês)" className="pl-9" aria-label="Buscar na coleção" />
             </div>
             <span className="inline-block w-44">
-              <Select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="h-10" aria-label="Ordenar">
-                <option value="name">por nome</option>
-                <option value="value">mais valiosas</option>
-                <option value="recent">mais recentes</option>
+              <Select value={sort} onChange={(e) => setSort(e.target.value as Sort)} aria-label="Ordenar">
+                <option value="name">Por nome</option>
+                <option value="value">Mais valiosas</option>
+                <option value="recent">Mais recentes</option>
               </Select>
             </span>
           </div>
@@ -188,19 +190,19 @@ export default function Collection() {
           {data.loading && !data.data ? (
             <div className="space-y-2">
               {[0, 1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-16" />
+                <Skeleton key={i} className="h-16 rounded-md" />
               ))}
             </div>
           ) : data.data?.items.length ? (
-            <ul className="board divide-y divide-oak-700/70 overflow-hidden">
+            <ul className="glass divide-y divide-cream/6 overflow-hidden">
               {data.data.items.map((g) => (
                 <li key={g.oracle_id}>
-                  <button onClick={() => setOpen(g)} className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-oak-750/60">
-                    <span className="tabular grid h-9 w-9 shrink-0 place-items-center rounded-[4px] border border-oak-600 bg-oak-950/70 font-serif text-[18px] font-semibold text-cream">{g.count}</span>
+                  <button type="button" onClick={() => setOpen(g)} className="flex min-h-16 w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-cream/5">
+                    <span className="well tabular grid size-10 shrink-0 place-items-center text-headline font-semibold text-cream">{g.count}</span>
                     <ArtThumb card={g.card} size={52} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-serif text-[17px] font-semibold text-cream">{cardName(g.card)}</span>
-                      <span className="flex flex-wrap gap-x-2 text-[13px] text-cream-faint">
+                      <span className="block truncate font-serif text-headline font-semibold text-cream">{cardName(g.card)}</span>
+                      <span className="flex flex-wrap gap-x-2 text-footnote text-cream-faint">
                         {g.locations.slice(0, 3).map((l) => (
                           <span key={`${l.id}`} className="truncate">
                             {l.type === "loose" ? "Solto" : l.name}
@@ -212,9 +214,9 @@ export default function Collection() {
                     </span>
                     <span className="hidden items-center gap-1.5 sm:flex">
                       <SetSymbol card={g.card} size={16} />
-                      {g.prints.length > 1 && <span className="text-[12px] text-cream-faint">+{g.prints.length - 1}</span>}
+                      {g.prints.length > 1 && <span className="text-caption text-cream-faint">+{g.prints.length - 1}</span>}
                     </span>
-                    <Money brl={g.value_brl || null} muted={!g.value_brl} className="w-24 text-right text-[15px]" />
+                    <Money brl={g.value_brl || null} muted={!g.value_brl} className="w-24 text-right text-subhead font-semibold" />
                   </button>
                 </li>
               ))}
@@ -222,12 +224,12 @@ export default function Collection() {
           ) : (
             <Board>
               <EmptyState
-                art={<Chest size={48} />}
+                art={<Chest size={44} />}
                 title={dq ? "Nada encontrado" : current ? "Este lugar está vazio" : "O baú está vazio"}
                 action={
                   !dq && (
-                    <Link to="/escanear?finalidade=colecao" className="inline-flex h-11 items-center rounded-[5px] border border-brass-600/80 px-4 font-caps text-[15px] font-bold lowercase tracking-[0.03em] text-brass-300">
-                      escanear cartas para guardar
+                    <Link to="/escanear?finalidade=colecao" className="btn btn-primary">
+                      Escanear cartas para guardar
                     </Link>
                   )
                 }
@@ -252,7 +254,7 @@ export default function Collection() {
         />
       )}
       {adding && <AddCard locations={all} defaultLocation={current && current.type !== "deck" ? current.id : ""} onClose={() => setAdding(false)} onAdded={refresh} />}
-      <Confirm open={confirmDelete} title={`Apagar ${current?.name ?? ""}?`} confirmLabel="apagar" danger onConfirm={removeLocation} onClose={() => setConfirmDelete(false)}>
+      <Confirm open={confirmDelete} title={`Apagar ${current?.name ?? ""}?`} confirmLabel="Apagar" danger onConfirm={removeLocation} onClose={() => setConfirmDelete(false)}>
         <p>O lugar some; as cartas que estavam nele vão para “Solto”. Nenhuma carta é apagada.</p>
       </Confirm>
     </div>
@@ -261,9 +263,9 @@ export default function Collection() {
 
 function Stat({ label, value }: { label: string; value: ReactNode | undefined }) {
   return (
-    <div className="board-sunken px-3 py-2">
-      <div className="font-caps text-[12px] font-bold lowercase tracking-[0.05em] text-cream-faint">{label}</div>
-      <div className="tabular truncate font-serif text-[21px] leading-tight font-semibold text-cream">{value ?? <Skeleton className="mt-1 h-5 w-12" />}</div>
+    <div className="well px-4 py-3">
+      <div className="text-caption font-medium text-cream-faint">{label}</div>
+      <div className="tabular mt-0.5 truncate text-title-3 font-semibold text-cream">{value ?? <Skeleton className="mt-1 h-5 w-12" />}</div>
     </div>
   );
 }
@@ -334,40 +336,40 @@ function WhereIs({ group, locations, onClose, onChanged }: { group: CollectionGr
       <div className="space-y-5">
         <div className="flex gap-4">
           <CardImage card={group.card} className="w-32 shrink-0" eager />
-          <div className="space-y-1 text-[15px] text-cream-dim">
+          <div className="space-y-1 text-subhead text-cream-dim">
             <p>{plural(group.count, "cópia física", "cópias físicas")}</p>
             {group.value_brl > 0 && (
               <p>
                 valor estimado <Money brl={group.value_brl} />
               </p>
             )}
-            <p className="text-[13px] text-cream-faint">Marque as cópias para mover de lugar ou tirar da coleção.</p>
+            <p className="text-footnote text-cream-faint">Marque as cópias para mover de lugar ou tirar da coleção.</p>
           </div>
         </div>
 
         {copies.loading && !copies.data ? (
-          <Skeleton className="h-40" />
+          <Skeleton className="h-40 rounded-md" />
         ) : (
           byPlace.map(([placeId, items]) => {
             const place = items[0];
             return (
               <section key={placeId}>
-                <p className="mb-1.5 flex items-center gap-2 font-caps text-[14px] font-bold lowercase tracking-[0.04em] text-brass-300">
+                <p className="mb-2 flex items-center gap-2 text-footnote font-semibold tracking-[0.06em] text-brass-300 uppercase">
                   {place.location_type === "deck" ? <Tome size={15} /> : <Chest size={15} />}
                   {place.location_type === "loose" ? "Solto" : `${LOCATION_LABEL[place.location_type ?? ""] ?? ""} ${place.location_name ?? ""}`}
                 </p>
-                <ul className="board-sunken divide-y divide-oak-700">
+                <ul className="well divide-y divide-cream/6">
                   {items.map((c) => (
                     <li key={c.id}>
-                      <label className="flex cursor-pointer items-center gap-3 px-3 py-2">
-                        <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} className="size-4 accent-[var(--color-brass-400)]" />
+                      <label className="flex min-h-11 cursor-pointer items-center gap-3 px-4 py-2">
+                        <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} className="size-5 accent-[var(--color-brass-400)]" />
                         <SetSymbol card={c.card} size={16} />
-                        <span className="font-mono text-[12px] text-cream-faint uppercase">
+                        <span className="font-mono text-caption text-cream-faint uppercase">
                           {c.card?.set_code} {c.card?.collector_number}
                         </span>
                         <LanguagePill lang={c.language} />
                         <FinishMark finish={c.finish} />
-                        {c.condition && <span className="text-[13px] text-cream-dim">{c.condition}</span>}
+                        {c.condition && <span className="text-footnote text-cream-dim">{c.condition}</span>}
                       </label>
                     </li>
                   ))}
@@ -378,11 +380,11 @@ function WhereIs({ group, locations, onClose, onChanged }: { group: CollectionGr
         )}
 
         {selected.size > 0 && (
-          <div className="board sticky bottom-0 space-y-2 p-3">
-            <p className="text-[14px] text-cream-dim">{plural(selected.size, "cópia marcada", "cópias marcadas")}</p>
+          <div className="glass-float sticky bottom-0 space-y-3 p-4">
+            <p className="text-subhead text-cream-dim">{plural(selected.size, "cópia marcada", "cópias marcadas")}</p>
             <div className="flex flex-wrap gap-2">
               <span className="inline-block min-w-40 flex-1">
-                <Select value={target} onChange={(e) => setTarget(e.target.value)} className="h-9" aria-label="Mover para">
+                <Select value={target} onChange={(e) => setTarget(e.target.value)} aria-label="Mover para">
                   {destinations.map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.type === "loose" ? "Solto" : `${LOCATION_LABEL[l.type]}: ${l.name}`}
@@ -390,18 +392,18 @@ function WhereIs({ group, locations, onClose, onChanged }: { group: CollectionGr
                   ))}
                 </Select>
               </span>
-              <Button size="sm" variant="brass" busy={busy} onClick={move}>
-                mover
+              <Button variant="primary" busy={busy} onClick={move}>
+                Mover
               </Button>
-              <Button size="sm" variant="danger" onClick={() => setConfirm(true)}>
-                tirar
+              <Button variant="danger" onClick={() => setConfirm(true)}>
+                Tirar
               </Button>
             </div>
-            <p className="text-[12px] text-cream-faint">Para colocar num deck, use a aba “cartas físicas” do deck: ela avisa se a carta já estiver em outro.</p>
+            <p className="text-caption text-cream-faint">Para colocar num deck, use a aba “Cartas físicas” do deck: ela avisa se a carta já estiver em outro.</p>
           </div>
         )}
       </div>
-      <Confirm open={confirm} title="Tirar da coleção?" confirmLabel="tirar" danger busy={busy} onConfirm={remove} onClose={() => setConfirm(false)}>
+      <Confirm open={confirm} title="Tirar da coleção?" confirmLabel="Tirar" danger busy={busy} onConfirm={remove} onClose={() => setConfirm(false)}>
         <p>Use quando a carta foi vendida, trocada ou perdida. A lista dos decks não muda.</p>
       </Confirm>
     </Drawer>
@@ -430,15 +432,15 @@ function NewLocation({ type, onClose, onCreated }: { type: "binder" | "box"; onC
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            cancelar
+            Cancelar
           </Button>
-          <Button variant="brass" busy={busy} disabled={!name.trim()} onClick={create}>
-            criar
+          <Button variant="primary" busy={busy} disabled={!name.trim()} onClick={create}>
+            Criar
           </Button>
         </>
       }
     >
-      <Field label="nome">
+      <Field label="Nome">
         {(id) => (
           <Input id={id} autoFocus value={name} maxLength={60} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && name.trim() && void create()} placeholder={type === "binder" ? "Ex.: pasta das raras" : "Ex.: caixa de trocas"} />
         )}
@@ -479,10 +481,10 @@ function AddCard({ locations, defaultLocation, onClose, onAdded }: { locations: 
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            fechar
+            Fechar
           </Button>
-          <Button variant="brass" busy={busy} disabled={!card} onClick={add}>
-            adicionar
+          <Button variant="primary" busy={busy} disabled={!card} onClick={add}>
+            Adicionar
           </Button>
         </>
       }
@@ -493,12 +495,12 @@ function AddCard({ locations, defaultLocation, onClose, onAdded }: { locations: 
             <CardImage card={card} className="w-28 shrink-0" eager />
             <div className="min-w-0 space-y-3">
               <div>
-                <p className="font-serif text-[19px] font-semibold text-cream">{cardName(card)}</p>
-                <p className="text-[13px] text-cream-faint">
+                <p className="font-serif text-title-3 font-semibold text-cream">{cardName(card)}</p>
+                <p className="text-footnote text-cream-faint">
                   {card.set_name} · #{card.collector_number} · {card.lang.toUpperCase()}
                 </p>
-                <button onClick={() => setCard(null)} className="text-[13px] text-brass-300 hover:underline">
-                  trocar carta
+                <button onClick={() => setCard(null)} className="text-footnote text-brass-300 hover:underline">
+                  Trocar carta
                 </button>
               </div>
               <Stepper value={quantity} min={1} max={99} onChange={setQuantity} />
@@ -508,7 +510,7 @@ function AddCard({ locations, defaultLocation, onClose, onAdded }: { locations: 
           <CardSearch autoFocus onPick={setCard} placeholder="Nome da carta…" />
         )}
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="onde">
+          <Field label="Onde">
             {(id) => (
               <Select id={id} value={locationId} onChange={(e) => setLocationId(e.target.value)}>
                 <option value="">Solto</option>
@@ -522,10 +524,10 @@ function AddCard({ locations, defaultLocation, onClose, onAdded }: { locations: 
               </Select>
             )}
           </Field>
-          <Field label="acabamento">
+          <Field label="Acabamento">
             {(id) => (
               <Select id={id} value={finish} onChange={(e) => setFinish(e.target.value)}>
-                <option value="nonfoil">normal</option>
+                <option value="nonfoil">Normal</option>
                 <option value="foil">foil</option>
                 <option value="etched">etched</option>
               </Select>

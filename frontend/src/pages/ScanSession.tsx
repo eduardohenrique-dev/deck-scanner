@@ -1,5 +1,5 @@
-import { ArrowRight, BookmarkCheck, MoreHorizontal, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, BookmarkCheck, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Chest, Lens, Scales } from "../components/icons";
 import AttentionList from "../components/review/AttentionList";
 import BracketPanel from "../components/review/BracketPanel";
@@ -11,7 +11,7 @@ import ValueBox from "../components/review/ValueBox";
 import CapturePanel from "../components/scan/CapturePanel";
 import CheckPanel from "../components/scan/CheckPanel";
 import SaveDialog from "../components/scan/SaveDialog";
-import { Board, Button, Confirm, cx, EmptyState, IconButton, InlineEdit, Select, Skeleton, Tabs, Tag, type Tone } from "../components/ui";
+import { Board, Button, Confirm, Count, cx, EmptyState, InlineEdit, Menu, Select, Skeleton, Tabs, Tag, type Tone } from "../components/ui";
 import { api } from "../lib/api";
 import { relativeDay } from "../lib/format";
 import { useMediaQuery, useResource } from "../lib/hooks";
@@ -20,11 +20,11 @@ import { toast, toastError } from "../lib/toast";
 import type { Capture, SessionState } from "../lib/types";
 
 const STATUS: Record<string, { label: string; tone: Tone }> = {
-  capturing: { label: "capturando", tone: "info" },
-  processing: { label: "lendo cartas", tone: "info" },
-  review: { label: "para revisar", tone: "warn" },
-  saved: { label: "guardado", tone: "ok" },
-  error: { label: "com erro", tone: "bad" },
+  capturing: { label: "Capturando", tone: "info" },
+  processing: { label: "Lendo cartas", tone: "info" },
+  review: { label: "Para revisar", tone: "warn" },
+  saved: { label: "Guardado", tone: "ok" },
+  error: { label: "Com erro", tone: "bad" },
 };
 
 type MobileTab = "capture" | "list" | "summary";
@@ -41,7 +41,6 @@ export default function ScanSession({ id }: { id: string }) {
   const [saveOpen, setSaveOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [menu, setMenu] = useState(false);
   const [focus, setFocus] = useState<string | null>(null);
   const [viewer, setViewer] = useState<{ capture: Capture; detectionId?: string } | null>(null);
   const reload = res.reload;
@@ -57,25 +56,18 @@ export default function ScanSession({ id }: { id: string }) {
   const onBusyChange = useCallback((b: boolean) => setBusy(b), []);
   const cards = useMemo(() => new Map((state?.entries ?? []).map((e) => [e.card_ref_id, e.card])), [state?.entries]);
   const listKey = useMemo(() => (state?.entries ?? []).map((e) => `${e.card_ref_id}:${e.quantity}:${e.is_commander ? 1 : 0}`).join("|"), [state?.entries]);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!menu) return;
-    const close = (e: MouseEvent) => !menuRef.current?.contains(e.target as Node) && setMenu(false);
-    window.addEventListener("mousedown", close);
-    return () => window.removeEventListener("mousedown", close);
-  }, [menu]);
 
   if (res.loading && !state)
     return (
       <div className="space-y-6">
-        <Skeleton className="h-16 w-2/3" />
-        <Skeleton className="h-96" />
+        <Skeleton className="h-16 w-2/3 rounded-md" />
+        <Skeleton className="h-96 rounded-lg" />
       </div>
     );
   if (!state)
     return (
       <Board>
-        <EmptyState art={<Lens size={46} />} title="Não encontrei esta mesa" action={<Button onClick={() => navigate("/")}>voltar à taverna</Button>}>
+        <EmptyState art={<Lens size={44} />} title="Não encontrei esta mesa" action={<Button onClick={() => navigate("/")}>Voltar à taverna</Button>}>
           {res.error ?? "Ela pode ter sido apagada."}
         </EmptyState>
       </Board>
@@ -118,21 +110,21 @@ export default function ScanSession({ id }: { id: string }) {
 
   const kicker = isCheck ? (
     <span className="inline-flex items-center gap-1.5">
-      <Scales size={15} /> conferindo deck
+      <Scales size={15} /> Conferindo deck
     </span>
   ) : isCollection ? (
     <span className="inline-flex items-center gap-1.5">
-      <Chest size={15} /> guardando na coleção
+      <Chest size={15} /> Guardando na coleção
     </span>
   ) : (
     <span className="inline-flex items-center gap-1.5">
-      <Lens size={15} /> montando lista
+      <Lens size={15} /> Montando lista
     </span>
   );
 
   const primary = isCheck ? null : (
-    <Button variant="brass" icon={isCollection ? <Chest size={18} /> : <BookmarkCheck className="size-[18px]" />} disabled={!count || busy} onClick={() => setSaveOpen(true)}>
-      {session.status === "saved" ? "guardar de novo" : isCollection ? "guardar na coleção" : "salvar deck"}
+    <Button variant="primary" icon={isCollection ? <Chest size={18} /> : <BookmarkCheck className="size-[18px]" />} disabled={!count || busy} onClick={() => setSaveOpen(true)}>
+      {session.status === "saved" ? "Guardar de novo" : isCollection ? "Guardar na coleção" : "Salvar deck"}
     </Button>
   );
 
@@ -143,8 +135,8 @@ export default function ScanSession({ id }: { id: string }) {
       <AttentionList state={state} apply={apply} onShowCapture={(c, detectionId) => setViewer({ capture: c, detectionId })} />
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
-          <h2 className="kicker text-[15px]">a lista</h2>
-          <span className="tabular text-[14px] text-cream-faint">{count === 1 ? "1 carta" : `${count} cartas`}</span>
+          <h2 className="font-display text-title-3 font-semibold text-cream">A lista</h2>
+          <span className="tabular text-footnote text-cream-faint">{count === 1 ? "1 carta" : `${count} cartas`}</span>
         </div>
         <EntryList
           entries={entries}
@@ -163,7 +155,7 @@ export default function ScanSession({ id }: { id: string }) {
   const summary = (
     <div className="space-y-6">
       {session.status === "saved" && session.saved_deck_id && (
-        <Link to={`/decks/${session.saved_deck_id}`} className="parchment flex items-center gap-2 px-3 py-2.5 font-serif text-[16px] text-ink-900 hover:brightness-105">
+        <Link to={`/decks/${session.saved_deck_id}`} className="parchment flex min-h-12 items-center gap-3 px-4 py-3 font-serif text-body font-semibold text-ink-900 transition-[filter] hover:brightness-105">
           <BookmarkCheck className="size-5 text-moss-600" />
           <span className="min-w-0 flex-1 truncate">Guardado no deck {session.saved_deck_name ?? ""}</span>
           <ArrowRight className="size-4" />
@@ -189,9 +181,9 @@ export default function ScanSession({ id }: { id: string }) {
   return (
     <div className="space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0 flex-1 space-y-1 max-sm:basis-full">
-          <p className="kicker text-[13px] text-brass-400">{kicker}</p>
-          <h1 className="font-display text-[32px] leading-[1.08] font-semibold text-cream sm:text-[40px]">
+        <div className="min-w-0 flex-1 space-y-2 max-sm:basis-full">
+          <p className="eyebrow">{kicker}</p>
+          <h1 className="font-display text-title-1 font-semibold text-cream sm:text-display">
             <InlineEdit
               label="Nome do scan"
               value={session.name ?? ""}
@@ -200,11 +192,11 @@ export default function ScanSession({ id }: { id: string }) {
               className="font-display"
             />
           </h1>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[14px] text-cream-faint">
-            <Tag tone={status.tone}>{busy ? "capturando" : status.label}</Tag>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-footnote text-cream-faint">
+            <Tag tone={busy ? "live" : status.tone}>{busy ? "Capturando" : status.label}</Tag>
             {!isCheck && !isCollection ? (
               <span className="inline-block w-56">
-                <Select aria-label="Formato" value={session.format_id} onChange={(e) => void patchFormat(e.target.value)} className="h-8 py-0 pr-8 text-[14px]" disabled={busy}>
+                <Select aria-label="Formato" value={session.format_id} onChange={(e) => void patchFormat(e.target.value)} className="h-10 text-subhead" disabled={busy}>
                   {(formats.length ? formats : [format]).map((f) => (
                     <option key={f.id} value={f.id}>
                       {f.name}
@@ -213,38 +205,19 @@ export default function ScanSession({ id }: { id: string }) {
                 </Select>
               </span>
             ) : (
-              <span>{isCheck ? format.name : "sem formato"}</span>
+              <span>{isCheck ? format.name : "Sem formato"}</span>
             )}
-            <span>criado {relativeDay(session.created_at)}</span>
+            <span>Criado {relativeDay(session.created_at)}</span>
             {session.target_deck_id && (
               <Link to={`/decks/${session.target_deck_id}`} className="text-brass-300 hover:underline">
-                deck {state.check?.available ? state.check.deck.name : (session.target_deck_name ?? "")}
+                Deck {state.check?.available ? state.check.deck.name : (session.target_deck_name ?? "")}
               </Link>
             )}
           </div>
         </div>
         <div className="flex items-center gap-2 max-sm:w-full max-sm:justify-between">
           {primary}
-          <div className="relative" ref={menuRef}>
-            <IconButton label="Mais ações" onClick={() => setMenu((m) => !m)} aria-expanded={menu}>
-              <MoreHorizontal className="size-5" />
-            </IconButton>
-            {menu && (
-              <div className="board animate-rise absolute right-0 z-30 mt-1 w-52 p-1" role="menu">
-                <button
-                  role="menuitem"
-                  disabled={busy}
-                  onClick={() => {
-                    setMenu(false);
-                    setConfirmDelete(true);
-                  }}
-                  className="flex w-full items-center gap-2 rounded-[4px] px-3 py-2 text-left text-[15px] text-wine-300 hover:bg-wine-600/15 disabled:opacity-40"
-                >
-                  <Trash2 className="size-4" /> apagar este scan
-                </button>
-              </div>
-            )}
-          </div>
+          <Menu items={[{ label: "Apagar este scan", icon: <Trash2 className="size-[18px]" />, tone: "danger", disabled: busy, onSelect: () => setConfirmDelete(true) }]} />
         </div>
       </header>
 
@@ -261,13 +234,13 @@ export default function ScanSession({ id }: { id: string }) {
           <Tabs<MobileTab>
             value={tab}
             onChange={setTab}
-            className="sticky top-16 z-20 -mx-4 bg-oak-900/95 px-4"
+            className="bar-glass sticky top-16 z-20 -mx-4 px-4"
             tabs={[
-              { value: "capture", label: "capturar" },
-              { value: "list", label: "lista", badge: <span className="tabular text-[13px] text-cream-faint">{count}</span> },
+              { value: "capture", label: "Capturar" },
+              { value: "list", label: "Lista", badge: <Count>{count}</Count> },
               {
                 value: "summary",
-                label: "resumo",
+                label: "Resumo",
                 badge: validation.issues.some((i) => i.severity === "error") ? <span className="size-2 rounded-full bg-wine-400" aria-label="há problemas" /> : null,
               },
             ]}
@@ -275,10 +248,10 @@ export default function ScanSession({ id }: { id: string }) {
           {/* a captura continua montada nas outras abas: trocar de aba não interrompe a câmera */}
           <div className={cx(tab !== "capture" && "hidden")}>{capture}</div>
           {tab === "capture" && entries.length > 0 && (
-            <button onClick={() => setTab("list")} className="board flex w-full items-center justify-between px-4 py-3 text-left">
-              <span className="font-serif text-[17px] text-cream">{count === 1 ? "1 carta na lista" : `${count} cartas na lista`}</span>
-              <span className="inline-flex items-center gap-1 text-[14px] text-brass-300">
-                revisar <ArrowRight className="size-4" />
+            <button type="button" onClick={() => setTab("list")} className="glass flex min-h-14 w-full items-center justify-between px-4 py-3 text-left transition-transform duration-500 ease-spring active:scale-[0.98] active:duration-100">
+              <span className="text-headline font-semibold text-cream">{count === 1 ? "1 carta na lista" : `${count} cartas na lista`}</span>
+              <span className="inline-flex items-center gap-1 text-subhead font-semibold text-brass-300">
+                Revisar <ArrowRight className="size-4" />
               </span>
             </button>
           )}
@@ -289,7 +262,7 @@ export default function ScanSession({ id }: { id: string }) {
 
       {saveOpen && <SaveDialog state={state} open={saveOpen} onClose={() => setSaveOpen(false)} onSaved={apply} />}
       <PhotoViewer capture={viewer?.capture ?? null} detections={state.detections} focusId={viewer?.detectionId} onClose={() => setViewer(null)} />
-      <Confirm open={confirmDelete} title="Apagar este scan?" confirmLabel="apagar" danger busy={deleting} onConfirm={remove} onClose={() => setConfirmDelete(false)}>
+      <Confirm open={confirmDelete} title="Apagar este scan?" confirmLabel="Apagar" danger busy={deleting} onConfirm={remove} onClose={() => setConfirmDelete(false)}>
         <p>As leituras e fotos deste scan somem. Decks e cartas já guardadas na coleção continuam onde estão.</p>
       </Confirm>
     </div>

@@ -1,5 +1,5 @@
 import { Info, Search, Sparkles, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import { api } from "../../lib/api";
 import { useDebounced, usePersistentState } from "../../lib/hooks";
 import type { SessionState, SetSummary } from "../../lib/types";
@@ -38,12 +38,12 @@ export default function ScanOptions({ state, onState }: { state: SessionState; o
   }
 
   return (
-    <div className="space-y-2.5 rounded-[6px] border border-oak-700 bg-oak-950/40 p-3">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+    <div className="well space-y-3 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <SetField code={codes[0] ?? null} busy={busy} onPick={pickSet} />
-        <label className="flex items-center gap-2 text-[14px] text-cream-dim">
+        <label className="flex items-center gap-2 text-subhead text-cream-dim">
           <Sparkles className="size-4 text-brass-400" aria-hidden="true" />
-          avisar acima de
+          Avisar acima de
           <span className="text-cream-faint">R$</span>
           <Input
             type="number"
@@ -53,16 +53,16 @@ export default function ScanOptions({ state, onState }: { state: SessionState; o
             value={alert || ""}
             placeholder="0"
             onChange={(e) => setAlert(Math.max(0, Number(e.target.value) || 0))}
-            className="h-9 w-20 text-[14px]"
+            className="h-10 w-24"
             aria-label="Avisar quando a carta passar deste valor em reais"
           />
         </label>
-        <button onClick={() => setTips((t) => !t)} className="ml-auto flex items-center gap-1.5 text-[14px] text-brass-300 hover:text-brass-200">
-          <Info className="size-4" /> {tips ? "esconder dicas" : "dicas de captura"}
+        <button type="button" onClick={() => setTips((t) => !t)} aria-expanded={tips} className="btn btn-tertiary btn-sm ml-auto">
+          <Info className="size-4" /> {tips ? "Esconder dicas" : "Dicas de captura"}
         </button>
       </div>
       {tips && (
-        <ul className="grid gap-1 text-[14px] text-cream-faint sm:grid-cols-2">
+        <ul className="grid gap-1 text-footnote text-cream-faint sm:grid-cols-2">
           {TIPS.map((t) => (
             <li key={t} className="flex gap-2">
               <span className="text-brass-500">•</span>
@@ -110,27 +110,27 @@ function SetField({ code, busy, onPick }: { code: string | null; busy: boolean; 
   }, [query, open]);
 
   return (
-    <div className="relative flex items-center gap-2 text-[14px] text-cream-dim">
-      <span>coleção destas cartas:</span>
+    <div className="relative flex items-center gap-2 text-subhead text-cream-dim">
+      <span>Coleção destas cartas:</span>
       {code ? (
-        <span className="flex items-center gap-1.5 rounded-[5px] border border-brass-700/70 bg-oak-800 px-2 py-1 text-cream">
+        <span className="flex h-9 items-center gap-2 rounded-full bg-brass-300/12 pr-1 pl-3 text-cream shadow-[inset_0_0_0_1px_rgb(235_198_116/0.3)]">
           {chosen?.icon_svg_uri && <img src={chosen.icon_svg_uri} alt="" className="size-4 opacity-80 invert-[.85]" />}
           <strong className="font-semibold">{code.toUpperCase()}</strong>
           {chosen && <span className="hidden max-w-40 truncate text-cream-faint sm:inline">{chosen.name}</span>}
-          <button onClick={() => onPick(null)} disabled={busy} aria-label="Aceitar qualquer coleção" className="text-cream-faint hover:text-cream">
-            <X className="size-3.5" />
+          <button type="button" onClick={() => onPick(null)} disabled={busy} aria-label="Aceitar qualquer coleção" className="grid size-7 place-items-center rounded-full text-cream-faint hover:bg-cream/10 hover:text-cream">
+            <X className="size-4" />
           </button>
         </span>
       ) : (
-        <Button size="sm" variant="ghost" busy={busy} onClick={() => setOpen((o) => !o)}>
-          qualquer coleção
+        <Button size="sm" variant="secondary" busy={busy} onClick={() => setOpen((o) => !o)}>
+          Qualquer coleção
         </Button>
       )}
       {open && !code && (
-        <div className="board absolute top-full left-0 z-30 mt-1 w-[min(22rem,80vw)] p-2 shadow-[0_12px_24px_rgb(0_0_0/0.5)]">
+        <div className="glass-float popover absolute top-full left-0 z-30 mt-2 w-[min(22rem,80vw)] p-2" data-state="open" style={{ "--origin": "top left" } as CSSProperties}>
           <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-cream-faint" />
-            <Input ref={input} autoFocus value={text} onChange={(e) => setText(e.target.value)} placeholder="Nome ou sigla da coleção" className="h-9 pl-8 text-[14px]" />
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-cream-faint" />
+            <Input ref={input} autoFocus value={text} onChange={(e) => setText(e.target.value)} placeholder="Nome ou sigla da coleção" className="pl-9" />
             {loading && <Spinner className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2" />}
           </div>
           <ul id={listId} className="scrollbar-thin mt-1 max-h-64 overflow-y-auto">
@@ -143,11 +143,11 @@ function SetField({ code, busy, onPick }: { code: string | null; busy: boolean; 
                     setText("");
                     onPick(s.code);
                   }}
-                  className={cx("flex w-full items-center gap-2 rounded-[4px] px-2 py-1.5 text-left hover:bg-oak-700")}
+                  className={cx("flex min-h-11 w-full items-center gap-2 rounded-sm px-3 text-left hover:bg-cream/8")}
                 >
                   {s.icon_svg_uri && <img src={s.icon_svg_uri} alt="" className="size-4 shrink-0 opacity-80 invert-[.85]" />}
                   <span className="min-w-0 flex-1 truncate text-cream">{s.name}</span>
-                  <span className="tabular shrink-0 text-[12px] text-cream-faint">
+                  <span className="tabular shrink-0 text-caption text-cream-faint">
                     {s.code.toUpperCase()} · {s.released_at?.slice(0, 4)}
                   </span>
                 </button>

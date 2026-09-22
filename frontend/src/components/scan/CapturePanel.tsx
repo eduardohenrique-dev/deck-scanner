@@ -33,17 +33,17 @@ export default function CapturePanel({ state, onState, onBusyChange }: { state: 
             value={mode}
             onChange={(m) => !busy && setMode(m)}
             options={[
-              { value: "live", label: "câmera", hint: "passe as cartas diante da câmera" },
-              { value: "photo", label: "fotos", hint: "várias cartas por foto" },
-              { value: "video", label: "vídeo", hint: "vídeo gravado folheando o deck" },
+              { value: "live", label: "Câmera", hint: "passe as cartas diante da câmera" },
+              { value: "photo", label: "Fotos", hint: "várias cartas por foto" },
+              { value: "video", label: "Vídeo", hint: "vídeo gravado folheando o deck" },
             ]}
             className={busy ? "pointer-events-none opacity-50" : undefined}
           />
         }
       >
-        mesa de captura
+        Mesa de captura
       </SectionTitle>
-      <Board className="space-y-3 p-3 sm:p-4">
+      <Board className="space-y-4 p-3 sm:p-5">
         {!busy && <ScanOptions state={state} onState={onState} />}
         {mode === "live" && <LiveScanner sessionId={sessionId} onState={onState} onBusy={onBusy} fx={state.value?.fx?.rate ?? null} />}
         {mode === "photo" && <PhotoUploader sessionId={sessionId} onState={onState} onBusy={onBusy} />}

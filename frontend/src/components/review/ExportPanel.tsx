@@ -59,10 +59,10 @@ export default function ExportPanel({ kind, id, exporters, name }: { kind: "sess
     <section className="space-y-3">
       <SectionTitle>
         <span className="inline-flex items-center gap-2">
-          <Scroll size={17} /> levar a lista
+          <Scroll size={20} className="text-brass-300" /> Levar a lista
         </span>
       </SectionTitle>
-      <div className="board space-y-3 p-4">
+      <div className="glass space-y-3 p-4 sm:p-5">
         <Select value={format} onChange={(e) => setFormat(e.target.value)} aria-label="Formato de exportação">
           {exporters.map((e) => (
             <option key={e.id} value={e.id}>
@@ -72,38 +72,38 @@ export default function ExportPanel({ kind, id, exporters, name }: { kind: "sess
         </Select>
         <div className="flex flex-wrap gap-2">
           {exporter?.supports_grouping && (
-            <Segmented size="sm" value={group} onChange={setGroup} options={[{ value: "list", label: "lista corrida" }, { value: "type", label: "por tipo" }]} />
+            <Segmented size="sm" value={group} onChange={setGroup} options={[{ value: "list", label: "Lista corrida" }, { value: "type", label: "Por tipo" }]} />
           )}
           {exporter?.options?.lang && (
-            <Segmented size="sm" value={lang} onChange={setLang} options={[{ value: "pt", label: "português" }, { value: "en", label: "inglês" }]} />
+            <Segmented size="sm" value={lang} onChange={setLang} options={[{ value: "pt", label: "Português" }, { value: "en", label: "Inglês" }]} />
           )}
         </div>
         {HELP[format] && (
-          <p className="text-[14px] text-cream-faint">
+          <p className="text-footnote text-cream-faint">
             {HELP[format].hint}{" "}
             {HELP[format].url && (
               <a href={HELP[format].url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-brass-300 hover:underline">
-                abrir <ExternalLink className="size-3.5" />
+                Abrir <ExternalLink className="size-3.5" />
               </a>
             )}
           </p>
         )}
         {loading && !text ? (
-          <Skeleton className="h-40" />
+          <Skeleton className="h-44 rounded-sm" />
         ) : (
           <textarea
             readOnly
             value={text ?? ""}
-            className="scrollbar-thin h-44 w-full resize-y rounded-[5px] border border-oak-700 bg-oak-950 p-2.5 font-mono text-[13px] leading-relaxed text-cream-dim outline-none"
+            className="field scrollbar-thin h-44 resize-y py-3 font-mono text-footnote leading-relaxed text-cream-dim"
             aria-label="Prévia da exportação"
           />
         )}
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="brass" size="sm" icon={<Copy className="size-4" />} onClick={copy} disabled={!text}>
-            copiar
+          <Button variant="primary" icon={<Copy className="size-4" />} onClick={copy} disabled={!text}>
+            Copiar
           </Button>
-          <Button size="sm" icon={<Download className="size-4" />} onClick={download} disabled={!text}>
-            baixar .{exporter?.extension ?? "txt"}
+          <Button icon={<Download className="size-4" />} onClick={download} disabled={!text}>
+            Baixar .{exporter?.extension ?? "txt"}
           </Button>
         </div>
       </div>

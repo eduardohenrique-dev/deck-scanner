@@ -6,7 +6,7 @@ import { toast, toastError } from "../../lib/toast";
 import type { DeckDiff, DeckState, PrintRef, Snapshot } from "../../lib/types";
 import { Button, cx, EmptyState, Input, Skeleton } from "../ui";
 
-const SOURCE: Record<Snapshot["source"], string> = { scan: "salvo de um scan", check: "atualizado na conferência", manual: "versão guardada", import: "lista importada" };
+const SOURCE: Record<Snapshot["source"], string> = { scan: "Salvo de um scan", check: "Atualizado na conferência", manual: "Versão guardada", import: "Lista importada" };
 
 const printLabel = (p: PrintRef) =>
   [p.set_code?.toUpperCase(), p.collector_number && `#${p.collector_number}`, LANGUAGE_NAME[p.language] ?? p.language, p.finish !== "nonfoil" ? FINISH_NAME[p.finish] : null].filter(Boolean).join(" ");
@@ -51,28 +51,28 @@ export default function HistoryPanel({ state, onSnapshot }: { state: DeckState; 
   return (
     <div className="grid gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
       <div className="space-y-3">
-        <div className="board space-y-2 p-3">
-          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (ex.: antes do torneio)" className="h-10" maxLength={120} />
-          <Button size="sm" className="w-full" busy={saving} onClick={save}>
-            guardar versão atual
+        <div className="glass space-y-3 p-4">
+          <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Nota (ex.: antes do torneio)" maxLength={120} />
+          <Button className="w-full" busy={saving} onClick={save}>
+            Guardar versão atual
           </Button>
         </div>
         {snapshots.length === 0 ? (
-          <p className="px-1 text-[14px] text-cream-faint">Nenhuma versão ainda. Salvar um scan ou importar uma lista cria a primeira.</p>
+          <p className="px-1 text-footnote text-cream-faint">Nenhuma versão ainda. Salvar um scan ou importar uma lista cria a primeira.</p>
         ) : (
-          <ol className="board divide-y divide-oak-700/70 overflow-hidden" aria-label="Versões">
+          <ol className="glass divide-y divide-cream/6 overflow-hidden" aria-label="Versões">
             {snapshots.map((s) => (
               <li key={s.id}>
                 <button
                   onClick={() => compare(s.id)}
                   aria-current={selected === s.id && diff?.id === s.id ? "true" : undefined}
-                  className={cx("block w-full px-3 py-2.5 text-left transition-colors", diff?.id === s.id ? "bg-brass-400/10" : "hover:bg-oak-750/60")}
+                  className={cx("block w-full px-4 py-3 text-left transition-colors", diff?.id === s.id ? "bg-brass-400/10 shadow-[inset_3px_0_0_var(--color-brass-300)]" : "hover:bg-cream/5")}
                 >
-                  <span className="block font-serif text-[16px] text-cream">{dateLabel(s.created_at, true)}</span>
-                  <span className="block text-[13px] text-cream-faint">
+                  <span className="block font-serif text-body text-cream">{dateLabel(s.created_at, true)}</span>
+                  <span className="block text-footnote text-cream-faint">
                     {SOURCE[s.source]} · {s.card_count} cartas
                   </span>
-                  {s.note && <span className="block truncate text-[13px] text-cream-dim italic">“{s.note}”</span>}
+                  {s.note && <span className="block truncate text-footnote text-cream-dim italic">“{s.note}”</span>}
                 </button>
               </li>
             ))}
@@ -82,11 +82,11 @@ export default function HistoryPanel({ state, onSnapshot }: { state: DeckState; 
 
       <div>
         {loading ? (
-          <Skeleton className="h-64" />
+          <Skeleton className="h-64 rounded-lg" />
         ) : diff ? (
           <DiffView diff={diff.data} when={snapshots.find((s) => s.id === diff.id)?.created_at ?? null} />
         ) : (
-          <div className="board">
+          <div className="glass">
             <EmptyState art={<History className="size-10" />} title="Compare versões">
               Escolha uma versão ao lado para ver o que entrou, saiu ou mudou de edição até a lista de hoje.
             </EmptyState>
@@ -101,13 +101,13 @@ function DiffView({ diff, when }: { diff: DeckDiff; when: string | null }) {
   const name = (i: { name: string | null; name_pt: string | null }) => i.name_pt || i.name || "—";
   const nothing = !diff.added.length && !diff.removed.length && !diff.changed.length && !diff.reprinted.length;
   return (
-    <div className="board space-y-4 p-4">
-      <p className="text-[15px] text-cream-dim">
+    <div className="glass space-y-5 p-4 sm:p-5">
+      <p className="text-subhead text-cream-dim">
         De {dateLabel(when, true)} ({diff.count_before} cartas) para hoje ({diff.count_after} cartas) · {diff.unchanged} sem mudança
       </p>
-      {nothing && <p className="parchment px-3 py-2.5 font-serif text-[16px]">Nenhuma diferença: a lista é a mesma.</p>}
+      {nothing && <p className="parchment px-4 py-3 font-serif text-body">Nenhuma diferença: a lista é a mesma.</p>}
       {diff.added.length > 0 && (
-        <DiffGroup title="entraram" tone="text-moss-300" icon={<Plus className="size-4" />}>
+        <DiffGroup title="Entraram" tone="text-moss-300" icon={<Plus className="size-4" />}>
           {diff.added.map((i) => (
             <li key={i.oracle_id}>
               <span className="tabular text-moss-300">+{i.quantity}</span> {name(i)}
@@ -116,7 +116,7 @@ function DiffView({ diff, when }: { diff: DeckDiff; when: string | null }) {
         </DiffGroup>
       )}
       {diff.removed.length > 0 && (
-        <DiffGroup title="saíram" tone="text-wine-300" icon={<Minus className="size-4" />}>
+        <DiffGroup title="Saíram" tone="text-wine-300" icon={<Minus className="size-4" />}>
           {diff.removed.map((i) => (
             <li key={i.oracle_id}>
               <span className="tabular text-wine-300">−{i.quantity}</span> {name(i)}
@@ -125,7 +125,7 @@ function DiffView({ diff, when }: { diff: DeckDiff; when: string | null }) {
         </DiffGroup>
       )}
       {diff.changed.length > 0 && (
-        <DiffGroup title="mudou a quantidade" tone="text-amber-300" icon={<Repeat className="size-4" />}>
+        <DiffGroup title="Mudou a quantidade" tone="text-ember-300" icon={<Repeat className="size-4" />}>
           {diff.changed.map((i) => (
             <li key={i.oracle_id}>
               {name(i)}{" "}
@@ -137,11 +137,11 @@ function DiffView({ diff, when }: { diff: DeckDiff; when: string | null }) {
         </DiffGroup>
       )}
       {diff.reprinted.length > 0 && (
-        <DiffGroup title="trocou de edição, idioma ou acabamento" tone="text-steel-300" icon={<Repeat className="size-4" />}>
+        <DiffGroup title="Trocou de edição, idioma ou acabamento" tone="text-verdigris-300" icon={<Repeat className="size-4" />}>
           {diff.reprinted.map((i) => (
             <li key={i.oracle_id}>
               {name(i)}
-              <span className="block text-[13px] text-cream-faint">
+              <span className="block text-footnote text-cream-faint">
                 {i.before.map(printLabel).join(", ")} → {i.after.map(printLabel).join(", ")}
               </span>
             </li>
@@ -155,10 +155,10 @@ function DiffView({ diff, when }: { diff: DeckDiff; when: string | null }) {
 function DiffGroup({ title, tone, icon, children }: { title: string; tone: string; icon: ReactNode; children: ReactNode }) {
   return (
     <div>
-      <p className={cx("mb-1.5 flex items-center gap-1.5 font-caps text-[15px] font-bold lowercase tracking-[0.04em]", tone)}>
+      <p className={cx("mb-2 flex items-center gap-2 text-footnote font-semibold tracking-[0.06em] uppercase", tone)}>
         {icon} {title}
       </p>
-      <ul className="space-y-1 pl-6 text-[15px] text-cream">{children}</ul>
+      <ul className="space-y-1 pl-6 text-subhead text-cream">{children}</ul>
     </div>
   );
 }

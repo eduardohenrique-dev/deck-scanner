@@ -1,4 +1,4 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Chest, Lens, Scales } from "../components/icons";
 import { IdentityPips } from "../components/mtg";
@@ -74,7 +74,7 @@ export default function NewScan() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
-      <PageTitle kicker="nova mesa" title="O que vamos escanear?">
+      <PageTitle title="O que vamos escanear?">
         Escolha o objetivo. A captura (câmera ao vivo, fotos ou vídeo) você decide na próxima tela e pode misturar à vontade.
       </PageTitle>
 
@@ -84,30 +84,35 @@ export default function NewScan() {
           return (
             <button
               key={p.id}
+              type="button"
               role="radio"
               aria-checked={active}
               onClick={() => setPurpose(p.id)}
               className={cx(
-                "board relative grid grid-cols-[auto_1fr] items-start gap-x-3 gap-y-1.5 px-4 py-3.5 text-left transition-[transform,border-color] hover:-translate-y-0.5 sm:grid-cols-1 sm:py-4",
-                active ? "border-brass-400 shadow-[inset_0_0_0_1px_var(--color-brass-500)]" : "hover:border-brass-700",
+                "glass relative grid grid-cols-[auto_1fr] items-start gap-x-4 gap-y-1 px-4 py-4 text-left transition-[transform,box-shadow] duration-500 ease-spring active:scale-[0.98] active:duration-100 sm:grid-cols-1 sm:gap-y-2 sm:px-5 sm:py-5",
+                active ? "shadow-[inset_0_0_0_1.5px_var(--color-brass-400),0_12px_32px_-14px_rgb(216_166_76/0.45)]" : "hover:-translate-y-0.5",
               )}
             >
-              <span className={cx("row-span-2 sm:row-span-1", active ? "text-brass-300" : "text-cream-faint")}>{p.icon}</span>
-              <span className={cx("font-caps text-[19px] leading-tight font-bold lowercase tracking-[0.03em]", active ? "text-brass-200" : "text-cream")}>{p.title}</span>
-              <span className="text-[14px] leading-snug text-cream-dim">{p.text}</span>
-              {active && <span className="absolute top-3 right-3 size-2.5 rounded-full bg-brass-300" aria-hidden="true" />}
+              <span className={cx("row-span-2 grid size-11 place-items-center rounded-md sm:row-span-1", active ? "bg-brass-300/15 text-brass-200" : "bg-cream/6 text-cream-dim")}>{p.icon}</span>
+              <span className={cx("text-headline font-semibold", active ? "text-brass-100" : "text-cream")}>{p.title}</span>
+              <span className="text-subhead text-cream-dim">{p.text}</span>
+              {active && (
+                <span className="absolute top-4 right-4 grid size-6 place-items-center rounded-full bg-brass-400 text-ink-900 animate-pop" aria-hidden="true">
+                  <Check className="size-4 [--icon-stroke:2.4]" />
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
-      <Board className="space-y-5 p-5">
+      <Board className="space-y-6 p-5 sm:p-6">
         {purpose === "check" && (
           <div>
             {decks.loading ? (
               <Skeleton className="h-11" />
             ) : decks.data?.length ? (
-              <Field label="deck a conferir" hint="o formato vem do deck">
+              <Field label="Deck a conferir" hint="o formato vem do deck">
                 {(id) => (
                   <Select id={id} value={deckId} onChange={(e) => setDeckId(e.target.value)}>
                     {decks.data!.map((d) => (
@@ -119,13 +124,13 @@ export default function NewScan() {
                 )}
               </Field>
             ) : (
-              <p className="text-[15px] text-cream-dim">
+              <p className="text-subhead text-cream-dim">
                 Você ainda não tem decks salvos. <Link to="/escanear" className="text-brass-300 underline" onClick={() => setPurpose("build")}>Monte a lista primeiro</Link> ou{" "}
                 <Link to="/decks?novo=1" className="text-brass-300 underline">importe um deck</Link>.
               </p>
             )}
             {targetDeck && (
-              <p className="mt-2 flex items-center gap-2 text-[14px] text-cream-faint">
+              <p className="mt-2 flex items-center gap-2 text-footnote text-cream-faint">
                 <IdentityPips colors={targetDeck.identity} size={15} />
                 {targetDeck.format_name ?? targetDeck.format_id}
                 {targetDeck.commanders?.length ? ` · ${targetDeck.commanders.join(" & ")}` : ""}
@@ -135,7 +140,7 @@ export default function NewScan() {
         )}
 
         {purpose === "build" && (
-          <Field label="formato">
+          <Field label="Formato">
             {(id) =>
               games.loading ? (
                 <Skeleton className="h-11" />
@@ -153,7 +158,7 @@ export default function NewScan() {
                     ))}
                   </Select>
                   {format?.description && (
-                    <p id={`${id}-desc`} className="mt-1.5 text-[14px] text-cream-faint">
+                    <p id={`${id}-desc`} className="mt-1.5 text-footnote text-cream-faint">
                       {format.description}
                     </p>
                   )}
@@ -164,7 +169,7 @@ export default function NewScan() {
         )}
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <Field label="nome" hint="opcional">
+          <Field label="Nome" hint="opcional">
             {(id) => (
               <Input
                 id={id}
@@ -175,7 +180,7 @@ export default function NewScan() {
               />
             )}
           </Field>
-          <Field label="idioma das cartas" hint="quando a foto não decidir">
+          <Field label="Idioma das cartas" hint="quando a foto não decidir">
             {(id) => (
               <Select id={id} value={language} onChange={(e) => setLanguage(e.target.value)}>
                 {LANGS.map((l) => (
@@ -188,17 +193,17 @@ export default function NewScan() {
           </Field>
         </div>
 
-        <div className="brass-rule opacity-40" />
+        <div className="hairline" />
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="max-w-md text-[14px] text-cream-faint">
+          <p className="max-w-md text-footnote text-cream-faint">
             {purpose === "check"
               ? "Passe o deck inteiro. No fim aparece o que falta, o que sobra e o que foi trocado de edição."
               : purpose === "collection"
                 ? "Depois de revisar, você escolhe onde guardar: solto, numa pasta ou numa caixa."
                 : "Depois de revisar, salve como deck e cada carta física fica registrada nele."}
           </p>
-          <Button variant="brass" size="lg" busy={busy} disabled={!canStart} onClick={start} iconRight={<ArrowRight className="size-4" />}>
-            abrir a mesa
+          <Button variant="primary" size="lg" busy={busy} disabled={!canStart} onClick={start} iconRight={<ArrowRight className="size-4" />} className="max-sm:w-full">
+            Abrir a mesa
           </Button>
         </div>
       </Board>

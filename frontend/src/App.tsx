@@ -35,8 +35,9 @@ export default function App() {
   if (auth.status === "loading")
     return (
       <FullScreen>
-        <div className="flex flex-col items-center gap-3">
-          <Spinner className="size-7" />
+        <div className="flex flex-col items-center gap-4">
+          <BrandMark size={48} className="animate-pop" />
+          <Spinner className="size-6" />
           <DelayedText />
         </div>
       </FullScreen>
@@ -44,16 +45,21 @@ export default function App() {
   if (auth.status === "error")
     return (
       <FullScreen>
-        <div className="max-w-md space-y-3 text-center">
-          <p className="font-serif text-[21px] text-cream">A taverna está fechada</p>
-          <p className="text-cream-dim">
-            {auth.step === "session"
-              ? "Não consegui falar com o serviço de login. Se você usa bloqueador de anúncios ou uma rede do trabalho, ele pode estar barrando o acesso a neon.tech."
-              : "Não consegui falar com o servidor. Ele pode estar acordando: espere alguns segundos e tente de novo."}
-          </p>
-          <p className="text-[14px] text-cream-faint">detalhe: {auth.message}</p>
-          <Button variant="brass" onClick={() => location.reload()}>
-            tentar de novo
+        <div className="glass w-full max-w-md space-y-4 p-6 text-center">
+          <div className="mx-auto grid size-14 place-items-center rounded-full bg-brass-300/10 text-brass-300">
+            <Candle size={30} />
+          </div>
+          <div className="space-y-2">
+            <p className="font-display text-title-2 font-semibold text-cream">A taverna está fechada</p>
+            <p className="text-body text-cream-dim">
+              {auth.step === "session"
+                ? "Não consegui falar com o serviço de login. Se você usa bloqueador de anúncios ou uma rede do trabalho, ele pode estar barrando o acesso."
+                : "Não consegui falar com o servidor. Ele pode estar acordando: espere alguns segundos e tente de novo."}
+            </p>
+            <p className="text-footnote text-cream-faint">Detalhe: {auth.message}</p>
+          </div>
+          <Button variant="primary" onClick={() => location.reload()}>
+            Tentar de novo
           </Button>
         </div>
       </FullScreen>
@@ -65,14 +71,14 @@ export default function App() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <a href="#conteudo" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded focus:bg-brass-400 focus:px-3 focus:py-2 focus:text-ink-900">
+      <a href="#conteudo" className="btn btn-primary sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50">
         Pular para o conteúdo
       </a>
-      <header className="sticky top-0 z-40 bg-oak-900/95 backdrop-saturate-150">
+      <header className="bar-glass sticky top-0 z-40 shadow-[inset_0_-1px_0_rgb(255_226_184/0.08),0_8px_24px_-16px_rgb(0_0_0/0.8)]">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2.5" aria-label="Deck Scanner — início">
+          <Link to="/" className="flex items-center gap-2.5 rounded-sm" aria-label="Deck Scanner, início">
             <BrandMark size={32} />
-            <span className="font-display text-[25px] leading-none font-semibold tracking-[0.01em] text-cream">Deck Scanner</span>
+            <span className="font-brand text-[1.625rem] leading-none font-semibold tracking-[0.01em] text-cream">Deck Scanner</span>
           </Link>
           <nav className="ml-2 hidden items-center gap-1 md:flex" aria-label="Principal">
             {NAV.map((item) => {
@@ -83,8 +89,10 @@ export default function App() {
                   to={item.to}
                   aria-current={active ? "page" : undefined}
                   className={cx(
-                    "flex h-10 items-center gap-2 rounded-[5px] px-3 font-caps text-[16px] font-bold lowercase tracking-[0.04em] transition-colors",
-                    active ? "bg-oak-750 text-brass-200 shadow-[inset_0_-2px_0_var(--color-brass-400)]" : "text-cream-dim hover:bg-oak-800 hover:text-cream",
+                    "flex h-10 items-center gap-2 rounded-full px-3.5 text-subhead font-medium transition-colors duration-200",
+                    active
+                      ? "bg-brass-300/12 text-brass-200 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.22),inset_0_1px_0_rgb(255_240_210/0.12)]"
+                      : "text-cream-dim hover:bg-cream/5 hover:text-cream",
                   )}
                 >
                   <item.icon size={19} />
@@ -94,7 +102,7 @@ export default function App() {
             })}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            {email && <span className="hidden max-w-48 truncate text-[14px] text-cream-faint lg:inline">{email}</span>}
+            {email && <span className="hidden max-w-48 truncate text-footnote text-cream-faint lg:inline">{email}</span>}
             {auth.status === "signed-in" && (
               <IconButton label="Sair" onClick={() => void signOut()}>
                 <LogOut className="size-[18px]" />
@@ -102,11 +110,16 @@ export default function App() {
             )}
           </div>
         </div>
-        <div className="brass-rule" />
       </header>
 
-      <main id="conteudo" className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-28 sm:px-6 md:pb-12">
-        <Suspense fallback={<div className="grid place-items-center py-24"><Spinner className="size-7" /></div>}>
+      <main id="conteudo" className="mx-auto w-full max-w-7xl flex-1 px-4 pt-6 pb-32 sm:px-6 sm:pt-8 md:pb-16">
+        <Suspense
+          fallback={
+            <div className="grid place-items-center py-24">
+              <Spinner className="size-7" />
+            </div>
+          }
+        >
           {route.name === "home" && <Home />}
           {route.name === "scan-new" && <NewScan />}
           {route.name === "session" && <ScanSession key={route.id} id={route.id} />}
@@ -118,10 +131,10 @@ export default function App() {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-brass-700/70 bg-oak-900/97 pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="bar-glass fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] shadow-[inset_0_1px_0_rgb(255_226_184/0.1),0_-8px_24px_-16px_rgb(0_0_0/0.8)] md:hidden"
         aria-label="Principal"
       >
-        <div className="grid grid-cols-4">
+        <div className="grid" style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}>
           {NAV.map((item) => {
             const active = item.match(path);
             return (
@@ -129,9 +142,9 @@ export default function App() {
                 key={item.to}
                 to={item.to}
                 aria-current={active ? "page" : undefined}
-                className={cx("flex h-16 flex-col items-center justify-center gap-1 font-caps text-[13px] font-bold lowercase tracking-[0.04em]", active ? "text-brass-200" : "text-cream-faint")}
+                className={cx("flex h-16 flex-col items-center justify-center gap-1 text-caption font-medium transition-colors duration-200", active ? "text-brass-200" : "text-cream-faint")}
               >
-                <item.icon size={22} />
+                <item.icon size={24} />
                 {item.label}
               </Link>
             );
@@ -156,7 +169,7 @@ function DelayedText() {
     const t = window.setTimeout(() => setShow(true), 1500);
     return () => window.clearTimeout(t);
   }, []);
-  return <p className={cx("max-w-xs text-center text-[15px] text-cream-dim transition-opacity duration-500", show ? "opacity-100" : "opacity-0")}>{WAKE_TEXT}</p>;
+  return <p className={cx("max-w-xs text-center text-subhead text-cream-dim transition-opacity duration-500", show ? "opacity-100" : "opacity-0")}>{WAKE_TEXT}</p>;
 }
 
 /** Aviso discreto enquanto servidor e banco acordam (a requisição em curso não está travada). */
@@ -169,9 +182,9 @@ function WakeNotice() {
   }, []);
   if (!waking) return null;
   return (
-    <div role="status" className="animate-rise fixed inset-x-0 bottom-20 z-50 flex justify-center px-4 md:bottom-6">
-      <p className="flex max-w-md items-center gap-2.5 rounded-[6px] border border-brass-700 bg-oak-900/95 px-3.5 py-2.5 text-[14px] text-cream-dim shadow-[0_4px_14px_rgb(0_0_0/0.5)]">
-        <Candle size={18} className="animate-candle shrink-0 text-brass-300" />
+    <div role="status" className="animate-rise fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 md:bottom-6">
+      <p className="glass-float flex max-w-md items-center gap-3 px-4 py-3 text-subhead text-cream-dim">
+        <Candle size={18} className="shrink-0 text-brass-300" />
         {WAKE_TEXT}
       </p>
     </div>

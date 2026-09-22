@@ -1,4 +1,4 @@
-import { CopyCheck, CopyX, Eye, HelpCircle, Layers, SearchCheck, Sparkles } from "lucide-react";
+import { CircleHelp, CopyCheck, CopyX, Eye, Layers, SearchCheck, Sparkles } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import { api } from "../../lib/api";
 import { brl, cardName, positionLabel } from "../../lib/format";
@@ -95,25 +95,25 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
     <section className="space-y-3">
       <SectionTitle aside={<Tag tone="warn">{total}</Tag>}>
         <span className="inline-flex items-center gap-2">
-          <SearchCheck className="size-4" /> confira primeiro
+          <SearchCheck className="size-5 text-brass-300" /> Confira primeiro
         </span>
       </SectionTitle>
-      <ul className="space-y-3">
+      <ul className="space-y-4">
         {valuable.map((d) => {
           const cap = capById.get(d.capture_id);
           return (
             <Case key={`valor:${d.id}`} image={d.crop_url} title={<><Sparkles className="size-4 text-brass-300" /> Carta valiosa: confira a edição</>}>
-              <p className="text-[15px] text-cream">
+              <p className="text-subhead text-cream">
                 {cardName(d.card)} <span className="text-cream-faint">· {d.card?.set_code?.toUpperCase()}</span>
               </p>
-              <p className="text-[14px] text-brass-200">{brl(cardBrl(d, fx) ?? 0)}</p>
-              <div className="flex flex-wrap gap-1.5">
-                <Button size="xs" variant="ghost" onClick={() => dismiss(`valor:${d.id}`)}>
-                  está certa
+              <p className="text-subhead text-brass-200">{brl(cardBrl(d, fx) ?? 0)}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="secondary" onClick={() => dismiss(`valor:${d.id}`)}>
+                  Está certa
                 </Button>
                 {cap?.image_url && (
-                  <Button size="xs" variant="ghost" onClick={() => onShowCapture(cap, d.id)}>
-                    ver na foto
+                  <Button size="sm" variant="ghost" icon={<Eye className="size-4" />} onClick={() => onShowCapture(cap, d.id)}>
+                    Ver na foto
                   </Button>
                 )}
               </div>
@@ -124,29 +124,30 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
         {unidentified.map((d) => {
           const cap = capById.get(d.capture_id);
           return (
-            <Case key={d.id} image={d.crop_url} title={<><HelpCircle className="size-4 text-wine-300" /> Carta não identificada</>}>
-              <p className="text-[14px] text-cream-faint">
+            <Case key={d.id} image={d.crop_url} title={<><CircleHelp className="size-5 text-wine-300" /> Carta não identificada</>}>
+              <p className="text-footnote text-cream-faint">
                 {positionLabel(d, cap?.idx, cap?.type !== "image")}
                 {cap?.image_url && (
-                  <button onClick={() => onShowCapture(cap, d.id)} className="ml-2 inline-flex items-center gap-1 text-brass-300 hover:underline">
-                    <Eye className="size-3.5" /> ver na foto
+                  <button type="button" onClick={() => onShowCapture(cap, d.id)} className="ml-2 inline-flex items-center gap-1 font-medium text-brass-300 hover:underline">
+                    <Eye className="size-3.5" /> Ver na foto
                   </button>
                 )}
               </p>
               {d.notes.filter((n) => !n.includes("multimodal")).slice(0, 2).map((n) => (
-                <p key={n} className="text-[13px] text-cream-faint">
+                <p key={n} className="text-footnote text-cream-faint">
                   {n}
                 </p>
               ))}
               {d.candidates.length > 0 && (
                 <div>
-                  <p className="mb-1 text-[13px] text-cream-faint">parece com</p>
-                  <div className="flex flex-wrap gap-1.5">
+                  <p className="mb-2 text-footnote text-cream-faint">Parece com</p>
+                  <div className="flex flex-wrap gap-2">
                     {d.candidates.slice(0, 4).map((c) => (
                       <button
                         key={c.card_ref_id}
                         onClick={() => run(() => api.identify(d.id, c.card_ref_id), `Identificada como ${cardName(c.card)}`)}
-                        className="flex items-center gap-2 rounded-[4px] border border-oak-600 bg-oak-900 py-1 pr-2 pl-1 text-[14px] text-cream-dim hover:border-brass-500 hover:text-cream"
+                        type="button"
+                        className="chip gap-2 py-1 pr-3 pl-1.5 text-cream-dim hover:text-cream"
                       >
                         <ArtThumb card={c.card} size={32} />
                         {cardName(c.card)}
@@ -156,15 +157,15 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
                 </div>
               )}
               <CardSearch onPick={(c) => run(() => api.identify(d.id, c.id), `Identificada como ${cardName(c)}`)} placeholder="Qual carta é? Busque pelo nome…" />
-              <div className="flex flex-wrap gap-1.5">
-                <Button size="xs" variant="ghost" onClick={() => run(() => api.setStatus(d.id, "noise"), "Descartada")}>
-                  não é carta
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="ghost" onClick={() => run(() => api.setStatus(d.id, "noise"), "Descartada")}>
+                  Não é carta
                 </Button>
-                <Button size="xs" variant="ghost" onClick={() => run(() => api.setStatus(d.id, "back"))}>
-                  é o verso
+                <Button size="sm" variant="ghost" onClick={() => run(() => api.setStatus(d.id, "back"))}>
+                  É o verso
                 </Button>
-                <Button size="xs" variant="ghost" onClick={() => run(() => api.setStatus(d.id, "token"))}>
-                  é token
+                <Button size="sm" variant="ghost" onClick={() => run(() => api.setStatus(d.id, "token"))}>
+                  É token
                 </Button>
               </div>
             </Case>
@@ -172,9 +173,9 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
         })}
 
         {pairs.map(([a, b, reasons]) => (
-          <li key={a.id + b.id} className="board p-3">
-            <p className="mb-2 flex items-center gap-2 font-serif text-[17px] font-semibold text-cream">
-              <Layers className="size-4 text-amber-300" /> A mesma carta em duas fotos?
+          <li key={a.id + b.id} className="glass p-4">
+            <p className="mb-3 flex items-center gap-2 text-headline font-semibold text-cream">
+              <Layers className="size-5 text-ember-300" /> A mesma carta em duas fotos?
             </p>
             <div className="flex flex-wrap items-start gap-3">
               {[a, b].map((d) => {
@@ -182,10 +183,10 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
                 return (
                   <figure key={d.id} className="w-[112px]">
                     {d.crop_url && <CardImage src={d.crop_url} alt="recorte" />}
-                    <figcaption className="mt-1 text-[13px] leading-tight text-cream-faint">
+                    <figcaption className="mt-1 text-footnote leading-tight text-cream-faint">
                       {cardName(d.card)}
                       {cap?.image_url && (
-                        <button onClick={() => onShowCapture(cap, d.id)} className="block text-brass-300 hover:underline">
+                        <button type="button" onClick={() => onShowCapture(cap, d.id)} className="block font-medium text-brass-300 hover:underline">
                           foto {cap.idx}
                         </button>
                       )}
@@ -194,18 +195,18 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
                 );
               })}
               <div className="min-w-[180px] flex-1 space-y-2">
-                <ul className="list-disc space-y-0.5 pl-4 text-[14px] text-cream-dim">
+                <ul className="list-disc space-y-0.5 pl-4 text-subhead text-cream-dim">
                   {reasons.map((r) => (
                     <li key={r}>{r}</li>
                   ))}
                 </ul>
-                <p className="text-[13px] text-cream-faint">Na dúvida as duas são contadas — o sistema nunca apaga uma carta sozinho.</p>
+                <p className="text-footnote text-cream-faint">Na dúvida as duas são contadas — o sistema nunca apaga uma carta sozinho.</p>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" variant="brass" icon={<CopyCheck className="size-4" />} onClick={() => run(() => api.duplicate(a.id, b.id, true), "Contada uma vez")}>
-                    mesma carta
+                  <Button size="sm" variant="primary" icon={<CopyCheck className="size-4" />} onClick={() => run(() => api.duplicate(a.id, b.id, true), "Contada uma vez")}>
+                    Mesma carta
                   </Button>
                   <Button size="sm" icon={<CopyX className="size-4" />} onClick={() => run(() => api.duplicate(a.id, b.id, false), "Contadas as duas")}>
-                    cartas diferentes
+                    Cartas diferentes
                   </Button>
                 </div>
               </div>
@@ -220,33 +221,33 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
           const entry = state.entries.find((e) => e.detection_ids.includes(d.id) || e.card_ref_id === d.card_ref_id);
           return (
             <Case key={d.id} image={d.crop_url} secondImage={prev && !isLong ? prev.crop_url : undefined} title={cardName(d.card)}>
-              <p className="text-[14px] text-cream-dim">
+              <p className="text-subhead text-cream-dim">
                 {isSplit ? "Parece que duas cópias iguais passaram seguidas (a posição da carta mudou no meio)." : isLong ? "Esta carta ficou na câmera o dobro do normal — podem ser duas cópias." : "A mesma carta apareceu duas vezes seguidas e foi contada duas vezes."}
               </p>
               <div className="flex flex-wrap gap-2">
                 {isLong && entry ? (
                   <>
-                    <Button size="sm" variant="brass" onClick={() => run(() => api.patchEntry<SessionState>(entry.id, { quantity_override: entry.quantity + 1 })).then(() => dismiss(d.id))}>
-                      eram 2 (+1)
+                    <Button size="sm" variant="primary" onClick={() => run(() => api.patchEntry<SessionState>(entry.id, { quantity_override: entry.quantity + 1 })).then(() => dismiss(d.id))}>
+                      Eram 2 (+1)
                     </Button>
-                    <Button size="sm" onClick={() => dismiss(d.id)}>era uma só</Button>
+                    <Button size="sm" onClick={() => dismiss(d.id)}>Era uma só</Button>
                   </>
                 ) : isSplit ? (
                   <>
-                    <Button size="sm" variant="brass" onClick={() => dismiss(d.id)}>eram 2 mesmo</Button>
-                    <Button size="sm" onClick={() => run(() => api.setStatus(d.id, "noise"))}>era uma só</Button>
+                    <Button size="sm" variant="primary" onClick={() => dismiss(d.id)}>Eram 2 mesmo</Button>
+                    <Button size="sm" onClick={() => run(() => api.setStatus(d.id, "noise"))}>Era uma só</Button>
                   </>
                 ) : prev ? (
                   <>
-                    <Button size="sm" variant="brass" onClick={() => run(() => api.duplicate(d.id, prev.id, true), "Contada uma vez")}>
-                      é a mesma carta
+                    <Button size="sm" variant="primary" onClick={() => run(() => api.duplicate(d.id, prev.id, true), "Contada uma vez")}>
+                      É a mesma carta
                     </Button>
                     <Button size="sm" onClick={() => run(() => api.duplicate(d.id, prev.id, false)).then(() => dismiss(d.id))}>
-                      são duas cópias
+                      São duas cópias
                     </Button>
                   </>
                 ) : (
-                  <Button size="sm" onClick={() => dismiss(d.id)}>ok</Button>
+                  <Button size="sm" onClick={() => dismiss(d.id)}>Ok</Button>
                 )}
               </div>
             </Case>
@@ -255,13 +256,13 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
 
         {impossible.map((d) => (
           <Case key={`print-${d.id}`} image={d.crop_url} title={<>Impressão que não existe no registro · {cardName(d.card)}</>}>
-            <p className="text-[14px] text-cream-dim">{d.print_check!.message}</p>
-            <p className="text-[13px] text-cream-faint">
+            <p className="text-subhead text-cream-dim">{d.print_check!.message}</p>
+            <p className="text-footnote text-cream-faint">
               Pode ser leitura errada da linha de coleção ou uma carta falsificada. Vale olhar a carta de perto.
               {d.raw.set && ` Lido: ${d.raw.set.toUpperCase()} ${d.raw.number ?? ""} ${d.raw.language ?? ""}.`}
             </p>
-            <Button size="sm" variant="ghost" onClick={() => dismiss(`print:${d.id}`)}>
-              conferi, está certo
+            <Button size="sm" variant="secondary" onClick={() => dismiss(`print:${d.id}`)}>
+              Conferi, está certo
             </Button>
           </Case>
         ))}
@@ -272,13 +273,13 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
 
 function Case({ image, secondImage, title, children }: { image: string | null; secondImage?: string | null; title: ReactNode; children: ReactNode }) {
   return (
-    <li className="board flex flex-col gap-3 p-3 sm:flex-row">
+    <li className="glass flex flex-col gap-4 p-4 sm:flex-row">
       <div className="flex shrink-0 gap-2">
         {secondImage && <CardImage src={secondImage} className="w-[88px]" alt="exibição anterior" />}
         {image ? <CardImage src={image} className="w-[108px]" alt="recorte" /> : null}
       </div>
-      <div className="min-w-0 flex-1 space-y-2">
-        <p className="flex items-center gap-2 font-serif text-[17px] font-semibold text-cream">{title}</p>
+      <div className="min-w-0 flex-1 space-y-3">
+        <p className="flex items-center gap-2 text-headline font-semibold text-cream">{title}</p>
         {children}
       </div>
     </li>

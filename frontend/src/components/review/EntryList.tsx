@@ -4,7 +4,7 @@ import { cardName, entryNeedsReview, TYPE_LABEL, TYPE_ORDER, typeGroup } from ".
 import { usePersistentState } from "../../lib/hooks";
 import type { DeckState, Detection, Entry, FormatRule, GameMeta, SessionState } from "../../lib/types";
 import { CardStack } from "../icons";
-import { cx, EmptyState, Input, Segmented } from "../ui";
+import { EmptyState, Input, Segmented } from "../ui";
 import { EntryRow } from "./EntryRow";
 
 type Props = {
@@ -75,7 +75,7 @@ export default function EntryList({ entries, detections = [], format, game, onSt
 
   if (!entries.length)
     return (
-      <div className="board">
+      <div className="glass">
         <EmptyState art={<CardStack size={46} />} title={empty?.title ?? "Nenhuma carta ainda"}>
           {empty?.text ?? "As cartas aparecem aqui assim que forem lidas."}
         </EmptyState>
@@ -87,39 +87,33 @@ export default function EntryList({ entries, detections = [], format, game, onSt
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-cream-faint" />
-          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filtrar por nome, tipo ou coleção" className="h-10 pl-9" aria-label="Filtrar cartas" />
+          <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filtrar por nome, tipo ou coleção" className="pl-9" aria-label="Filtrar cartas" />
         </div>
         <Segmented
           size="sm"
           value={grouping}
           onChange={setGrouping}
           options={[
-            { value: "type", label: "por tipo" },
-            { value: "zone", label: "por zona" },
+            { value: "type", label: "Por tipo" },
+            { value: "zone", label: "Por zona" },
           ]}
         />
         {reviewCount > 0 && (
-          <button
-            onClick={() => setOnlyReview((v) => !v)}
-            aria-pressed={onlyReview}
-            className={cx(
-              "h-9 rounded-[5px] border px-3 font-caps text-[14px] font-bold lowercase tracking-[0.03em] transition-colors",
-              onlyReview ? "border-amber-400 bg-amber-400/15 text-amber-300" : "border-oak-600 text-cream-dim hover:text-cream",
-            )}
-          >
-            revisar ({reviewCount})
+          <button type="button" onClick={() => setOnlyReview((v) => !v)} aria-pressed={onlyReview} className="chip chip-pill">
+            <span className="size-2 rounded-full bg-ember-400" aria-hidden="true" />
+            Revisar <span className="tabular">{reviewCount}</span>
           </button>
         )}
       </div>
 
       {sections.length === 0 ? (
-        <p className="board px-4 py-6 text-center text-cream-faint">Nada com esse filtro.</p>
+        <p className="glass px-4 py-8 text-center text-subhead text-cream-faint">Nada com esse filtro.</p>
       ) : (
         sections.map((s) => (
-          <section key={s.key} className="board overflow-hidden">
-            <h3 className="flex items-baseline justify-between border-b border-oak-700 bg-oak-900/50 px-3 py-2">
-              <span className="font-caps text-[15px] font-bold lowercase tracking-[0.05em] text-brass-300">{s.label}</span>
-              <span className="tabular text-[14px] text-cream-faint">{s.count}</span>
+          <section key={s.key} className="glass overflow-hidden">
+            <h3 className="panel-head justify-between text-brass-300">
+              <span>{s.label}</span>
+              <span className="tabular tracking-normal text-cream-faint">{s.count}</span>
             </h3>
             <ul>
               {s.items.map((e) => (

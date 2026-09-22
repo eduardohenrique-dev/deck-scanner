@@ -1,5 +1,5 @@
-import { FileInput, MoreHorizontal, Plus, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { FileInput, Plus, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import CardSearch from "../components/cards/CardSearch";
 import AllocationPanel from "../components/deck/AllocationPanel";
 import HistoryPanel from "../components/deck/HistoryPanel";
@@ -11,7 +11,7 @@ import EntryList from "../components/review/EntryList";
 import ExportPanel from "../components/review/ExportPanel";
 import NoticeBoard from "../components/review/NoticeBoard";
 import ValueBox from "../components/review/ValueBox";
-import { Board, Button, Confirm, EmptyState, IconButton, InlineEdit, Modal, Segmented, Select, Skeleton, Tabs, Textarea } from "../components/ui";
+import { Board, Button, Confirm, Count, EmptyState, InlineEdit, Menu, Modal, Segmented, Select, Skeleton, Tabs, Textarea } from "../components/ui";
 import { api, type ImportResult } from "../lib/api";
 import { artCrop, cardName, relativeDay } from "../lib/format";
 import { useMediaQuery, useResource } from "../lib/hooks";
@@ -32,17 +32,8 @@ export default function DeckPage({ id }: { id: string }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [menu, setMenu] = useState(false);
   const [adding, setAdding] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const formats = (games.data?.find((g) => g.id === "mtg")?.formats ?? []).filter((f) => f.id !== "collection");
-
-  useEffect(() => {
-    if (!menu) return;
-    const close = (e: MouseEvent) => !menuRef.current?.contains(e.target as Node) && setMenu(false);
-    window.addEventListener("mousedown", close);
-    return () => window.removeEventListener("mousedown", close);
-  }, [menu]);
 
   const cards = useMemo(() => new Map((state?.entries ?? []).map((e) => [e.card_ref_id, e.card])), [state?.entries]);
   const listKey = useMemo(() => (state?.entries ?? []).map((e) => `${e.card_ref_id}:${e.quantity}:${e.is_commander ? 1 : 0}`).join("|"), [state?.entries]);
@@ -50,14 +41,14 @@ export default function DeckPage({ id }: { id: string }) {
   if (res.loading && !state)
     return (
       <div className="space-y-6">
-        <Skeleton className="h-44" />
-        <Skeleton className="h-96" />
+        <Skeleton className="h-44 rounded-lg" />
+        <Skeleton className="h-96 rounded-lg" />
       </div>
     );
   if (!state)
     return (
       <Board>
-        <EmptyState art={<Tome size={46} />} title="Deck não encontrado" action={<Button onClick={() => navigate("/decks")}>ver a estante</Button>}>
+        <EmptyState art={<Tome size={44} />} title="Deck não encontrado" action={<Button onClick={() => navigate("/decks")}>Ver os decks</Button>}>
           {res.error ?? "Ele pode ter sido apagado."}
         </EmptyState>
       </Board>
@@ -93,15 +84,15 @@ export default function DeckPage({ id }: { id: string }) {
   }
 
   const tabs = [
-    { value: "list" as const, label: "lista", badge: <span className="tabular text-[13px] text-cream-faint">{deck.card_count}</span> },
+    { value: "list" as const, label: "Lista", badge: <Count>{deck.card_count}</Count> },
     {
       value: "physical" as const,
-      label: "cartas físicas",
-      badge: allocation.totals.conflict + allocation.totals.move > 0 ? <span className="size-2 rounded-full bg-amber-400" aria-label="há cartas para organizar" /> : null,
+      label: "Cartas físicas",
+      badge: allocation.totals.conflict + allocation.totals.move > 0 ? <span className="size-2 rounded-full bg-ember-400" aria-label="há cartas para organizar" /> : null,
     },
-    { value: "shopping" as const, label: "compras", badge: allocation.totals.buy ? <span className="tabular text-[13px] text-cream-faint">{allocation.totals.buy}</span> : null },
-    { value: "history" as const, label: "histórico" },
-    ...(desktop ? [] : [{ value: "export" as const, label: "exportar" }]),
+    { value: "shopping" as const, label: "Compras", badge: allocation.totals.buy ? <Count>{allocation.totals.buy}</Count> : null },
+    { value: "history" as const, label: "Histórico" },
+    ...(desktop ? [] : [{ value: "export" as const, label: "Exportar" }]),
   ];
 
   const aside = (
@@ -123,7 +114,7 @@ export default function DeckPage({ id }: { id: string }) {
       {state.print_issues.length > 0 && (
         <ul className="space-y-2">
           {state.print_issues.map((p) => (
-            <li key={p.entry_id} className="parchment border-l-4 border-l-amber-600 px-3 py-2 text-[14px]">
+            <li key={p.entry_id} className="parchment border-l-4 border-l-ember-600 px-4 py-3 text-subhead">
               {p.message}
             </li>
           ))}
@@ -137,25 +128,23 @@ export default function DeckPage({ id }: { id: string }) {
 
   return (
     <div className="space-y-6">
-      <header className="board relative overflow-hidden">
-        {art && <img src={art} alt="" className="absolute inset-0 h-full w-full object-cover object-[center_30%] opacity-35" />}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,var(--color-oak-900)_15%,rgb(22_16_12/0.82)_55%,rgb(22_16_12/0.55))]" />
-        <div className="relative flex flex-wrap items-end justify-between gap-4 px-5 pt-10 pb-5 sm:px-6 sm:pt-16">
-          <div className="min-w-0 flex-1 space-y-1.5 max-sm:basis-full">
-            <p className="kicker text-[13px] text-brass-400">
-              deck · atualizado {relativeDay(deck.updated_at ?? deck.created_at)}
-            </p>
-            <h1 className="font-display text-[34px] leading-[1.05] font-semibold text-cream sm:text-[46px]">
+      <header className="glass relative overflow-hidden">
+        {art && <img src={art} alt="" className="absolute inset-0 h-full w-full object-cover object-[center_30%] opacity-40" />}
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(22_16_12/0.96)_18%,rgb(22_16_12/0.8)_55%,rgb(22_16_12/0.45))]" />
+        <div className="relative flex flex-wrap items-end justify-between gap-4 px-5 pt-12 pb-5 sm:px-8 sm:pt-20 sm:pb-6">
+          <div className="min-w-0 flex-1 space-y-2 max-sm:basis-full">
+            <p className="eyebrow">Deck · atualizado {relativeDay(deck.updated_at ?? deck.created_at)}</p>
+            <h1 className="font-display text-title-1 font-semibold text-cream sm:text-display">
               <InlineEdit label="Nome do deck" value={deck.name} placeholder="Deck sem nome" onSave={async (name) => name && apply(await api.patchDeck(deck.id, { name }))} className="font-display" />
             </h1>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[15px] text-cream-dim">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-subhead text-cream-dim">
               {identity.length > 0 && <IdentityPips colors={identity} size={18} />}
               {commanders.length > 0 && <span className="font-serif text-cream">{commanders.map((e) => cardName(e.card)).join(" & ")}</span>}
-              <span className="inline-block w-52">
+              <span className="inline-block w-56">
                 <Select
                   aria-label="Formato do deck"
                   value={deck.format_id}
-                  className="h-8 py-0 pr-8 text-[14px]"
+                  className="h-10 text-subhead"
                   onChange={async (e) => {
                     try {
                       apply(await api.patchDeck(deck.id, { format_id: e.target.value }));
@@ -176,45 +165,29 @@ export default function DeckPage({ id }: { id: string }) {
             </div>
           </div>
           <div className="flex items-center gap-2 max-sm:w-full">
-            <Button variant="brass" icon={<Scales size={18} />} busy={checking} disabled={!deck.card_count} onClick={startCheck} className="whitespace-nowrap max-sm:flex-1" title="Escanear o baralho físico e comparar com esta lista">
-              conferir
+            <Button variant="primary" icon={<Scales size={18} />} busy={checking} disabled={!deck.card_count} onClick={startCheck} className="max-sm:flex-1" title="Escanear o baralho físico e comparar com esta lista">
+              Conferir
             </Button>
             <Button icon={<FileInput className="size-4" />} onClick={() => setImporting(true)} className="max-sm:flex-1">
-              importar
+              Importar
             </Button>
-            <div className="relative" ref={menuRef}>
-              <IconButton label="Mais ações" onClick={() => setMenu((m) => !m)} aria-expanded={menu}>
-                <MoreHorizontal className="size-5" />
-              </IconButton>
-              {menu && (
-                <div className="board animate-rise absolute right-0 z-30 mt-1 w-56 p-1" role="menu">
-                  <button role="menuitem" onClick={() => navigate("/escanear")} className="flex w-full items-center gap-2 rounded-[4px] px-3 py-2 text-left text-[15px] text-cream-dim hover:bg-oak-700/60">
-                    <Lens size={16} /> escanear outro deck
-                  </button>
-                  <button
-                    role="menuitem"
-                    onClick={() => {
-                      setMenu(false);
-                      setConfirmDelete(true);
-                    }}
-                    className="flex w-full items-center gap-2 rounded-[4px] px-3 py-2 text-left text-[15px] text-wine-300 hover:bg-wine-600/15"
-                  >
-                    <Trash2 className="size-4" /> apagar deck
-                  </button>
-                </div>
-              )}
-            </div>
+            <Menu
+              items={[
+                { label: "Escanear outro deck", icon: <Lens size={18} />, onSelect: () => navigate("/escanear") },
+                { label: "Apagar deck", icon: <Trash2 className="size-[18px]" />, tone: "danger", onSelect: () => setConfirmDelete(true) },
+              ]}
+            />
           </div>
         </div>
       </header>
 
       <div className={desktop ? "grid grid-cols-[minmax(0,1fr)_350px] gap-8" : "space-y-6"}>
         <div className="min-w-0 space-y-5">
-          <Tabs value={tab} onChange={setTab} tabs={tabs} className={desktop ? undefined : "sticky top-16 z-20 -mx-4 bg-oak-900/95 px-4"} />
+          <Tabs value={tab} onChange={setTab} tabs={tabs} className={desktop ? undefined : "bar-glass sticky top-16 z-20 -mx-4 px-4"} />
           {tab === "list" && (
             <div className="space-y-4">
               {adding ? (
-                <div className="board space-y-2 p-3">
+                <div className="glass space-y-3 p-4">
                   <CardSearch
                     autoFocus
                     placeholder="Adicionar carta pelo nome…"
@@ -227,13 +200,13 @@ export default function DeckPage({ id }: { id: string }) {
                       }
                     }}
                   />
-                  <Button size="xs" variant="ghost" onClick={() => setAdding(false)}>
-                    fechar
+                  <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>
+                    Fechar
                   </Button>
                 </div>
               ) : (
-                <Button size="sm" variant="ghost" icon={<Plus className="size-4" />} onClick={() => setAdding(true)}>
-                  adicionar carta
+                <Button size="sm" variant="tertiary" icon={<Plus className="size-4" />} onClick={() => setAdding(true)}>
+                  Adicionar carta
                 </Button>
               )}
               <EntryList
@@ -256,7 +229,7 @@ export default function DeckPage({ id }: { id: string }) {
       </div>
 
       {importing && <ImportDialog deck={state} onClose={() => setImporting(false)} onDone={apply} />}
-      <Confirm open={confirmDelete} title={`Apagar ${deck.name}?`} confirmLabel="apagar deck" danger busy={deleting} onConfirm={remove} onClose={() => setConfirmDelete(false)}>
+      <Confirm open={confirmDelete} title={`Apagar ${deck.name}?`} confirmLabel="Apagar deck" danger busy={deleting} onConfirm={remove} onClose={() => setConfirmDelete(false)}>
         <p>A lista e o histórico somem. As cartas físicas registradas neste deck não são apagadas: vão para “Solto” na coleção.</p>
       </Confirm>
     </div>
@@ -294,26 +267,26 @@ function ImportDialog({ deck, onClose, onDone }: { deck: DeckState; onClose: () 
       width="lg"
       footer={
         report ? (
-          <Button variant="brass" onClick={onClose}>
-            entendi
+          <Button variant="primary" onClick={onClose}>
+            Entendi
           </Button>
         ) : (
           <>
             <Button variant="ghost" onClick={onClose} disabled={busy}>
-              cancelar
+              Cancelar
             </Button>
-            <Button variant="brass" busy={busy} disabled={!text.trim()} onClick={run}>
-              {mode === "replace" ? "substituir lista" : "adicionar cartas"}
+            <Button variant="primary" busy={busy} disabled={!text.trim()} onClick={run}>
+              {mode === "replace" ? "Substituir lista" : "Adicionar cartas"}
             </Button>
           </>
         )
       }
     >
       {report ? (
-        <div className="space-y-3 text-[15px]">
+        <div className="space-y-3 text-subhead">
           <p className="text-cream-dim">{report.imported} cartas entraram.</p>
           {report.unresolved.length > 0 && (
-            <ul className="board-sunken max-h-48 space-y-1 overflow-y-auto px-3 py-2 font-mono text-[13px] text-wine-300">
+            <ul className="well max-h-48 space-y-1 overflow-y-auto px-4 py-3 font-mono text-footnote text-wine-300">
               {report.unresolved.map((u) => (
                 <li key={u.line}>
                   linha {u.line}: {u.text}
@@ -322,7 +295,7 @@ function ImportDialog({ deck, onClose, onDone }: { deck: DeckState; onClose: () 
             </ul>
           )}
           {report.print_warnings.map((w) => (
-            <p key={w.line} className="text-[14px] text-amber-300">
+            <p key={w.line} className="text-subhead text-ember-300">
               linha {w.line}: {w.message}
             </p>
           ))}
@@ -333,12 +306,12 @@ function ImportDialog({ deck, onClose, onDone }: { deck: DeckState; onClose: () 
             value={mode}
             onChange={setMode}
             options={[
-              { value: "add", label: "adicionar à lista" },
-              { value: "replace", label: "substituir a lista", hint: "a lista atual vai para o histórico" },
+              { value: "add", label: "Adicionar à lista" },
+              { value: "replace", label: "Substituir a lista", hint: "a lista atual vai para o histórico" },
             ]}
           />
-          <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={12} autoFocus className="font-mono text-[13px]" placeholder={"1 Sol Ring\n4 Raio (M11) 149\n\nSideboard\n2 Pyroblast"} aria-label="Lista para importar" />
-          <p className="text-[13px] text-cream-faint">Aceita listas do Moxfield, LigaMagic, Arena e Archidekt, com nomes em português ou inglês.</p>
+          <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={12} autoFocus className="font-mono text-body" placeholder={"1 Sol Ring\n4 Raio (M11) 149\n\nSideboard\n2 Pyroblast"} aria-label="Lista para importar" />
+          <p className="text-footnote text-cream-faint">Aceita listas do Moxfield, LigaMagic, Arena e Archidekt, com nomes em português ou inglês.</p>
         </div>
       )}
     </Modal>

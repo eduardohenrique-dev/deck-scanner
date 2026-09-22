@@ -20,32 +20,23 @@ export default function Decks() {
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageTitle kicker="a estante" title="Seus decks">
+        <PageTitle title="Decks">
           Cada deck guarda a lista, as cartas físicas que estão nele e o histórico de versões.
         </PageTitle>
         <div className="flex gap-2">
           <Button icon={<Lens size={18} />} onClick={() => navigate("/escanear")}>
-            escanear
+            Escanear
           </Button>
-          <Button variant="brass" icon={<Plus className="size-4" />} onClick={() => setCreating(true)}>
-            novo deck
+          <Button variant="primary" icon={<Plus className="size-4" />} onClick={() => setCreating(true)}>
+            Novo deck
           </Button>
         </div>
       </div>
 
       {formatsInUse.length > 1 && (
         <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por formato">
-          {[["", "todos"], ...formatsInUse].map(([id, name]) => (
-            <button
-              key={id}
-              onClick={() => setFilter(id)}
-              aria-pressed={filter === id}
-              className={
-                filter === id
-                  ? "h-9 rounded-full border border-brass-400 bg-brass-400/15 px-3.5 text-[14px] text-brass-200"
-                  : "h-9 rounded-full border border-oak-600 px-3.5 text-[14px] text-cream-dim hover:text-cream"
-              }
-            >
+          {[["", "Todos"], ...formatsInUse].map(([id, name]) => (
+            <button key={id} type="button" onClick={() => setFilter(id)} aria-pressed={filter === id} className="chip chip-pill">
               {name}
             </button>
           ))}
@@ -55,7 +46,7 @@ export default function Decks() {
       {decks.loading ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="aspect-[4/3.6]" />
+            <Skeleton key={i} className="aspect-[4/3.6] rounded-lg" />
           ))}
         </div>
       ) : list.length ? (
@@ -67,15 +58,15 @@ export default function Decks() {
       ) : (
         <Board>
           <EmptyState
-            art={<Tome size={48} />}
+            art={<Tome size={44} />}
             title="A estante está vazia"
             action={
               <div className="flex flex-wrap justify-center gap-2">
-                <Button variant="brass" icon={<Lens size={18} />} onClick={() => navigate("/escanear")}>
-                  escanear um deck
+                <Button variant="primary" icon={<Lens size={18} />} onClick={() => navigate("/escanear")}>
+                  Escanear um deck
                 </Button>
                 <Button icon={<Plus className="size-4" />} onClick={() => setCreating(true)}>
-                  importar lista
+                  Importar lista
                 </Button>
               </div>
             }
@@ -136,17 +127,17 @@ function NewDeckDialog({ onClose }: { onClose: () => void }) {
         onClose={() => navigate(`/decks/${result.deckId}`)}
         title="Lista importada, com ressalvas"
         footer={
-          <Button variant="brass" onClick={() => navigate(`/decks/${result.deckId}`)}>
-            abrir o deck
+          <Button variant="primary" onClick={() => navigate(`/decks/${result.deckId}`)}>
+            Abrir o deck
           </Button>
         }
       >
-        <div className="space-y-4 text-[15px]">
+        <div className="space-y-4 text-subhead">
           <p className="text-cream-dim">
             {result.report.imported} cartas entraram. {result.report.unresolved.length > 0 && `${result.report.unresolved.length} linhas não foram reconhecidas.`}
           </p>
           {result.report.unresolved.length > 0 && (
-            <ul className="board-sunken max-h-48 space-y-1 overflow-y-auto px-3 py-2 font-mono text-[13px] text-wine-300">
+            <ul className="well max-h-48 space-y-1 overflow-y-auto px-4 py-3 font-mono text-footnote text-wine-300">
               {result.report.unresolved.map((u) => (
                 <li key={u.line}>
                   linha {u.line}: {u.text}
@@ -157,7 +148,7 @@ function NewDeckDialog({ onClose }: { onClose: () => void }) {
           {result.report.print_warnings.length > 0 && (
             <div className="space-y-1.5">
               <p className="text-cream-dim">Impressões que não existem no registro (a carta entrou na impressão mais comum):</p>
-              <ul className="space-y-1 text-[14px] text-amber-300">
+              <ul className="space-y-1 text-subhead text-ember-300">
                 {result.report.print_warnings.map((w) => (
                   <li key={w.line}>
                     linha {w.line}: {w.message}
@@ -179,20 +170,20 @@ function NewDeckDialog({ onClose }: { onClose: () => void }) {
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={busy}>
-            cancelar
+            Cancelar
           </Button>
-          <Button variant="brass" busy={busy} disabled={!name.trim()} onClick={create}>
-            {lines ? `criar com ${lines} linhas` : "criar vazio"}
+          <Button variant="primary" busy={busy} disabled={!name.trim()} onClick={create}>
+            {lines ? `Criar com ${lines} linhas` : "Criar vazio"}
           </Button>
         </>
       }
     >
       <div className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="nome">
+          <Field label="Nome">
             {(id) => <Input id={id} autoFocus value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Kaalia dos anjos" maxLength={80} />}
           </Field>
-          <Field label="formato">
+          <Field label="Formato">
             {(id) => (
               <Select id={id} value={formatId} onChange={(e) => setFormatId(e.target.value)}>
                 {groups.map(([group, list]) => (
@@ -208,19 +199,19 @@ function NewDeckDialog({ onClose }: { onClose: () => void }) {
             )}
           </Field>
         </div>
-        <Field label="lista" hint="opcional · Moxfield, LigaMagic, Arena, Archidekt">
+        <Field label="Lista" hint="opcional · Moxfield, LigaMagic, Arena, Archidekt">
           {(id) => (
             <Textarea
               id={id}
               value={text}
               onChange={(e) => setText(e.target.value)}
               rows={10}
-              className="font-mono text-[13px]"
+              className="font-mono text-body"
               placeholder={"1 Sol Ring\n1 Arcane Signet (CMM) 381\n1 Anel Solar\n\nCommander\n1 Kaalia of the Vast"}
             />
           )}
         </Field>
-        <p className="text-[13px] text-cream-faint">Nomes em português ou inglês. Edição e número entre parênteses fixam a impressão; *F* marca foil.</p>
+        <p className="text-footnote text-cream-faint">Nomes em português ou inglês. Edição e número entre parênteses fixam a impressão; *F* marca foil.</p>
       </div>
     </Modal>
   );

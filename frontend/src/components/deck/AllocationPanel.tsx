@@ -62,29 +62,29 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
 
   return (
     <div className="space-y-5">
-      <div className="board space-y-3 p-4">
+      <div className="glass space-y-4 p-4 sm:p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="font-serif text-[18px] text-cream">
-            <strong className="tabular text-[24px]">{t.here}</strong> de {t.needed} cartas físicas neste deck
+          <p className="text-body text-cream-dim">
+            <strong className="tabular text-title-2 font-semibold text-cream">{t.here}</strong> de {t.needed} cartas físicas neste deck
           </p>
-          {report.complete && <Tag tone="ok">deck montado</Tag>}
+          {report.complete && <Tag tone="ok">Deck montado</Tag>}
         </div>
         <Meter value={t.needed ? t.here / t.needed : 0} tone={report.complete ? "ok" : "brass"} label="cartas físicas no deck" />
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-[14px] text-cream-dim">
-          {t.move > 0 && <span className="text-steel-300">{t.move} na coleção</span>}
-          {t.conflict > 0 && <span className="text-amber-300">{t.conflict} em outros decks</span>}
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-subhead text-cream-dim">
+          {t.move > 0 && <span className="text-verdigris-300">{t.move} na coleção</span>}
+          {t.conflict > 0 && <span className="text-ember-300">{t.conflict} em outros decks</span>}
           {t.buy > 0 && <span className="text-wine-300">{t.buy} para comprar</span>}
         </div>
         <div className="flex flex-wrap gap-2 pt-1">
           {t.move > 0 && (
             <Button
-              variant="brass"
+              variant="primary"
               size="sm"
               icon={<ArrowDownToLine className="size-4" />}
               busy={busy === "auto"}
               onClick={() => run("auto", () => api.autoAllocate(state.deck.id), (r) => `${r?.moved ?? 0} cartas trazidas da coleção`)}
             >
-              trazer da coleção ({t.move})
+              Trazer da coleção ({t.move})
             </Button>
           )}
           {report.extra.length > 0 && (
@@ -94,32 +94,32 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
               busy={busy === "release"}
               onClick={() => run("release", () => api.releaseExtra(state.deck.id), (r) => `${r?.moved ?? 0} sobras devolvidas para Solto`)}
             >
-              devolver sobras ({report.extra.length})
+              Devolver sobras ({report.extra.length})
             </Button>
           )}
           {t.buy > 0 && (
-            <Button size="sm" variant="ghost" icon={<ShoppingCart className="size-4" />} onClick={onShop}>
-              ver lista de compras
+            <Button size="sm" variant="tertiary" icon={<ShoppingCart className="size-4" />} onClick={onShop}>
+              Ver lista de compras
             </Button>
           )}
         </div>
-        <p className="text-[13px] text-cream-faint">“Trazer da coleção” só usa cartas soltas, de pastas e caixas. Cartas de outros decks nunca saem sem você confirmar.</p>
+        <p className="text-footnote text-cream-faint">“Trazer da coleção” só usa cartas soltas, de pastas e caixas. Cartas de outros decks nunca saem sem você confirmar.</p>
       </div>
 
       {groups.conflict.length > 0 && (
-        <Section title="presas em outro deck" tone="warn" icon={<TriangleAlert className="size-4" />}>
+        <Section title="Presas em outro deck" tone="warn" icon={<TriangleAlert className="size-4" />}>
           {groups.conflict.map((item) => (
             <ItemRow key={item.oracle_id} item={item} card={cards(item)}>
               {item.warnings.map((w) => (
-                <p key={w} className="text-[14px] text-amber-300">
+                <p key={w} className="text-subhead text-ember-300">
                   {w}
                 </p>
               ))}
-              <ul className="mt-1 flex flex-wrap gap-1.5">
+              <ul className="mt-2 flex flex-wrap gap-2">
                 {item.in_other_decks.slice(0, 4).map((c) => (
                   <li key={c.id}>
-                    <Button size="xs" variant="ghost" busy={busy === c.id} onClick={() => bring(c.id)}>
-                      trazer do {c.location_name}
+                    <Button size="sm" variant="secondary" busy={busy === c.id} onClick={() => bring(c.id)}>
+                      Trazer do {c.location_name}
                     </Button>
                   </li>
                 ))}
@@ -130,14 +130,14 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
       )}
 
       {groups.move.length > 0 && (
-        <Section title="na coleção, fora do deck" tone="info" icon={<Chest size={16} />}>
+        <Section title="Na coleção, fora do deck" tone="info" icon={<Chest size={16} />}>
           {groups.move.map((item) => (
             <ItemRow key={item.oracle_id} item={item} card={cards(item)}>
-              <ul className="flex flex-wrap gap-1.5">
+              <ul className="mt-2 flex flex-wrap gap-2">
                 {item.available.slice(0, 4).map((c) => (
                   <li key={c.id}>
-                    <Button size="xs" busy={busy === c.id} onClick={() => bring(c.id)} title={copyLabel(c) || undefined}>
-                      trazer de {place(c)}
+                    <Button size="sm" busy={busy === c.id} onClick={() => bring(c.id)} title={copyLabel(c) || undefined}>
+                      Trazer de {place(c)}
                     </Button>
                   </li>
                 ))}
@@ -148,19 +148,19 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
       )}
 
       {groups.buy.length > 0 && (
-        <Section title="você não tem" tone="bad" icon={<ShoppingCart className="size-4" />}>
+        <Section title="Você não tem" tone="bad" icon={<ShoppingCart className="size-4" />}>
           {groups.buy.map((item) => (
             <ItemRow key={item.oracle_id} item={item} card={cards(item)}>
-              <p className="text-[14px] text-cream-faint">{item.buy === 1 ? "falta 1 cópia" : `faltam ${item.buy} cópias`}</p>
+              <p className="text-footnote text-cream-faint">{item.buy === 1 ? "Falta 1 cópia" : `Faltam ${item.buy} cópias`}</p>
             </ItemRow>
           ))}
         </Section>
       )}
 
       {report.extra.length > 0 && (
-        <Section title="no deck, mas fora da lista" tone="neutral" icon={<PackageOpen className="size-4" />}>
+        <Section title="No deck, mas fora da lista" tone="neutral" icon={<PackageOpen className="size-4" />}>
           {report.extra.map((c) => (
-            <li key={c.id} className="flex items-center gap-3 px-3 py-2 text-[15px] text-cream-dim">
+            <li key={c.id} className="flex items-center gap-3 px-4 py-3 text-subhead text-cream-dim">
               {state.entries.find((e) => e.card_ref_id === c.card_ref_id)?.card?.name_pt ?? c.card_ref_id.slice(0, 8)} {copyLabel(c) && <span className="text-cream-faint">({copyLabel(c)})</span>}
             </li>
           ))}
@@ -168,13 +168,13 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
       )}
 
       {groups.ok.length > 0 && (
-        <details className="board group">
-          <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 font-caps text-[15px] font-bold lowercase tracking-[0.04em] text-moss-300">
-            <CircleCheck className="size-4" /> já no deck ({groups.ok.reduce((n, i) => n + Math.min(i.here, i.needed), 0)})
+        <details className="glass group overflow-hidden">
+          <summary className="panel-head cursor-pointer border-b-0 text-moss-300 group-open:border-b">
+            <CircleCheck className="size-4" /> Já no deck ({groups.ok.reduce((n, i) => n + Math.min(i.here, i.needed), 0)})
           </summary>
-          <ul className="grid gap-x-4 border-t border-oak-700 px-4 py-2 sm:grid-cols-2">
+          <ul className="grid gap-x-4 px-4 py-3 sm:grid-cols-2">
             {groups.ok.map((item) => (
-              <li key={item.oracle_id} className="truncate py-0.5 text-[14px] text-cream-dim">
+              <li key={item.oracle_id} className="truncate py-0.5 text-subhead text-cream-dim">
                 {item.needed > 1 ? `${item.needed}× ` : ""}
                 {item.name}
               </li>
@@ -186,7 +186,7 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
       <Confirm
         open={!!conflict}
         title="Tirar de outro deck?"
-        confirmLabel="trazer mesmo assim"
+        confirmLabel="Trazer mesmo assim"
         busy={!!conflict && busy === conflict.copyId}
         onConfirm={() => conflict && bring(conflict.copyId, true)}
         onClose={() => setConflict(null)}
@@ -199,25 +199,25 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
 }
 
 function Section({ title, tone, icon, children }: { title: string; tone: "warn" | "info" | "bad" | "neutral"; icon: ReactNode; children: ReactNode }) {
-  const color = { warn: "text-amber-300", info: "text-steel-300", bad: "text-wine-300", neutral: "text-cream-dim" }[tone];
+  const color = { warn: "text-ember-300", info: "text-verdigris-300", bad: "text-wine-300", neutral: "text-cream-dim" }[tone];
   return (
-    <section className="board overflow-hidden">
-      <h3 className={cx("flex items-center gap-2 border-b border-oak-700 bg-oak-900/50 px-3 py-2 font-caps text-[15px] font-bold lowercase tracking-[0.04em]", color)}>
+    <section className="glass overflow-hidden">
+      <h3 className={cx("panel-head", color)}>
         {icon} {title}
       </h3>
-      <ul className="divide-y divide-oak-700/70">{children}</ul>
+      <ul className="divide-y divide-cream/6">{children}</ul>
     </section>
   );
 }
 
 function ItemRow({ item, card, children }: { item: AllocationItem; card: CardSummary | null; children: ReactNode }) {
   return (
-    <li className="flex gap-3 px-3 py-2.5">
+    <li className="flex gap-3 px-4 py-3">
       <ArtThumb card={card} size={48} />
       <div className="min-w-0 flex-1 space-y-1">
         <p className="flex items-baseline justify-between gap-2">
-          <span className="truncate font-serif text-[16px] font-semibold text-cream">{item.name}</span>
-          <span className="tabular shrink-0 text-[13px] text-cream-faint">
+          <span className="truncate font-serif text-body font-semibold text-cream">{item.name}</span>
+          <span className="tabular shrink-0 text-footnote text-cream-faint">
             {item.here}/{item.needed} no deck
           </span>
         </p>

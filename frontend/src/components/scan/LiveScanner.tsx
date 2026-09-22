@@ -17,9 +17,9 @@ const DOT: Record<string, string> = {
   neutral: "bg-cream-faint",
   brass: "bg-brass-300 animate-pulse",
   ok: "bg-moss-400",
-  warn: "bg-amber-400",
+  warn: "bg-ember-400",
   bad: "bg-wine-400",
-  info: "bg-steel-400",
+  info: "bg-verdigris-400",
 };
 
 /** Câmera ao vivo: passe uma carta por vez; cada carta parada vira uma leitura enviada ao servidor. */
@@ -202,36 +202,36 @@ export default function LiveScanner({
             <div className="absolute top-[max(env(safe-area-inset-top),12px)] right-3 left-3 z-10 flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
                 {immersive && !busy && (
-                  <IconButton label="Fechar câmera" onClick={closeCamera} className="border border-oak-600 bg-oak-950/85">
+                  <IconButton label="Fechar câmera" onClick={closeCamera} className="rounded-full bg-oak-950/70 text-cream shadow-[inset_0_0_0_1px_rgb(255_226_184/0.14)] backdrop-blur-md">
                     <X className="size-5" />
                   </IconButton>
                 )}
                 {(counted !== null || running) && (
-                  <span className="rounded-[5px] border border-oak-600 bg-oak-950/85 px-2.5 py-1 font-serif text-[15px] text-cream">
-                    <strong className="tabular text-[19px]">{counted ?? 0}</strong> {counted === 1 ? "carta" : "cartas"}
+                  <span className="flex h-11 items-center gap-1.5 rounded-full bg-oak-950/70 px-4 text-subhead text-cream-dim shadow-[inset_0_0_0_1px_rgb(255_226_184/0.14)] backdrop-blur-md">
+                    <strong className="tabular text-title-3 font-semibold text-cream">{counted ?? 0}</strong> {counted === 1 ? "carta" : "cartas"}
                   </span>
                 )}
               </div>
-              <div className="flex gap-1 rounded-[6px] border border-oak-600 bg-oak-950/85 p-0.5">
+              <div className="flex gap-1 rounded-full bg-oak-950/70 p-0.5 text-cream shadow-[inset_0_0_0_1px_rgb(255_226_184/0.14)] backdrop-blur-md">
                 {immersive && cameras.length > 1 && (
-                  <IconButton label="Trocar de câmera" onClick={nextCamera} disabled={busy} title={busy ? "Termine a leitura para trocar de câmera" : undefined}>
+                  <IconButton label="Trocar de câmera" onClick={nextCamera} disabled={busy} title={busy ? "Termine a leitura para trocar de câmera" : undefined} className="rounded-full">
                     <SwitchCamera className="size-[18px]" />
                   </IconButton>
                 )}
                 {torch !== null && (
-                  <IconButton label={torch ? "Desligar lanterna" : "Ligar lanterna"} onClick={toggleTorch}>
+                  <IconButton label={torch ? "Desligar lanterna" : "Ligar lanterna"} onClick={toggleTorch} className="rounded-full">
                     {torch ? <FlashlightOff className="size-[18px]" /> : <Flashlight className="size-[18px]" />}
                   </IconButton>
                 )}
-                <IconButton label={sound ? "Silenciar o aviso de leitura" : "Tocar aviso a cada leitura"} onClick={() => setSound(!sound)}>
+                <IconButton label={sound ? "Silenciar o aviso de leitura" : "Tocar aviso a cada leitura"} onClick={() => setSound(!sound)} className="rounded-full">
                   {sound ? <Volume2 className="size-[18px]" /> : <VolumeX className="size-[18px]" />}
                 </IconButton>
               </div>
             </div>
-            <div className="absolute inset-x-3 bottom-3 z-10 flex items-center gap-2.5 rounded-[5px] border border-oak-600 bg-oak-950/88 px-3 py-2.5" role="status" aria-live="polite">
+            <div className="absolute inset-x-3 bottom-3 z-10 flex items-center gap-3 rounded-lg bg-oak-950/75 px-4 py-3 shadow-[inset_0_0_0_1px_rgb(255_226_184/0.12)] backdrop-blur-md" role="status" aria-live="polite">
               <span className={cx("size-2.5 shrink-0 rounded-full", DOT[tip.tone])} />
-              <span className="text-[15px] leading-snug text-cream">{tip.text}</span>
-              {running && scanner.fps > 0 && <span className="tabular ml-auto shrink-0 text-[12px] text-cream-faint">{scanner.fps} q/s</span>}
+              <span className="text-subhead text-cream">{tip.text}</span>
+              {running && scanner.fps > 0 && <span className="tabular ml-auto shrink-0 text-caption text-cream-faint">{scanner.fps} q/s</span>}
             </div>
           </>
         ) : (
@@ -239,32 +239,32 @@ export default function LiveScanner({
         )}
       </div>
 
-      <div className={cx(immersive ? "space-y-3 border-t border-brass-700/60 bg-oak-900 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]" : "space-y-4")}>
+      <div className={cx(immersive ? "bar-glass space-y-3 px-4 pt-4 pb-[max(env(safe-area-inset-bottom),16px)] shadow-[inset_0_1px_0_rgb(255_226_184/0.12)]" : "space-y-4")}>
         {camera === "on" && (
           <div className="flex flex-wrap items-center gap-3">
             {running ? (
-              <Button variant="brass" size="lg" icon={<Square className="size-4 fill-current" />} onClick={scanner.stop} className={immersive ? "flex-1" : undefined}>
-                terminar leitura
+              <Button variant="primary" size="lg" icon={<Square className="size-4 fill-current" />} onClick={scanner.stop} className={immersive ? "flex-1" : undefined}>
+                Terminar leitura
               </Button>
             ) : (
               <Button
-                variant="brass"
+                variant="primary"
                 size="lg"
                 icon={<Play className="size-4 fill-current" />}
                 busy={scanner.phase === "loading" || scanner.phase === "finishing"}
                 onClick={() => video.current && void scanner.startLive(video.current)}
                 className={immersive ? "flex-1" : undefined}
               >
-                {scanner.phase === "loading" ? (firstLoad ? "preparando a lente…" : "abrindo…") : scanner.phase === "finishing" ? "fechando as leituras…" : "começar a leitura"}
+                {scanner.phase === "loading" ? (firstLoad ? "Preparando a lente…" : "Abrindo…") : scanner.phase === "finishing" ? "Fechando as leituras…" : "Começar a leitura"}
               </Button>
             )}
             {!busy && !immersive && (
               <Button variant="ghost" onClick={closeCamera}>
-                fechar câmera
+                Fechar câmera
               </Button>
             )}
             {!immersive && cameras.length > 1 && (
-              <label className="flex min-w-0 items-center gap-2 text-[14px] text-cream-faint sm:ml-auto">
+              <label className="flex min-w-0 items-center gap-2 text-footnote text-cream-faint sm:ml-auto">
                 <Camera className="size-4 shrink-0 text-brass-400" aria-hidden="true" />
                 <span className="sr-only">Câmera</span>
                 <Select
@@ -283,15 +283,15 @@ export default function LiveScanner({
               </label>
             )}
             {!immersive && size.w > 0 && (
-              <span className="tabular text-[13px] text-cream-faint" title="resolução que a câmera está entregando">
+              <span className="tabular text-footnote text-cream-faint" title="resolução que a câmera está entregando">
                 {size.w}×{size.h}
               </span>
             )}
-            <p className={cx("text-[14px] text-cream-faint", immersive && "basis-full text-center")}>
+            <p className={cx("text-footnote text-cream-faint", immersive && "basis-full text-center")}>
               {scanner.phase === "loading" && firstLoad
                 ? "Na primeira vez o leitor de imagem é baixado (cerca de 13 MB)."
                 : scanner.pending > 0
-                  ? `enviando ${scanner.pending} ${scanner.pending === 1 ? "leitura" : "leituras"}…`
+                  ? `Enviando ${scanner.pending} ${scanner.pending === 1 ? "leitura" : "leituras"}…`
                   : running
                     ? "Segure cada carta parada até piscar verde; tire do quadro antes da próxima."
                     : null}
@@ -300,11 +300,11 @@ export default function LiveScanner({
         )}
 
         {scanner.treasure && camera === "on" && (
-          <div className="animate-rise relative z-20 flex items-center gap-3 rounded-[6px] border border-brass-500/80 bg-brass-500/12 p-2.5" role="status">
-            <img src={scanner.treasure.preview} alt="" className="card-img aspect-[488/680] w-11 shrink-0 border border-brass-600/60 object-cover" />
-            <p className="min-w-0 flex-1 text-[15px] text-cream">
+          <div className="animate-pop relative z-20 flex items-center gap-3 rounded-lg bg-brass-500/14 p-3 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.45),0_12px_32px_-12px_rgb(216_166_76/0.5)]" role="status">
+            <img src={scanner.treasure.preview} alt="" className="card-img aspect-[488/680] w-11 shrink-0 object-cover ring-1 ring-brass-400/60" />
+            <p className="min-w-0 flex-1 text-subhead text-cream">
               <span className="font-serif font-semibold">{scanner.treasure.name}</span>
-              <span className="block text-[14px] text-brass-200">carta valiosa · {brl(scanner.treasure.brl)}</span>
+              <span className="block text-subhead text-brass-200">Carta valiosa · {brl(scanner.treasure.brl)}</span>
             </p>
             <IconButton label="Fechar aviso" onClick={scanner.dismissTreasure} className="shrink-0">
               <X className="size-4" />
@@ -317,7 +317,7 @@ export default function LiveScanner({
         )}
 
         {scanner.error && (
-          <p className="rounded-[5px] border border-wine-600/60 bg-wine-600/10 px-3 py-2 text-[14px] text-wine-300" role="alert">
+          <p className="rounded-md bg-wine-600/14 px-4 py-3 text-subhead text-wine-300 shadow-[inset_0_0_0_1px_rgb(214_96_79/0.35)]" role="alert">
             {scanner.error}
           </p>
         )}
@@ -334,15 +334,15 @@ function MissPanel({ miss, dropUp, onPick, onDismiss }: { miss: Miss; dropUp: bo
   const [err, setErr] = useState<string | null>(null);
   return (
     // z-20: a animação cria um contexto de empilhamento; sem isso a lista de nomes fica atrás das dicas do visor
-    <div className="animate-rise relative z-20 flex gap-3 rounded-[6px] border border-wine-600/70 bg-wine-600/10 p-2.5" role="alert">
-      <img src={miss.preview} alt="" className="card-img aspect-[488/680] w-12 shrink-0 self-start border border-wine-600/60 object-cover sm:w-14" />
+    <div className="animate-rise relative z-20 flex gap-3 rounded-lg bg-wine-600/14 p-3 shadow-[inset_0_0_0_1px_rgb(214_96_79/0.4)]" role="alert">
+      <img src={miss.preview} alt="" className="card-img aspect-[488/680] w-12 shrink-0 self-start object-cover ring-1 ring-wine-400/50 sm:w-14" />
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-serif text-[16px] leading-tight font-semibold text-cream">
+            <p className="text-headline font-semibold text-cream">
               {miss.reason === "back" ? "Esse é o verso da carta" : "Não reconheci essa carta"}
             </p>
-            <p className="text-[13px] leading-snug text-cream-dim">
+            <p className="mt-0.5 text-footnote text-cream-dim">
               {miss.reason === "back" ? "Vire a carta e mostre de novo, ou digite o nome." : "Mostre de novo mais perto e sem reflexo, ou digite o nome."}
             </p>
           </div>
@@ -364,8 +364,8 @@ function MissPanel({ miss, dropUp, onPick, onDismiss }: { miss: Miss; dropUp: bo
             }
           }}
         />
-        {busy && <p className="text-[13px] text-cream-faint">anotando…</p>}
-        {err && <p className="text-[13px] text-wine-300">{err}</p>}
+        {busy && <p className="text-footnote text-cream-faint">Anotando…</p>}
+        {err && <p className="text-footnote text-wine-300">{err}</p>}
       </div>
     </div>
   );
@@ -383,7 +383,7 @@ function CameraMessage({ state, onOpen }: { state: CameraState; onOpen: () => vo
       <Message title="O navegador bloqueou a câmera">
         Libere o acesso à câmera nas permissões do site (o cadeado ao lado do endereço) e tente de novo.
         <Button className="mt-4" onClick={onOpen} icon={<Camera className="size-4" />}>
-          tentar de novo
+          Tentar de novo
         </Button>
       </Message>
     );
@@ -398,15 +398,15 @@ function CameraMessage({ state, onOpen }: { state: CameraState; onOpen: () => vo
       <Message title="Não consegui abrir a câmera">
         Ela pode estar em uso por outro aplicativo.
         <Button className="mt-4" onClick={onOpen} icon={<Camera className="size-4" />}>
-          tentar de novo
+          Tentar de novo
         </Button>
       </Message>
     );
   return (
     <Message title="Câmera ao vivo" icon={<Lens size={40} />}>
       Passe o baralho uma carta por vez, parada no centro por meio segundo. Nada é gravado: só o recorte de cada carta vai para o servidor.
-      <Button className="mt-4" variant="brass" size="lg" busy={state === "opening"} onClick={onOpen} icon={<Camera className="size-5" />}>
-        abrir câmera
+      <Button className="mt-5" variant="primary" size="lg" busy={state === "opening"} onClick={onOpen} icon={<Camera className="size-5" />}>
+        Abrir câmera
       </Button>
     </Message>
   );
@@ -415,9 +415,9 @@ function CameraMessage({ state, onOpen }: { state: CameraState; onOpen: () => vo
 function Message({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
   return (
     <div className="relative z-10 flex max-w-sm flex-col items-center px-6 text-center">
-      {icon && <div className="mb-3 text-brass-400">{icon}</div>}
-      <p className="font-serif text-[21px] font-semibold text-cream">{title}</p>
-      <div className="mt-1 flex flex-col items-center text-[15px] text-cream-dim">{children}</div>
+      {icon && <div className="mb-4 grid size-16 place-items-center rounded-full bg-brass-300/10 text-brass-300 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.2)]">{icon}</div>}
+      <p className="font-display text-title-2 font-semibold text-cream">{title}</p>
+      <div className="mt-2 flex flex-col items-center text-subhead text-cream-dim">{children}</div>
     </div>
   );
 }

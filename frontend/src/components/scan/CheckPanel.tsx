@@ -6,7 +6,7 @@ import { Link, navigate } from "../../lib/router";
 import { toast, toastError } from "../../lib/toast";
 import type { CheckCard, CheckResult, PrintRef, SessionState } from "../../lib/types";
 import { Scales } from "../icons";
-import { Button, Confirm, cx, SectionTitle, Tag } from "../ui";
+import { Button, Confirm, cx, LINK, SectionTitle, Tag } from "../ui";
 
 type Available = Extract<CheckResult, { available: true }>;
 
@@ -26,7 +26,7 @@ export default function CheckPanel({ state, scanning }: { state: SessionState; s
   if (!check) return null;
   if (!check.available)
     return (
-      <section className="board p-4 text-[15px] text-cream-dim">
+      <section className="glass p-4 text-subhead text-cream-dim sm:p-5">
         <Scales size={20} className="mr-2 inline text-brass-400" /> Não dá para conferir: {check.reason}.
       </section>
     );
@@ -48,34 +48,34 @@ export default function CheckPanel({ state, scanning }: { state: SessionState; s
 
   return (
     <section className="space-y-3">
-      <SectionTitle aside={<Link to={`/decks/${c.deck.id}`} className="inline-flex items-center gap-1 text-[14px] text-brass-300 hover:underline">abrir deck <ExternalLink className="size-3.5" /></Link>}>
+      <SectionTitle aside={<Link to={`/decks/${c.deck.id}`} className={cx(LINK, "inline-flex items-center gap-1")}>Abrir deck <ExternalLink className="size-3.5" /></Link>}>
         <span className="inline-flex items-center gap-2">
-          <Scales size={17} /> conferência · {c.deck.name}
+          <Scales size={20} className="text-brass-300" /> Conferência · {c.deck.name}
         </span>
       </SectionTitle>
-      <div className="board space-y-4 p-4">
+      <div className="glass space-y-5 p-4 sm:p-5">
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-          <Num label="na lista" value={s.expected} />
-          <Num label="lidas" value={s.scanned} />
-          <Num label="conferem" value={s.ok} tone="ok" />
-          <Num label="faltando" value={s.missing} tone={s.missing ? "warn" : undefined} />
-          <Num label="sobrando" value={s.extra} tone={s.extra ? "bad" : undefined} className="max-sm:col-start-2" />
+          <Num label="Na lista" value={s.expected} />
+          <Num label="Lidas" value={s.scanned} />
+          <Num label="Conferem" value={s.ok} tone="ok" />
+          <Num label="Faltando" value={s.missing} tone={s.missing ? "warn" : undefined} />
+          <Num label="Sobrando" value={s.extra} tone={s.extra ? "bad" : undefined} className="max-sm:col-start-2" />
         </div>
 
         {!started ? (
-          <p className="text-[15px] text-cream-faint">Escaneie o deck inteiro. A comparação com a lista salva aparece aqui conforme as cartas são lidas.</p>
+          <p className="text-subhead text-cream-faint">Escaneie o deck inteiro. A comparação com a lista salva aparece aqui conforme as cartas são lidas.</p>
         ) : c.matches ? (
-          <p className="parchment flex items-center gap-2 px-3 py-2.5 font-serif text-[17px] text-ink-900">
+          <p className="parchment flex items-center gap-3 px-4 py-3 font-serif text-headline font-semibold text-ink-900">
             <Check className="size-5 text-moss-600" /> Tudo confere: o baralho bate com a lista salva.
           </p>
         ) : (
           <>
-            {scanning && <p className="text-[14px] text-cream-faint">Ainda lendo — os números mudam até a última carta.</p>}
+            {scanning && <p className="text-footnote text-cream-faint">Ainda lendo — os números mudam até a última carta.</p>}
 
             {c.likely_swaps.length > 0 && (
-              <Group title="provavelmente trocadas" hint="saiu uma, entrou outra do mesmo tipo">
+              <Group title="Provavelmente trocadas" hint="saiu uma, entrou outra do mesmo tipo">
                 {c.likely_swaps.map((p, i) => (
-                  <li key={i} className="flex flex-wrap items-center gap-2 px-3 py-2 text-[15px]">
+                  <li key={i} className="flex flex-wrap items-center gap-2 px-4 py-3 text-subhead">
                     <span className="text-wine-300 line-through decoration-wine-400/60">{name(p.out)}</span>
                     <ArrowRight className="size-4 text-cream-faint" />
                     <span className="text-cream">{name(p.in)}</span>
@@ -84,43 +84,43 @@ export default function CheckPanel({ state, scanning }: { state: SessionState; s
               </Group>
             )}
             {c.missing.length > 0 && (
-              <Group title={`faltando (${s.missing})`} hint="estão na lista, não apareceram no scan">
+              <Group title={`Faltando (${s.missing})`} hint="estão na lista, não apareceram no scan">
                 {c.missing.map((m) => (
                   <Row key={m.oracle_id} card={m} qty={m.quantity} detail={m.expected && m.expected > 1 ? `${m.scanned ?? 0} de ${m.expected}` : undefined} />
                 ))}
               </Group>
             )}
             {c.extra.length > 0 && (
-              <Group title={`sobrando (${s.extra})`} hint="apareceram no scan, não estão na lista">
+              <Group title={`Sobrando (${s.extra})`} hint="apareceram no scan, não estão na lista">
                 {c.extra.map((m) => (
                   <Row key={m.oracle_id} card={m} qty={m.quantity} detail={m.expected ? `lista tem ${m.expected}` : undefined} />
                 ))}
               </Group>
             )}
             {c.swapped.length > 0 && (
-              <Group title={`outra edição ou idioma (${s.swapped})`} hint="mesma carta, impressão diferente da lista">
+              <Group title={`Outra edição ou idioma (${s.swapped})`} hint="mesma carta, impressão diferente da lista">
                 {c.swapped.map((m) => (
-                  <li key={m.oracle_id} className="px-3 py-2">
-                    <p className="flex items-center gap-2 font-serif text-[16px] text-cream">
-                      <Repeat className="size-4 text-steel-300" /> {name(m)}
+                  <li key={m.oracle_id} className="px-4 py-3">
+                    <p className="flex items-center gap-2 font-serif text-body text-cream">
+                      <Repeat className="size-4 text-verdigris-300" /> {name(m)}
                     </p>
-                    <p className="text-[13px] text-cream-faint">
-                      lista: {m.expected_prints.map(printLabel).join(", ")} · no scan: {m.scanned_prints.map(printLabel).join(", ")}
+                    <p className="text-footnote text-cream-faint">
+                      Lista: {m.expected_prints.map(printLabel).join(", ")} · no scan: {m.scanned_prints.map(printLabel).join(", ")}
                     </p>
                   </li>
                 ))}
               </Group>
             )}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-oak-700 pt-3">
-              <p className="max-w-md text-[14px] text-cream-faint">A lista do deck mudou de propósito? Atualize com o que foi escaneado; a versão atual fica guardada no histórico.</p>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-cream/8 pt-4">
+              <p className="max-w-md text-footnote text-cream-faint">A lista do deck mudou de propósito? Atualize com o que foi escaneado; a versão atual fica guardada no histórico.</p>
               <Button disabled={scanning} onClick={() => setConfirm(true)}>
-                usar o scan como lista
+                Usar o scan como lista
               </Button>
             </div>
           </>
         )}
       </div>
-      <Confirm open={confirm} title="Atualizar a lista do deck?" confirmLabel="atualizar lista" busy={busy} onConfirm={apply} onClose={() => setConfirm(false)}>
+      <Confirm open={confirm} title="Atualizar a lista do deck?" confirmLabel="Atualizar lista" busy={busy} onConfirm={apply} onClose={() => setConfirm(false)}>
         <p>
           A lista de <strong className="text-cream">{c.deck.name}</strong> passa a ser exatamente o que foi escaneado ({s.scanned} cartas).
         </p>
@@ -132,9 +132,9 @@ export default function CheckPanel({ state, scanning }: { state: SessionState; s
 
 function Num({ label, value, tone, className }: { label: string; value: number; tone?: "ok" | "warn" | "bad"; className?: string }) {
   return (
-    <div className={cx("board-sunken px-2.5 py-2", className)}>
-      <div className="font-caps text-[12px] font-bold lowercase tracking-[0.05em] text-cream-faint">{label}</div>
-      <div className={cx("tabular font-serif text-[23px] leading-tight font-semibold", tone === "ok" ? "text-moss-300" : tone === "warn" ? "text-amber-300" : tone === "bad" ? "text-wine-300" : "text-cream")}>{value}</div>
+    <div className={cx("well px-3 py-3", className)}>
+      <div className="text-caption font-medium text-cream-faint">{label}</div>
+      <div className={cx("tabular mt-0.5 text-title-2 font-semibold", tone === "ok" ? "text-moss-300" : tone === "warn" ? "text-ember-300" : tone === "bad" ? "text-wine-300" : "text-cream")}>{value}</div>
     </div>
   );
 }
@@ -142,21 +142,21 @@ function Num({ label, value, tone, className }: { label: string; value: number; 
 function Group({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
   return (
     <div>
-      <p className="mb-1.5 flex flex-wrap items-baseline gap-x-2">
-        <span className="font-caps text-[15px] font-bold lowercase tracking-[0.04em] text-brass-300">{title}</span>
-        <span className="text-[13px] text-cream-faint">{hint}</span>
+      <p className="mb-2 flex flex-wrap items-baseline gap-x-2">
+        <span className="text-footnote font-semibold tracking-[0.06em] text-brass-300 uppercase">{title}</span>
+        <span className="text-footnote text-cream-faint">{hint}</span>
       </p>
-      <ul className="board-sunken divide-y divide-oak-700">{children}</ul>
+      <ul className="well divide-y divide-cream/6">{children}</ul>
     </div>
   );
 }
 
 function Row({ card, qty, detail }: { card: CheckCard; qty: number; detail?: string }) {
   return (
-    <li className="flex items-center gap-3 px-3 py-1.5">
+    <li className="flex min-h-14 items-center gap-3 px-4 py-2">
       {card.image_small ? <img src={card.image_small} alt="" loading="lazy" className="card-img h-11 w-8 object-cover" /> : <span className="h-11 w-8" />}
-      <span className="min-w-0 flex-1 truncate font-serif text-[16px] text-cream">{name(card)}</span>
-      {detail && <span className="text-[13px] text-cream-faint">{detail}</span>}
+      <span className="min-w-0 flex-1 truncate font-serif text-body text-cream">{name(card)}</span>
+      {detail && <span className="text-footnote text-cream-faint">{detail}</span>}
       <Tag>{qty}×</Tag>
     </li>
   );

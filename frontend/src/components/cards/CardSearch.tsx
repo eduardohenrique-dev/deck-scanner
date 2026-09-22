@@ -100,7 +100,7 @@ export default function CardSearch({
           aria-controls={listId}
           aria-activedescendant={open && results[active] ? `${listId}-${active}` : undefined}
           placeholder={placeholder}
-          className="h-11 w-full rounded-[5px] border border-oak-600 bg-oak-950/80 pr-10 pl-10 text-[15px] text-cream shadow-[inset_0_2px_4px_rgb(0_0_0/0.4)] outline-none focus:border-brass-400"
+          className="field h-11 pr-10 pl-10"
         />
         {loading && <Spinner className="absolute top-1/2 right-3 size-4 -translate-y-1/2" />}
       </div>
@@ -108,7 +108,7 @@ export default function CardSearch({
         <ul
           id={listId}
           role="listbox"
-          className={cx("board scrollbar-thin absolute inset-x-0 z-30 max-h-80 overflow-y-auto p-1 shadow-[0_12px_24px_rgb(0_0_0/0.5)]", place)}
+          className={cx("glass-float scrollbar-thin absolute inset-x-0 z-30 max-h-80 overflow-y-auto p-1.5", place)}
         >
           {results.map((card, i) => (
             <li
@@ -121,15 +121,15 @@ export default function CardSearch({
                 pick(card);
               }}
               onMouseEnter={() => setActive(i)}
-              className={cx("flex cursor-pointer items-center gap-3 rounded-[4px] px-2 py-1.5", i === active && "bg-oak-700")}
+              className={cx("flex min-h-12 cursor-pointer items-center gap-3 rounded-sm px-2 py-1.5", i === active && "bg-cream/8")}
             >
               <ArtThumb card={card} size={46} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
-                  <span className="truncate font-serif text-[16px] font-semibold text-cream">{card.name_pt || card.name_en}</span>
+                  <span className="truncate font-serif text-body font-semibold text-cream">{card.name_pt || card.name_en}</span>
                   <ManaCost cost={card.mana_cost} size={14} />
                 </span>
-                <span className="block truncate text-[13px] text-cream-faint">
+                <span className="block truncate text-footnote text-cream-faint">
                   {card.name_pt && card.name_pt !== card.name_en ? `${card.name_en} · ` : ""}
                   {card.type_line}
                 </span>
@@ -140,7 +140,7 @@ export default function CardSearch({
         </ul>
       )}
       {open && query.length >= 2 && !loading && results.length === 0 && (
-        <p className={cx("absolute inset-x-0 z-30 rounded-[5px] border border-oak-600 bg-oak-850 px-3 py-2 text-[14px] text-cream-faint", place)}>
+        <p className={cx("glass-float absolute inset-x-0 z-30 px-4 py-3 text-footnote text-cream-faint", place)}>
           Nenhuma carta com esse nome.
         </p>
       )}

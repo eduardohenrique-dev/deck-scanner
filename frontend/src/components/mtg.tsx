@@ -52,7 +52,7 @@ export function SetSymbol({ card, size = 18, className }: { card: CardSummary | 
 export function PrintLabel({ card, className }: { card: CardSummary | null | undefined; className?: string }) {
   if (!card) return null;
   return (
-    <span className={cx("inline-flex items-center gap-1.5 text-[13px] text-cream-faint", className)}>
+    <span className={cx("inline-flex items-center gap-1.5 text-footnote text-cream-faint", className)}>
       <SetSymbol card={card} size={15} />
       <span className="font-mono uppercase tracking-tight">{card.set_code}</span>
       <span className="tabular">#{card.collector_number}</span>
@@ -64,8 +64,8 @@ export function CardName({ card, className, sub = true }: { card: CardSummary | 
   const secondary = sub ? secondaryName(card) : null;
   return (
     <span className={cx("min-w-0", className)}>
-      <span className="block truncate font-serif text-[17px] leading-tight font-semibold text-cream">{cardName(card)}</span>
-      {secondary && <span className="block truncate text-[13px] text-cream-faint italic">{secondary}</span>}
+      <span className="block truncate font-serif text-headline leading-tight font-semibold text-cream">{cardName(card)}</span>
+      {secondary && <span className="block truncate text-footnote text-cream-faint italic">{secondary}</span>}
     </span>
   );
 }
@@ -73,7 +73,7 @@ export function CardName({ card, className, sub = true }: { card: CardSummary | 
 export function LanguagePill({ lang, uncertain }: { lang: string | null | undefined; uncertain?: boolean }) {
   const code = (lang || "en").toLowerCase();
   return (
-    <Tag tone={uncertain ? "warn" : "neutral"} title={`${LANGUAGE_NAME[code] ?? code}${uncertain ? " (não confirmado pela imagem)" : ""}`} className="font-mono text-[12px] uppercase">
+    <Tag tone={uncertain ? "warn" : "neutral"} title={`${LANGUAGE_NAME[code] ?? code}${uncertain ? " (não confirmado pela imagem)" : ""}`} className="font-mono text-caption uppercase">
       {code}
       {uncertain && "?"}
     </Tag>
@@ -98,7 +98,7 @@ export function ConditionBadge({ condition, estimate }: { condition?: string | n
   return (
     <Tag tone={tone} title={`${CONDITION_NAME[grade] ?? grade}${estimated ? ` — estimada pela foto (confiança ${Math.round((estimate?.confidence ?? 0) * 100)}%)` : ""}`}>
       {grade}
-      {estimated && <span className="text-[11px] opacity-75">est.</span>}
+      {estimated && <span className="text-caption opacity-75">est.</span>}
     </Tag>
   );
 }
@@ -138,7 +138,7 @@ export function ArtThumb({ card, className, size = 44 }: { card: CardSummary | n
   const url = artCrop(card);
   return (
     <span
-      className={cx("inline-block shrink-0 overflow-hidden rounded-[3px] bg-oak-750 ring-1 ring-brass-700/60", className)}
+      className={cx("inline-block shrink-0 overflow-hidden rounded-xs bg-oak-750 ring-1 ring-brass-700/60", className)}
       style={{ width: size, height: Math.round(size * 0.73) }}
     >
       {url && <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />}

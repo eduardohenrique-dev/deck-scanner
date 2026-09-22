@@ -1,7 +1,7 @@
 import type { SVGProps } from "react";
 
 /**
- * Ícones da casa, desenhados para o tema (grade 24, traço 1,6). Os genéricos (+, ×, busca…) vêm do lucide.
+ * Ícones da casa, desenhados para o tema (grade 24, traço 1,75 — o mesmo do lucide no app). Os genéricos (+, ×, busca…) vêm do lucide.
  */
 type P = SVGProps<SVGSVGElement> & { size?: number };
 
@@ -13,7 +13,7 @@ function Svg({ size = 20, children, ...rest }: P) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.6}
+      strokeWidth={1.75}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -152,15 +152,41 @@ export function Crown(props: P) {
   );
 }
 
-/** Marca: carta com lupa sobre a mesa. */
+/** Taça: o torneio. */
+export function Goblet(props: P) {
+  return (
+    <Svg {...props}>
+      <path d="M7 4h10v4.6a5 5 0 0 1-10 0z" />
+      <path d="M7 5.6H4.9a2 2 0 0 0 .5 3.9l1.8.2" />
+      <path d="M17 5.6h2.1a2 2 0 0 1-.5 3.9l-1.8.2" />
+      <path d="M12 13.6V17" />
+      <path d="M8.6 20.2h6.8l-1-3.2H9.6z" />
+    </Svg>
+  );
+}
+
+/** Ampulheta: o relógio da rodada. */
+export function Hourglass(props: P) {
+  return (
+    <Svg {...props}>
+      <path d="M6.5 3h11M6.5 21h11" />
+      <path d="M7.6 3c0 4.4 4.4 5.4 4.4 9s-4.4 4.6-4.4 9" />
+      <path d="M16.4 3c0 4.4-4.4 5.4-4.4 9s4.4 4.6 4.4 9" />
+      <path d="M9.8 18.6h4.4" />
+    </Svg>
+  );
+}
+
+/** Marca: carta com lupa sobre a mesa (o reflexo na lente é o brilho do vidro do app). */
 export function BrandMark({ size = 30, ...rest }: P) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" {...rest}>
-      <rect x="5" y="3.5" width="15" height="21" rx="2" transform="rotate(-9 12.5 14)" fill="#efe3c8" stroke="#8a6429" strokeWidth="1.2" />
-      <rect x="7.8" y="6.6" width="9.4" height="7.2" rx="0.8" transform="rotate(-9 12.5 14)" fill="#463524" />
-      <path d="M8.9 16.8l7.4-1.2M9.3 19.2l5-.8" stroke="#8a6429" strokeWidth="1.1" strokeLinecap="round" />
-      <circle cx="20.5" cy="18.5" r="6" fill="#16100c" fillOpacity="0.55" stroke="#e8c273" strokeWidth="2" />
-      <path d="m25 23 4 4" stroke="#e8c273" strokeWidth="2.6" strokeLinecap="round" />
+      <rect x="5" y="3.5" width="15" height="21" rx="2.4" transform="rotate(-9 12.5 14)" fill="#f2e8d5" stroke="#8d6529" strokeWidth="1.2" />
+      <rect x="7.8" y="6.6" width="9.4" height="7.2" rx="1" transform="rotate(-9 12.5 14)" fill="#463524" />
+      <path d="M8.9 16.8l7.4-1.2M9.3 19.2l5-.8" stroke="#8d6529" strokeWidth="1.1" strokeLinecap="round" />
+      <circle cx="20.5" cy="18.5" r="6" fill="#16100c" fillOpacity="0.5" stroke="#ebc674" strokeWidth="2" />
+      <path d="M17.6 16.2a3.6 3.6 0 0 1 3.6-1.4" stroke="#fbeccb" strokeOpacity="0.7" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="m25 23 4 4" stroke="#ebc674" strokeWidth="2.6" strokeLinecap="round" />
     </svg>
   );
 }
