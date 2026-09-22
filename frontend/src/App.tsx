@@ -1,6 +1,6 @@
 import { LogOut } from "lucide-react";
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
-import { BrandMark, Candle, Chest, Lens, Tankard, Tome } from "./components/icons";
+import { BrandMark, Candle, Chest, Goblet, Lens, Tankard, Tome } from "./components/icons";
 import { Button, cx, IconButton, Spinner } from "./components/ui";
 import { signOut, useAuth } from "./lib/auth";
 import { Link, matchRoute, useLocation } from "./lib/router";
@@ -13,6 +13,9 @@ const ScanSession = lazy(() => import("./pages/ScanSession"));
 const Decks = lazy(() => import("./pages/Decks"));
 const DeckPage = lazy(() => import("./pages/DeckPage"));
 const Collection = lazy(() => import("./pages/Collection"));
+const Tournaments = lazy(() => import("./pages/Tournaments"));
+const TournamentPage = lazy(() => import("./pages/TournamentPage"));
+const TournamentDisplay = lazy(() => import("./pages/TournamentDisplay"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const NAV = [
@@ -20,6 +23,7 @@ const NAV = [
   { to: "/escanear", label: "Escanear", icon: Lens, match: (p: string) => p.startsWith("/escanear") || p.startsWith("/s/") },
   { to: "/decks", label: "Decks", icon: Tome, match: (p: string) => p.startsWith("/decks") },
   { to: "/colecao", label: "Coleção", icon: Chest, match: (p: string) => p.startsWith("/colecao") },
+  { to: "/torneios", label: "Torneio", icon: Goblet, match: (p: string) => p.startsWith("/torneios") },
 ];
 
 export default function App() {
@@ -68,6 +72,15 @@ export default function App() {
 
   const route = matchRoute(path);
   const email = auth.status === "signed-in" ? auth.user.email : null;
+
+  // telão: tela cheia, sem a moldura do app
+  if (route.name === "tournament-display")
+    return (
+      <Suspense fallback={<FullScreen><Spinner className="size-7" /></FullScreen>}>
+        <TournamentDisplay id={route.id} />
+        <Toaster />
+      </Suspense>
+    );
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -126,6 +139,8 @@ export default function App() {
           {route.name === "decks" && <Decks />}
           {route.name === "deck" && <DeckPage key={route.id} id={route.id} />}
           {route.name === "collection" && <Collection />}
+          {route.name === "tournaments" && <Tournaments />}
+          {route.name === "tournament" && <TournamentPage key={route.id} id={route.id} />}
           {route.name === "not-found" && <NotFound />}
         </Suspense>
       </main>

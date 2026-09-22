@@ -1,4 +1,5 @@
 import { accessToken } from "./auth";
+import type { Summary, Tournament } from "../tournament/types.ts";
 import type {
   AllocationReport,
   Bracket,
@@ -262,7 +263,38 @@ export const api = {
     const res = await raw(`/api/${kind}/${id}/export${q({ format: opts.format, group: opts.group ? "true" : "false", lang: opts.lang ?? "en" })}`);
     return res.text();
   },
+
+  // ---------------------------------------------------------------- torneios
+  tournaments: () => request<TournamentRow[]>("/api/tournaments"),
+  tournament: (id: string) => request<TournamentRecord>(`/api/tournaments/${id}`),
+  /** Só devolve o torneio se a versão mudou (null = nada novo): é o que o telão consulta. */
+  tournamentSince: async (id: string, version: number): Promise<TournamentRecord | null> => {
+    const res = await raw(`/api/tournaments/${id}${q({ since: version })}`);
+    return res.status === 204 ? null : ((await res.json()) as TournamentRecord);
+  },
+  createTournament: (doc: Tournament, summary: ServerSummary) => request<TournamentRecord>("/api/tournaments", { method: "POST", body: json({ doc, summary }) }),
+  /** Grava a partir de `baseVersion`; se outro aparelho gravou antes, lança ApiError 409 com `body.current`. */
+  saveTournament: (id: string, doc: Tournament, summary: ServerSummary, baseVersion: number) =>
+    request<{ version: number; updated_at: string }>(`/api/tournaments/${id}`, { method: "PUT", body: json({ doc, summary, base_version: baseVersion }) }),
+  deleteTournament: (id: string) => request<{ ok: true }>(`/api/tournaments/${id}`, { method: "DELETE" }),
 };
+
+/** O resumo que o servidor guarda para a lista (etapa, rodada, campeão…). */
+export type ServerSummary = Summary & { format?: string; structure?: string };
+
+export type TournamentRow = {
+  id: string;
+  name: string;
+  status: "draft" | "running" | "finished";
+  event_date: string | null;
+  player_count: number;
+  summary: Partial<ServerSummary>;
+  version: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TournamentRecord = TournamentRow & { doc: Tournament };
 
 export type ImportResult = {
   imported: number;

@@ -835,6 +835,26 @@
   }
 }
 
+/* brasas que sobem atrás do campeão */
+.ember {
+  opacity: 0;
+  box-shadow: 0 0 8px 2px rgb(235 198 116 / 0.55);
+  animation: ember 4s var(--ease-out) infinite;
+}
+@keyframes ember {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(1);
+  }
+  12% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(14px, -360px) scale(0.35);
+  }
+}
+
 @keyframes shimmer {
   from {
     background-position: 120% 0;

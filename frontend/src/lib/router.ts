@@ -26,6 +26,9 @@ export type Route =
   | { name: "decks" }
   | { name: "deck"; id: string }
   | { name: "collection" }
+  | { name: "tournaments" }
+  | { name: "tournament"; id: string }
+  | { name: "tournament-display"; id: string }
   | { name: "not-found" };
 
 export function matchRoute(path: string): Route {
@@ -37,6 +40,11 @@ export function matchRoute(path: string): Route {
   m = path.match(/^\/decks\/([a-f0-9]{8,})\/?$/);
   if (m) return { name: "deck", id: m[1] };
   if (path === "/colecao") return { name: "collection" };
+  if (path === "/torneios") return { name: "tournaments" };
+  m = path.match(/^\/torneios\/([a-f0-9]{8,})\/?$/);
+  if (m) return { name: "tournament", id: m[1] };
+  m = path.match(/^\/torneios\/([a-f0-9]{8,})\/telao\/?$/);
+  if (m) return { name: "tournament-display", id: m[1] };
   return { name: "not-found" };
 }
 

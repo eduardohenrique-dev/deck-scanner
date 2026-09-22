@@ -1,10 +1,11 @@
 import { ArrowRight, ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import DeckTome from "../components/deck/DeckTome";
-import { Candle, Chest, Lens, Scales, Tome } from "../components/icons";
+import { Candle, Chest, Goblet, Lens, Scales, Tome } from "../components/icons";
+import { progressLine } from "../components/tournament/labels";
 import { ArtThumb, Money } from "../components/mtg";
 import SessionRow from "../components/scan/SessionRow";
-import { Board, Button, cx, EmptyState, LINK, SectionTitle, Skeleton } from "../components/ui";
+import { Board, Button, cx, EmptyState, LINK, SectionTitle, Skeleton, Tag } from "../components/ui";
 import { api } from "../lib/api";
 import { cardName, plural } from "../lib/format";
 import { useResource } from "../lib/hooks";
@@ -19,6 +20,8 @@ export default function Home() {
   const sessions = useResource(() => api.sessions(), []);
   const decks = useResource(() => api.decks(), []);
   const summary = useResource(() => api.collectionSummary(), []);
+  const tournaments = useResource(() => api.tournaments(), []);
+  const live = (tournaments.data ?? []).find((t) => t.status === "running");
   const topIds = (summary.data?.top ?? []).map((t) => t.card_ref_id);
   const topCards = useResource(async () => Promise.all(topIds.slice(0, 4).map((id) => api.card(id))), [topIds.slice(0, 4).join(",")]);
 
@@ -27,10 +30,11 @@ export default function Home() {
   const cards = summary.data?.total ?? 0;
 
   const actions = (
-    <div className="grid gap-3 sm:grid-cols-3">
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <ActionTile primary icon={<Lens size={24} />} title="Escanear um deck" text="Câmera, fotos ou vídeo: a lista sai pronta." onClick={() => navigate("/escanear")} />
       <ActionTile icon={<Scales size={24} />} title="Conferir um deck" text="Bater o baralho com a lista salva." onClick={() => navigate("/escanear?finalidade=conferir")} />
       <ActionTile icon={<Chest size={24} />} title="Guardar cartas" text="Registrar na pasta, na caixa ou solto." onClick={() => navigate("/escanear?finalidade=colecao")} />
+      <ActionTile icon={<Goblet size={24} />} title="Organizar um torneio" text="Suíço, corte e mata-mata, com desempates." onClick={() => navigate("/torneios")} />
     </div>
   );
 
@@ -80,6 +84,22 @@ export default function Home() {
           </dl>
         )}
       </header>
+
+      {live && (
+        <Link to={`/torneios/${live.id}`} className="group glass flex items-center gap-4 px-5 py-4 transition-transform duration-500 ease-spring hover:-translate-y-0.5 active:scale-[0.99] active:duration-100">
+          <span className="grid size-11 shrink-0 place-items-center rounded-md bg-verdigris-600/30 text-verdigris-200 shadow-[inset_0_0_0_1px_rgb(95_176_160/0.35)]">
+            <Goblet size={24} />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2">
+              <span className="truncate font-display text-title-3 font-semibold text-cream group-hover:text-brass-100">{live.name}</span>
+              <Tag tone="live">Em andamento</Tag>
+            </span>
+            <span className="block truncate text-footnote text-cream-faint">{progressLine({ ...live.summary, status: live.status })}</span>
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-cream-faint group-hover:text-brass-300" />
+        </Link>
+      )}
 
       {actions}
 

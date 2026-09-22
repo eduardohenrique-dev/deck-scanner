@@ -3,7 +3,8 @@
 Aponte a câmera para as cartas e receba a decklist pronta para LigaMagic, Moxfield, Archidekt ou MTG Arena — e saiba
 onde cada carta física da coleção está. Arquitetura multi-jogo; Magic: The Gathering implementado.
 
-**Estado:** Fase 1 (núcleo) e Fase 2 (coleção, conferência, histórico, preços, condição e bracket) completas.
+**Estado:** Fase 1 (núcleo) e Fase 2 (coleção, conferência, histórico, preços, condição e bracket) completas,
+mais a aba de **Torneio** (suíço, Top X, eliminação simples, todos contra todos, telão).
 Roda localmente (SQLite, um usuário) ou hospedado (Vercel + Neon + Cloudflare R2, com login).
 
 ---
@@ -101,6 +102,40 @@ ação demorar.
 - **Bracket de Commander (1–5)** com o raciocínio: Game Changers (lista versionada em `rules/mtg/data`), destruição
   em massa de terrenos, turnos extras, tutores e combos de 2 cartas via Commander Spellbook.
 
+### Torneio
+
+Aba própria (`/torneios`), com o fluxo **Configurar → Inscrições → Rodadas → Corte → Bracket → Campeão** e a ação de
+cada etapa sempre à mão (desabilitada com o motivo: "faltam os placares das mesas 3, 6 e 8").
+
+- **Estruturas:** suíço, suíço + corte para **Top X livre**, eliminação simples e todos contra todos (método do círculo).
+  Melhor de 1 ou de 3 (o mata-mata pode ser diferente), pontuação configurável (padrão 3/1/0) e relógio de rodada.
+- **Emparelhamento suíço como o WER da Wizards:** 1ª rodada sorteada; depois, pontos iguais com sorteio dentro do grupo,
+  e a última rodada pela classificação. A rodada inteira sai de uma conta de **emparelhamento ótimo** (algoritmo de
+  blossom de Edmonds, porte do `mwmatching`), então revanche e folga repetida só aparecem quando não há saída.
+  Folga para quem tem menos pontos e ainda não folgou, valendo vitória por 2 a 0.
+- **Desempates da MTR (apêndice C):** pontos → OMW% → GW% → OGW%, piso de 33%, folga fora da média dos oponentes,
+  quem saiu continua contando. Rodadas sugeridas pela tabela do apêndice E.
+- **Mesa em um toque:** fichas 2–0 · 2–1 · Empate · 1–2 · 0–2 (ou "venceu/empate" no melhor de 1) e "outro placar"
+  para casos como 1–0–1. Editar um placar antigo recalcula tudo. Troca manual de jogadores, emparelhar de novo, drop.
+- **Corte e bracket:** chave da próxima potência de 2 com **folga para os melhores seeds** (Top 6 → seeds 1 e 2 folgam),
+  seeds na posição padrão ou **sorteio** (animação das cartas voando para os lugares), vencedor avança sozinho e
+  trocar um resultado antigo desfaz os placares que dependiam dele.
+- **Salvo no servidor** (tabela `tournaments`, documento JSON com versão) e numa cópia no aparelho: sem internet,
+  nada se perde; se outro aparelho gravou antes, as ações daqui são reaplicadas por cima (os comandos são puros).
+  Cada ação crítica mostra "Desfazer"; as que apagam pedem confirmação.
+- **Compartilhar:** texto pronto para o WhatsApp (mesas, classificação, resultado final), CSV e imagem PNG do bracket.
+  **Telão** (`/torneios/:id/telao`) em tela cheia, com mesas em ordem alfabética, classificação, bracket e relógio
+  grande, atualizando sozinho.
+
+### Visual
+
+Taverna premium: madeira escura com luz de vela ao fundo, **vidro âmbar** (quatro níveis: painel, flutuante, folha,
+mais o poço dos campos) e latão polido só no que é ação. Tudo sai dos tokens em `frontend/src/index.css`: cores
+(latão, verdete como secundário, musgo/brasa/lacre para estados), escala de 10 tamanhos com nome, raios com intenção,
+sombras e desfoque por nível e duas molas em `linear()`. Fontes: **Grenze** nos títulos e nomes, **Instrument Sans**
+na interface (números tabulares) e Grenze Gotisch só na marca. Botões de 44 px, janelas com foco preso (`inert`),
+"reduzir movimento" e "reduzir transparência" respeitados.
+
 ---
 
 ## Arquitetura
@@ -111,8 +146,9 @@ backend/
     vision/        detecção (OpenCV), qualidade, pHash, índice NumPy, ORB, alinhamento de impressão/idioma
     pipeline/      cascata de identificação, fotos, leituras do navegador (sightings), deduplicação, deck, IA
     collection/    locais, inventário, alocação, conferência, salvar scan, impressões, preços, condição, brackets
-    api/           REST por área (sessões, entradas, cartas, decks, coleção, sistema)
+    api/           REST por área (sessões, entradas, cartas, decks, coleção, torneios, sistema)
     games/         GameAdapter e o adapter de Magic (Scryfall, importadores, exportadores, terrenos)
+    tournaments.py torneios: guarda o documento com versão (as regras do torneio moram no cliente)
     db.py          mesmo SQL em SQLite (local) e Postgres (hospedado)
     storage.py     disco local ou bucket S3/R2 (assinatura AWS V4 própria, testada com os exemplos da AWS)
     auth.py        usuário local ou JWT do Neon Auth (EdDSA via JWKS)
@@ -122,8 +158,9 @@ backend/
   tests/           pytest
 frontend/
   src/vision/      porta em TypeScript da detecção, qualidade, assinatura e agrupamento temporal (Web Worker)
-  src/pages/       taverna, nova mesa, sessão de scan, decks, deck, coleção, login
-  src/components/  captura, revisão, deck, símbolos de Magic, UI da taverna
+  src/tournament/  motor puro do torneio: emparelhamento (blossom), desempates, bracket, exportação + testes
+  src/pages/       taverna, nova mesa, sessão de scan, decks, deck, coleção, torneios, telão, login
+  src/components/  captura, revisão, deck, torneio, símbolos de Magic, UI da taverna
 tools-js/          e2e da visão do navegador, perfil de tempo, capturas de tela com emulação de celular
 vercel.json        serviços web + api
 ```
@@ -177,10 +214,13 @@ some: `quantity_detected` guarda o que foi lido e o aviso explica a diferença.
 
 ```powershell
 cd backend
-.\.venv\Scripts\python -m pytest                          # 39 testes
+.\.venv\Scripts\python -m pytest                          # 46 testes
 .\.venv\Scripts\python -m tools.e2e video                   # vídeo sintético de 100 cartas (visão em Python)
 .\.venv\Scripts\python -m tools.e2e photos                  # 10 fotos sobrepostas de uma mesa sintética
 .\.venv\Scripts\python -m tools.printlang_eval --n 200      # impressão e idioma pela imagem
+cd ..\frontend
+npm test                                                     # 40 testes do motor do torneio (Node puro, sem dependência)
+npm run typecheck                                            # app + testes
 cd ..
 node --experimental-strip-types tools-js/e2e-video.mjs      # mesmo vídeo pela visão do NAVEGADOR (API local rodando)
 node tools-js/shot.mjs http://localhost:5190/escanear out.png --width 390   # tela de celular, detecta rolagem lateral
@@ -209,3 +249,5 @@ node tools-js/shot.mjs http://localhost:5190/escanear out.png --width 390   # te
 - **Condição pela foto** é estimativa grosseira (bordas e cantos), sempre marcada como "est.".
 - **OpenCV.js tem ~13 MB:** baixado uma vez, na primeira captura por câmera ou vídeo.
 - **Vídeo gravado** depende do codec que o navegador abre (MP4 H.264 funciona em todos).
+- **Torneio:** ainda sem eliminação dupla, mesas de 4 para Commander, disputa de 3º lugar e inscrição depois da
+  1ª rodada. O telão acompanha por consulta a cada poucos segundos (e na hora no mesmo aparelho), não por push.

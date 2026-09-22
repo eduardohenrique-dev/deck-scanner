@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { cx } from "../components/ui";
 
-type Toast = { id: number; tone: "ok" | "bad" | "info"; text: string; action?: { label: string; run: () => void }; ttl: number; leaving?: boolean };
+type Toast = { id: number; tone: "ok" | "bad" | "info"; text: string; action?: { label: string; run: () => void }; ttl: number; leaving?: boolean; group?: string };
 
 let items: Toast[] = [];
 const listeners = new Set<() => void>();
@@ -13,11 +13,22 @@ function emit() {
   listeners.forEach((l) => l());
 }
 
-export function toast(text: string, opts: { tone?: Toast["tone"]; action?: Toast["action"]; ttl?: number } = {}) {
-  const t: Toast = { id: seq++, tone: opts.tone ?? "ok", text, action: opts.action, ttl: opts.ttl ?? (opts.action ? 7000 : 4200) };
-  items = [...items.slice(-3), t];
+const timers = new Map<number, number>();
+
+/**
+ * Aviso rápido. Com `group`, o aviso novo substitui o anterior do mesmo grupo em vez de empilhar
+ * (ex.: só o último "Desfazer" fica na tela quando se lançam vários placares seguidos).
+ */
+export function toast(text: string, opts: { tone?: Toast["tone"]; action?: Toast["action"]; ttl?: number; group?: string } = {}) {
+  const t: Toast = { id: seq++, tone: opts.tone ?? "ok", text, action: opts.action, ttl: opts.ttl ?? (opts.action ? 7000 : 4200), group: opts.group };
+  const old = opts.group ? items.find((x) => x.group === opts.group && !x.leaving) : undefined;
+  if (old) {
+    window.clearTimeout(timers.get(old.id));
+    timers.delete(old.id);
+    items = items.map((x) => (x.id === old.id ? t : x));
+  } else items = [...items.slice(-3), t];
   emit();
-  window.setTimeout(() => dismiss(t.id), t.ttl);
+  timers.set(t.id, window.setTimeout(() => dismiss(t.id), t.ttl));
 }
 
 export const toastError = (e: unknown) => toast(e instanceof Error ? e.message : String(e), { tone: "bad", ttl: 6500 });

@@ -825,7 +825,7 @@ export function StepIndicator({ steps, onSelect, current, className }: { steps: 
                   className={cx(
                     "truncate text-subhead",
                     s.state === "now" ? "font-semibold text-cream" : s.state === "done" ? "text-cream-dim" : "text-cream-faint",
-                    s.state === "now" || viewing ? "max-sm:inline" : "max-sm:hidden",
+                    "max-sm:hidden",
                   )}
                 >
                   {s.label}
@@ -838,6 +838,12 @@ export function StepIndicator({ steps, onSelect, current, className }: { steps: 
           );
         })}
       </ol>
+      {/* no celular os nomes somem dos pontos; a etapa atual aparece por extenso embaixo */}
+      {now >= 0 && (
+        <p className="mt-1 px-1 text-footnote text-cream-dim sm:hidden">
+          Etapa {now + 1} de {steps.length} · <span className="font-semibold text-cream">{steps.find((s) => s.id === current)?.label ?? steps[now].label}</span>
+        </p>
+      )}
     </nav>
   );
 }

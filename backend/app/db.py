@@ -463,6 +463,20 @@ CREATE TABLE IF NOT EXISTS deck_snapshots (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_snapshots_deck ON deck_snapshots(deck_id, created_at);
+CREATE TABLE IF NOT EXISTS tournaments (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  name TEXT,
+  status TEXT NOT NULL DEFAULT 'draft',   -- draft | running | finished
+  event_date TEXT,
+  player_count INTEGER NOT NULL DEFAULT 0,
+  summary TEXT,                    -- json: etapa, rodada, campeão, líder (para a lista)
+  doc TEXT NOT NULL,               -- json do torneio inteiro (as regras moram no cliente)
+  version INTEGER NOT NULL DEFAULT 1,  -- sobe a cada gravação; gravar com versão velha dá 409
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_tournaments_user ON tournaments(user_id, updated_at);
 CREATE TABLE IF NOT EXISTS locations (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -592,7 +606,8 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX IF NOT EXISTS idx_names_trgm ON card_names USING gin (name_norm gin_trgm_ops);
 """
 
-SCHEMA_VERSION = "3"
+# sobe a cada tabela nova: no Postgres o schema só roda de novo quando a versão muda (4: torneios)
+SCHEMA_VERSION = "4"
 
 # colunas adicionadas depois da versão 1 (bancos SQLite já existentes)
 APP_MIGRATIONS: dict[str, dict[str, str]] = {
