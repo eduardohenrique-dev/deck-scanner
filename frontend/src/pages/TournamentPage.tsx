@@ -15,7 +15,7 @@ import { api } from "../lib/api";
 import { navigate } from "../lib/router";
 import { toast, toastError } from "../lib/toast";
 import { bracketView } from "../tournament/bracket.ts";
-import { champion, currentRound, isDraft, listPt, nextRoundBlocker, pendingTables, stage, stages, startBlocker, status } from "../tournament/engine.ts";
+import { currentRound, isDraft, listPt, nextRoundBlocker, pendingTables, stage, stages, startBlocker, status } from "../tournament/engine.ts";
 import { dateLabel, structureLabel } from "../tournament/export.ts";
 import { plannedRounds } from "../tournament/engine.ts";
 import type { StageId, Tournament } from "../tournament/types.ts";
@@ -74,7 +74,6 @@ export default function TournamentPage({ id }: { id: string }) {
     start: () => setStarting(true),
     pairNext: () => dispatch({ type: "pairNext" }, { undo: `Rodada ${t.rounds.length + 1} emparelhada` }),
     finish: () => dispatch({ type: "finish", at: new Date().toISOString() }, { undo: "Torneio encerrado" }),
-    share: () => setSharing(true),
   });
   const st = status(t);
 
@@ -177,7 +176,7 @@ function ActionButton({ action, className }: { action: Action | null; className?
 function primaryAction(
   t: Tournament,
   shown: StageId,
-  go: { goto: (s: StageId) => void; start: () => void; pairNext: () => void; finish: () => void; share: () => void },
+  go: { goto: (s: StageId) => void; start: () => void; pairNext: () => void; finish: () => void },
 ): Action | null {
   const draft = isDraft(t);
   switch (shown) {
@@ -208,7 +207,7 @@ function primaryAction(
       return { label: "Coroar campeão", icon: <Crown size={18} />, reason: `${left === 1 ? "Falta 1 partida" : `Faltam ${left} partidas`} do mata-mata.` };
     }
     case "champion":
-      return champion(t) ? { label: "Compartilhar resultado", icon: <Share2 className="size-4" />, onClick: go.share } : null;
+      return null; // "Compartilhar resultado" fica na placa do campeão, sem repetir no topo
   }
 }
 
