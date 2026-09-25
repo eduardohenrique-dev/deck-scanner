@@ -65,6 +65,9 @@ scope.onmessage = async (e) => {
       case "rearm":
         processor?.rearm(msg.group);
         break;
+      case "reject":
+        processor?.reject(msg.group);
+        break;
       case "frame": {
         if (!processor || !cv) {
           msg.bitmap.close();

@@ -51,6 +51,13 @@ export interface GrouperOptions {
   emitAfterUnsure?: number;
   /** abaixo disso o frame nem conta: não é carta (mesa, mão, caixa de arte, tela) */
   minCardness?: number;
+  /**
+   * abaixo disso a leitura é "duvidosa": carta de arte completa sem as linhas da moldura, ou lixo.
+   * Sai só depois de `emitAfterDoubtful` frames e marcada, para o servidor descartar em silêncio se não
+   * reconhecer (a identificação pela arte é quem decide; o layout sozinho não separa os dois).
+   */
+  doubtCardness?: number;
+  emitAfterDoubtful?: number;
   /** a partir daqui a leitura sai no tempo normal */
   sureCardness?: number;
   /** fração mínima do quadro ocupada pela carta (perto o bastante para ler) */
@@ -71,7 +78,11 @@ export const LIVE_OPTIONS: GrouperOptions = {
   emptyToClose: 6,
   splitOnMotion: false,
   minFrames: 4,
-  minCardness: 0.5,
+  // carta de arte completa chega a 0,10–0,28 (tools/fullart_eval.py): o piso só corta o que não tem
+  // estrutura nenhuma; o resto da faixa duvidosa quem decide é a identificação da arte no servidor
+  minCardness: 0.12,
+  doubtCardness: 0.5,
+  emitAfterDoubtful: 12,
   sureCardness: 0.7,
   minSize: 0.045,
   rejectEdge: true,
@@ -84,6 +95,10 @@ export class Group<P> {
   seq = 0;
   /** já virou leitura: os frames seguintes só acompanham a carta */
   emitted = false;
+  /** saiu com a "cara de carta" baixa: o servidor decide pela arte */
+  doubtful = false;
+  /** o servidor não reconheceu a leitura duvidosa: não era carta (a tela deixa de dizer "lida") */
+  rejected = false;
   /** frames contados a partir de quando a leitura foi (re)armada */
   armedAt = 0;
   retries = 0;
@@ -137,7 +152,9 @@ export class TemporalGrouper<P> {
   private readonly splitOnMotion: boolean;
   private readonly minFrames: number;
   private readonly emitAfterUnsure: number;
+  private readonly emitAfterDoubtful: number;
   private readonly minCardness: number;
+  private readonly doubtCardness: number;
   private readonly sureCardness: number;
   private readonly minSize: number;
   private readonly rejectEdge: boolean;
@@ -151,7 +168,9 @@ export class TemporalGrouper<P> {
     this.splitOnMotion = options.splitOnMotion ?? true;
     this.minFrames = options.minFrames ?? 1;
     this.emitAfterUnsure = options.emitAfterUnsure ?? options.emitAfter ?? 0;
+    this.emitAfterDoubtful = options.emitAfterDoubtful ?? this.emitAfterUnsure;
     this.minCardness = options.minCardness ?? 0;
+    this.doubtCardness = options.doubtCardness ?? this.minCardness;
     this.sureCardness = options.sureCardness ?? 0;
     this.minSize = options.minSize ?? 0;
     this.rejectEdge = options.rejectEdge ?? false;
@@ -176,6 +195,19 @@ export class TemporalGrouper<P> {
     g.best = [];
     g.armedAt = g.frames.length;
     return true;
+  }
+
+  /** Ao vivo: o servidor não reconheceu a leitura duvidosa `seq` (não era carta). Não tenta de novo. */
+  reject(seq: number): boolean {
+    const g = this.current;
+    if (!g || !g.emitted || g.seq !== seq) return false;
+    g.rejected = true;
+    return true;
+  }
+
+  /** "Cara de carta" dos frames desde que a leitura foi (re)armada. */
+  private cardMedian(g: Group<P>): number {
+    return median(g.frames.slice(g.armedAt).map((f) => f.q?.card ?? 1));
   }
 
   private mark(kind: Exclude<Transition, null>) {
@@ -268,15 +300,18 @@ export class TemporalGrouper<P> {
 
   /**
    * Ao vivo a leitura só sai com certeza: com a "cara de carta" alta, os frames normais bastam;
-   * na faixa do talvez (moldura estranha, carta de arte completa, luz ruim) exige bem mais frames.
+   * na faixa do talvez (moldura estranha, luz ruim) exige mais frames; abaixo dela (carta de arte
+   * completa, ou lixo) também, e vai marcada como duvidosa: o servidor descarta se a arte não bater.
    */
   private maybeEmit() {
     const g = this.current;
     if (this.emitAfter === null || !g || g.emitted) return;
     const frames = g.frames.length - g.armedAt;
     if (frames < this.emitAfter) return;
-    const sure = median(g.frames.slice(g.armedAt).map((f) => f.q?.card ?? 1)) >= this.sureCardness;
-    if (!sure && frames < this.emitAfterUnsure) return;
+    const card = this.cardMedian(g);
+    if (card < this.sureCardness && frames < this.emitAfterUnsure) return;
+    if (card < this.doubtCardness && frames < this.emitAfterDoubtful) return;
+    g.doubtful = card < this.doubtCardness;
     this.emit(g);
   }
 
@@ -293,7 +328,9 @@ export class TemporalGrouper<P> {
     if (!g) return;
     this.lastClosedPts = g.frames[g.frames.length - 1].pts;
     if (g.emitted) return;
-    if (g.frames.length - g.armedAt < this.minFrames || !g.best.length) {
+    // ao vivo, a leitura duvidosa só vale se a carta ficou parada o tempo todo: saiu antes, era lixo passando
+    const doubtful = this.emitAfter !== null && this.cardMedian(g) < this.doubtCardness;
+    if (doubtful || g.frames.length - g.armedAt < this.minFrames || !g.best.length) {
       // passou rápido demais para ser uma carta mostrada de propósito
       g.best.forEach((obs) => {
         obs.retained = false;

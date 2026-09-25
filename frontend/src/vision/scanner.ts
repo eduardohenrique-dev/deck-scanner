@@ -27,6 +27,8 @@ export interface SightingMeta {
   quad: number[][];
   frame_w: number;
   frame_h: number;
+  /** "cara de carta" baixa (arte completa ou lixo): se a arte não for reconhecida, o servidor descarta */
+  doubtful?: boolean;
 }
 
 export interface Sighting {
@@ -48,6 +50,8 @@ export interface FrameReport {
   stable: boolean;
   /** a carta no quadro já virou leitura (ao vivo) */
   emitted: boolean;
+  /** a leitura duvidosa desta carta não foi reconhecida pelo servidor */
+  rejected: boolean;
   group: number | null;
   groupFrames: number;
   groups: number;
@@ -89,6 +93,11 @@ export class FrameProcessor {
   /** Ao vivo: tenta ler de novo a carta que continua no quadro. */
   rearm(seq: number): boolean {
     return this.grouper.rearm(seq);
+  }
+
+  /** Ao vivo: a leitura duvidosa não era carta; a tela para de dizer que foi lida. */
+  reject(seq: number): boolean {
+    return this.grouper.reject(seq);
   }
 
   /** Recebe a posse do Mat RGBA (liberado aqui quando não for mais necessário). */
@@ -135,7 +144,8 @@ export class FrameProcessor {
       kind: card?.kind ?? null,
       quality: obs.q ?? null,
       stable,
-      emitted: !!current?.emitted,
+      emitted: !!current?.emitted && !current.rejected,
+      rejected: !!current?.rejected,
       group: current?.seq || null,
       groupFrames: current?.frames.length ?? 0,
       groups: this.grouper.seq,
@@ -183,6 +193,7 @@ export class FrameProcessor {
       quad: best.pts!.map(([x, y]) => [round(x / fw, 5), round(y / fh, 5)]),
       frame_w: fw,
       frame_h: fh,
+      ...(group.doubtful ? { doubtful: true } : {}),
     };
     group.best.forEach((obs) => {
       obs.retained = false;

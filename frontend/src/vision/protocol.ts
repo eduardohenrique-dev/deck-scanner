@@ -6,6 +6,7 @@ export type WorkerIn =
   | { type: "start"; detectMaxDim: number; live?: boolean }
   | { type: "frame"; t: number; bitmap: ImageBitmap }
   | { type: "rearm"; group: number }
+  | { type: "reject"; group: number }
   | { type: "flush" };
 
 export type WorkerOut =

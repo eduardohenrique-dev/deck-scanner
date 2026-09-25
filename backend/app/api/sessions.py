@@ -182,7 +182,8 @@ async def post_sighting(session_id: str, meta: str = Form(...), cards: list[Uplo
             group=int(m["group"]), frame_count=int(m.get("frame_count") or 1), t_start=float(m.get("t_start") or 0),
             t_end=float(m.get("t_end") or 0), gap_before=m.get("gap_before") or {},
             angles=[float(a) for a in (m.get("angles") or [])][:240], quality=m.get("quality") or {},
-            quad=m.get("quad"), frame_w=m.get("frame_w"), frame_h=m.get("frame_h"))
+            quad=m.get("quad"), frame_w=m.get("frame_w"), frame_h=m.get("frame_h"),
+            doubtful=bool(m.get("doubtful")))
     except (KeyError, TypeError, ValueError, orjson.JSONDecodeError) as exc:
         raise HTTPException(400, "metadados da leitura inválidos") from exc
     cap = store.get_capture(capture_id)

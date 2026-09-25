@@ -18,8 +18,8 @@ export type ReadItem = {
   replaced?: boolean;
 };
 
-/** Pisca na borda do visor: verde anotada, vermelho não reconhecida, dourado carta cara. */
-export type Flash = { tone: "ok" | "bad" | "gold"; id: number };
+/** Pisca na borda do visor: verde anotada, dourado carta cara. Falha não pisca: o aviso embaixo explica. */
+export type Flash = { tone: "ok" | "gold"; id: number };
 
 /** Carta acima do valor que a pessoa definiu para ser avisada. */
 export type Treasure = { key: string; name: string; brl: number; preview: string };
@@ -186,9 +186,17 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
   const judge = useCallback(
     (token: Run, group: number, key: string, preview: string, sig: number[], detection: Detection, merged: boolean) => {
       const status = detection.status;
+      if (status === "noise") {
+        // leitura duvidosa sem arte reconhecida: não era carta. Some sem alarde e o visor volta a esperar
+        if (!token.stop) token.worker.postMessage({ type: "reject", group } satisfies WorkerIn);
+        setReads((r) => r.filter((x) => x.key !== key));
+        URL.revokeObjectURL(preview);
+        previews.current.delete(preview);
+        return;
+      }
       // a mesma carta mostrada de novo depois de uma falha: a leitura que falhou sai da revisão
       const prev = failed.current;
-      if (prev && status !== "noise" && performance.now() - prev.at < RESHOW_WINDOW_MS && sig.length
+      if (prev && performance.now() - prev.at < RESHOW_WINDOW_MS && sig.length
         && prev.sig.length === sig.length && hamming(Uint8Array.from(prev.sig), Uint8Array.from(sig)) <= SAME_THRESH) {
         failed.current = null;
         setReads((r) => r.map((x) => (x.key === prev.key ? { ...x, replaced: true } : x)));
@@ -204,7 +212,6 @@ export function useScanner(sessionId: string, onState: (s: SessionState) => void
         setMiss((m) => (m && failed.current?.detectionId === m.detectionId ? m : null));
         if (soundRef.current) chime(rich);
       } else if (status === "unidentified" || status === "back") {
-        blink("bad");
         failed.current = { key, detectionId: detection.id, sig, at: performance.now() };
         setMiss({ key, detectionId: detection.id, preview, reason: status === "back" ? "back" : "unknown" });
         // carta ainda parada no quadro: mais uma leitura com frames novos (o worker confere se é a mesma)

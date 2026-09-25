@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { usePersistentState } from "../../lib/hooks";
 import type { SessionState } from "../../lib/types";
 import { Board, Segmented, SectionTitle } from "../ui";
+import AddCardSheet from "./AddCardSheet";
 import LiveScanner from "./LiveScanner";
 import PhotoUploader from "./PhotoUploader";
 import ScanOptions from "./ScanOptions";
@@ -23,6 +24,7 @@ export default function CapturePanel({ state, onState, onBusyChange }: { state: 
     [onBusyChange],
   );
   const sessionId = state.session.id;
+  const [adding, setAdding] = useState(false);
 
   return (
     <section className="space-y-3">
@@ -45,10 +47,11 @@ export default function CapturePanel({ state, onState, onBusyChange }: { state: 
       </SectionTitle>
       <Board className="space-y-4 p-3 sm:p-5">
         {!busy && <ScanOptions state={state} onState={onState} />}
-        {mode === "live" && <LiveScanner sessionId={sessionId} onState={onState} onBusy={onBusy} fx={state.value?.fx?.rate ?? null} />}
+        {mode === "live" && <LiveScanner sessionId={sessionId} onState={onState} onBusy={onBusy} fx={state.value?.fx?.rate ?? null} onAddCard={() => setAdding(true)} />}
         {mode === "photo" && <PhotoUploader sessionId={sessionId} onState={onState} onBusy={onBusy} />}
         {mode === "video" && <VideoScanner sessionId={sessionId} onState={onState} onBusy={onBusy} />}
       </Board>
+      {adding && <AddCardSheet state={state} onState={onState} onClose={() => setAdding(false)} />}
     </section>
   );
 }

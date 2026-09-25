@@ -26,6 +26,7 @@ NOTE_LONG = "exibição longa: podem ser 2 cópias seguidas — confira a quanti
 NOTE_SPLIT = "segunda cópia inferida: a pose da carta mudou no meio de uma exibição longa — confira"
 NOTE_BRIEF_NOISE = "aparição muito breve (1 frame) — provavelmente não era uma carta"
 NOTE_BRIEF = "carta vista por muito pouco tempo — confira"
+NOTE_DOUBTFUL_NOISE = "sem a estrutura de uma carta e sem arte reconhecida — provavelmente não era uma carta"
 
 
 @dataclass
@@ -47,6 +48,8 @@ class GroupMeta:
     quad: list | None = None                         # quadrilátero normalizado no frame
     frame_w: int | None = None
     frame_h: int | None = None
+    # ao vivo, "cara de carta" baixa (arte completa ou lixo): quem decide é a arte; sem ela, vira ruído
+    doubtful: bool = False
 
 
 def record_sighting(session_id: str, capture_id: str, frames: list[Frame], meta: GroupMeta,
@@ -76,7 +79,8 @@ def record_sighting(session_id: str, capture_id: str, frames: list[Frame], meta:
         ranked = sorted(tries, key=lambda x: (x[0].status in ("identified", "token", "back"), x[0].confidence),
                         reverse=True)
         chosen = ranked[0]
-        if chosen[0].status == "unidentified" and allow_vlm and vlm.enabled():
+        # leitura duvidosa não gasta IA: na maioria das vezes é mesa ou mão
+        if chosen[0].status == "unidentified" and allow_vlm and not meta.doubtful and vlm.enabled():
             fr = frames[0]
             chosen = (identify.identify(fr.card, adapter=adapter, context_bgr=fr.context, default_language=lang,
                                         session_id=session_id, allow_orb=False, user_id=user_id,
@@ -85,6 +89,9 @@ def record_sighting(session_id: str, capture_id: str, frames: list[Frame], meta:
     if meta.frame_count <= 1 and result.status == "unidentified":
         result.status = "noise"
         result.notes.append(NOTE_BRIEF_NOISE)
+    elif meta.doubtful and result.status == "unidentified":
+        result.status = "noise"
+        result.notes.append(NOTE_DOUBTFUL_NOISE)
     elif meta.frame_count < 3 and result.status == "identified":
         result.notes.append(NOTE_BRIEF)
 

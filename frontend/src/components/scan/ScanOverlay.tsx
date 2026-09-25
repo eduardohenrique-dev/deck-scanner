@@ -1,12 +1,14 @@
+import { LIVE_OPTIONS } from "../../vision/grouper";
 import type { FrameReport } from "../../vision/protocol";
 import type { Tone } from "../ui";
 
+/** Só duas cores no visor: o contorno da carta (latão) e o verde quando ela foi anotada. */
 const STROKE: Record<string, string> = {
-  moving: "#e3a53e",
-  steady: "#e8c273",
+  tracking: "#e8c273",
   captured: "#93b86b",
-  edge: "#d0604f",
 };
+
+const NOT_A_CARD = LIVE_OPTIONS.minCardness ?? 0;
 
 export type Guidance = { text: string; tone: Tone };
 
@@ -16,7 +18,7 @@ export function guidance(r: FrameReport | null, running: boolean): Guidance {
   if (!r) return { text: "Preparando…", tone: "neutral" };
   if (!r.quad) return { text: "Mostre uma carta por vez, no centro", tone: "neutral" };
   if (r.kind === "edge") return { text: "A carta está saindo do quadro", tone: "warn" };
-  if (r.quality?.card !== undefined && r.quality.card < 0.5)
+  if (r.quality?.card !== undefined && r.quality.card < NOT_A_CARD)
     return r.quality.size > 0.12
       ? { text: "Parece o verso da carta — vire para a frente", tone: "warn" }
       : { text: "Isso não parece uma carta — enquadre a carta inteira", tone: "warn" };
@@ -26,6 +28,7 @@ export function guidance(r: FrameReport | null, running: boolean): Guidance {
     if (r.quality && r.quality.sharpness < 22) return { text: "Imagem tremida — segure firme", tone: "warn" };
     return { text: "Segure firme…", tone: "neutral" };
   }
+  if (r.rejected) return { text: "Não reconheci — aproxime a carta ou adicione pelo nome", tone: "warn" };
   if (r.emitted) return { text: "Lida. Tire a carta do quadro e mostre a próxima", tone: "ok" };
   if (r.quality && r.quality.glare > 0.03) return { text: "Reflexo na carta — incline um pouco", tone: "warn" };
   return { text: "Lendo a carta…", tone: "brass" };
@@ -39,7 +42,7 @@ export default function ScanOverlay({ report, width, height, showGuide }: { repo
   const quad = report?.quad;
   // ao vivo (com guia) a carta está "anotada" quando já virou leitura; no vídeo, depois de 3 frames estáveis
   const captured = report?.emitted || (!showGuide && report?.stable && report.groupFrames >= 3);
-  const state = !quad ? null : report!.kind === "edge" ? "edge" : captured ? "captured" : !report!.stable ? "moving" : "steady";
+  const state = !quad ? null : captured ? "captured" : "tracking";
   const stroke = Math.max(3, width / 240);
   const gh = Math.min(height * 0.74, (width * 0.78 * 88) / 63);
   const gw = (gh * 63) / 88;

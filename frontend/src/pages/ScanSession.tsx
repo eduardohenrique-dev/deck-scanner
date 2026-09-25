@@ -1,4 +1,4 @@
-import { ArrowRight, BookmarkCheck, Trash2 } from "lucide-react";
+import { ArrowRight, BookmarkCheck, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Chest, Lens, Scales } from "../components/icons";
 import AttentionList from "../components/review/AttentionList";
@@ -8,6 +8,7 @@ import ExportPanel from "../components/review/ExportPanel";
 import NoticeBoard from "../components/review/NoticeBoard";
 import PhotoViewer from "../components/review/PhotoViewer";
 import ValueBox from "../components/review/ValueBox";
+import AddCardSheet from "../components/scan/AddCardSheet";
 import CapturePanel from "../components/scan/CapturePanel";
 import CheckPanel from "../components/scan/CheckPanel";
 import SaveDialog from "../components/scan/SaveDialog";
@@ -43,6 +44,7 @@ export default function ScanSession({ id }: { id: string }) {
   const [deleting, setDeleting] = useState(false);
   const [focus, setFocus] = useState<string | null>(null);
   const [viewer, setViewer] = useState<{ capture: Capture; detectionId?: string } | null>(null);
+  const [adding, setAdding] = useState(false);
   const reload = res.reload;
 
   // outra aba/aparelho processando fotos desta sessão: acompanha até terminar
@@ -134,9 +136,14 @@ export default function ScanSession({ id }: { id: string }) {
       {isCheck && <CheckPanel state={state} scanning={busy} />}
       <AttentionList state={state} apply={apply} onShowCapture={(c, detectionId) => setViewer({ capture: c, detectionId })} />
       <section className="space-y-3">
-        <div className="flex items-end justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-title-3 font-semibold text-cream">A lista</h2>
-          <span className="tabular text-footnote text-cream-faint">{count === 1 ? "1 carta" : `${count} cartas`}</span>
+          <div className="flex items-center gap-3">
+            <span className="tabular text-footnote text-cream-faint">{count === 1 ? "1 carta" : `${count} cartas`}</span>
+            <Button size="sm" variant="secondary" icon={<Plus className="size-4" />} onClick={() => setAdding(true)}>
+              Adicionar carta
+            </Button>
+          </div>
         </div>
         <EntryList
           entries={entries}
@@ -147,7 +154,7 @@ export default function ScanSession({ id }: { id: string }) {
           ownedElsewhere={state.owned_elsewhere}
           fxRate={state.value?.fx?.rate}
           focusId={focus}
-          empty={{ title: "A mesa está vazia", text: "Use a câmera, fotos ou um vídeo acima. Cada carta lida entra aqui na hora." }}
+          empty={{ title: "A mesa está vazia", text: "Use a câmera, fotos ou um vídeo acima, ou adicione pelo nome. Cada carta lida entra aqui na hora." }}
         />
       </section>
     </div>
@@ -261,6 +268,7 @@ export default function ScanSession({ id }: { id: string }) {
       )}
 
       {saveOpen && <SaveDialog state={state} open={saveOpen} onClose={() => setSaveOpen(false)} onSaved={apply} />}
+      {adding && <AddCardSheet state={state} onState={apply} onClose={() => setAdding(false)} />}
       <PhotoViewer capture={viewer?.capture ?? null} detections={state.detections} focusId={viewer?.detectionId} onClose={() => setViewer(null)} />
       <Confirm open={confirmDelete} title="Apagar este scan?" confirmLabel="Apagar" danger busy={deleting} onConfirm={remove} onClose={() => setConfirmDelete(false)}>
         <p>As leituras e fotos deste scan somem. Decks e cartas já guardadas na coleção continuam onde estão.</p>

@@ -215,7 +215,8 @@ def video_deck(rng: np.random.Generator) -> list[dict]:
     return items
 
 
-def make_video(out_dir: Path, seed: int = 7, size=(1280, 720), fps: int = 10) -> dict:
+def make_video(out_dir: Path, seed: int = 7, size=(1280, 720), fps: int = 10, hold: tuple[int, int] = (10, 21)) -> dict:
+    """`hold`: faixa de frames com a carta parada (a câmera ao vivo pede para segurar até ficar verde)."""
     rng = np.random.default_rng(seed)
     out_dir.mkdir(parents=True, exist_ok=True)
     items = video_deck(rng)
@@ -239,7 +240,7 @@ def make_video(out_dir: Path, seed: int = 7, size=(1280, 720), fps: int = 10) ->
         rgba = rgba_of(i)
         glare = rng.random() < 0.25
         base_angle = float(rng.normal(0, 2.5))
-        n_hold = int(rng.integers(10, 21))
+        n_hold = int(rng.integers(*hold))
         for f in range(n_hold):
             frame = bg.copy()
             jitter = (rng.normal(0, 0.008 * W), rng.normal(0, 0.008 * H))

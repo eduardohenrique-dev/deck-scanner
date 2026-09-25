@@ -1,4 +1,4 @@
-import { Camera, Flashlight, FlashlightOff, Play, Square, SwitchCamera, Volume2, VolumeX, X } from "lucide-react";
+import { Camera, Flashlight, FlashlightOff, Play, Plus, Square, SwitchCamera, Volume2, VolumeX, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { brl } from "../../lib/format";
 import { useMediaQuery, usePersistentState } from "../../lib/hooks";
@@ -28,12 +28,15 @@ export default function LiveScanner({
   onState,
   onBusy,
   fx,
+  onAddCard,
 }: {
   sessionId: string;
   onState: (s: SessionState) => void;
   onBusy?: (busy: boolean) => void;
   /** dólar do dia, para o aviso de carta valiosa */
   fx?: number | null;
+  /** abre a busca pelo nome, para a carta que a câmera não lê */
+  onAddCard?: () => void;
 }) {
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -52,13 +55,13 @@ export default function LiveScanner({
 
   useEffect(() => onBusy?.(busy), [busy, onBusy]);
 
-  // borda verde/vermelha: fica montada pelo tempo da animação (e vibra no celular)
+  // borda verde (ou dourada, carta cara): fica montada pelo tempo da animação (e vibra no celular)
   const [flash, setFlash] = useState(scanner.flash);
   useEffect(() => {
     const f = scanner.flash;
     if (!f) return;
     setFlash(f);
-    navigator.vibrate?.(f.tone === "bad" ? [70, 60, 70] : f.tone === "gold" ? [30, 40, 30, 40, 30] : 35);
+    navigator.vibrate?.(f.tone === "gold" ? [30, 40, 30, 40, 30] : 35);
     const timer = window.setTimeout(() => setFlash((cur) => (cur?.id === f.id ? null : cur)), 780);
     return () => window.clearTimeout(timer);
   }, [scanner.flash]);
@@ -180,7 +183,7 @@ export default function LiveScanner({
   }, [immersive]);
 
   return (
-    <div className={immersive ? "fixed inset-0 z-50 flex flex-col bg-oak-950" : "space-y-4"}>
+    <div className={immersive ? "fixed inset-0 z-50 flex flex-col bg-oak-950" : "space-y-4"} data-immersive={immersive || undefined}>
       <div
         className={cx(
           "viewfinder",
@@ -256,6 +259,11 @@ export default function LiveScanner({
                 className={immersive ? "flex-1" : undefined}
               >
                 {scanner.phase === "loading" ? (firstLoad ? "Preparando a lente…" : "Abrindo…") : scanner.phase === "finishing" ? "Fechando as leituras…" : "Começar a leitura"}
+              </Button>
+            )}
+            {onAddCard && (
+              <Button variant="secondary" size="lg" icon={<Plus className="size-4" />} onClick={onAddCard} title="Adicionar uma carta pelo nome" className={immersive ? "w-full" : undefined}>
+                Digitar carta
               </Button>
             )}
             {!busy && !immersive && (
@@ -334,8 +342,8 @@ function MissPanel({ miss, dropUp, onPick, onDismiss }: { miss: Miss; dropUp: bo
   const [err, setErr] = useState<string | null>(null);
   return (
     // z-20: a animação cria um contexto de empilhamento; sem isso a lista de nomes fica atrás das dicas do visor
-    <div className="animate-rise relative z-20 flex gap-3 rounded-lg bg-wine-600/14 p-3 shadow-[inset_0_0_0_1px_rgb(214_96_79/0.4)]" role="alert">
-      <img src={miss.preview} alt="" className="card-img aspect-[488/680] w-12 shrink-0 self-start object-cover ring-1 ring-wine-400/50 sm:w-14" />
+    <div className="animate-rise relative z-20 flex gap-3 rounded-lg bg-brass-500/10 p-3 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.32)]" role="alert">
+      <img src={miss.preview} alt="" className="card-img aspect-[488/680] w-12 shrink-0 self-start object-cover ring-1 ring-brass-400/40 sm:w-14" />
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -365,7 +373,7 @@ function MissPanel({ miss, dropUp, onPick, onDismiss }: { miss: Miss; dropUp: bo
           }}
         />
         {busy && <p className="text-footnote text-cream-faint">Anotando…</p>}
-        {err && <p className="text-footnote text-wine-300">{err}</p>}
+        {err && <p className="text-footnote text-ember-300">{err}</p>}
       </div>
     </div>
   );

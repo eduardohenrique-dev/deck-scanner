@@ -17,6 +17,8 @@ const height = Number(opt("--height", "844"));
 const wait = Number(opt("--wait", "5000"));
 const scroll = Number(opt("--scroll", "0"));
 const script = opt("--eval", "");
+// pausa depois do --eval antes da foto (0 pega um estado passageiro, como o contorno antes de ficar verde)
+const settle = Number(opt("--settle", "1500"));
 const full = args.includes("--full");
 const mobile = width < 768;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -81,7 +83,7 @@ await send("Page.navigate", { url });
 await sleep(wait);
 if (script) {
   console.log("eval:", JSON.stringify(await evaluate(`(async () => { ${script} })()`)));
-  await sleep(1500);
+  await sleep(settle);
 }
 if (scroll) {
   await evaluate(`window.scrollTo(0, ${scroll})`);
