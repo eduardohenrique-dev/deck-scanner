@@ -71,8 +71,9 @@ ação demorar.
 1. **Nova mesa:** montar lista (formato obrigatório), conferir um deck salvo ou guardar na coleção.
 2. **Captura** — misture à vontade na mesma sessão:
    - *Câmera ao vivo:* a visão roda **no navegador** (OpenCV.js num Web Worker): contorno da carta, dicas
-     ("segure firme", "reflexo na carta"), só duas cores no visor (contorno âmbar enquanto lê, verde quando anotada;
-     dourada se a carta passa do valor escolhido), aviso com busca pelo nome quando não reconhece, botão
+     ("segure firme", "reflexo na carta"), uma moldura fixa com formato de carta que pisca verde quando lê (dourada se
+     a carta passa do valor escolhido) — o contorno detectado não aparece, aviso com busca pelo nome quando não
+     reconhece, botão
      *Digitar carta*, escolha de câmera, lanterna, tela sempre acesa; no celular ocupa a tela inteira. Só os melhores
      recortes de cada carta sobem para o servidor.
    - *Antes de escanear:* a coleção destas cartas (resolve reimpressão de arte igual) e o valor a partir do qual

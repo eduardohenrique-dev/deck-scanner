@@ -1,11 +1,12 @@
 import { LIVE_OPTIONS } from "../../vision/grouper";
 import type { FrameReport } from "../../vision/protocol";
 import type { Tone } from "../ui";
+import type { Flash } from "./useScanner";
 
-/** Só duas cores no visor: o contorno da carta (latão) e o verde quando ela foi anotada. */
-const STROKE: Record<string, string> = {
-  tracking: "#e8c273",
-  captured: "#93b86b",
+/** A moldura acende junto com o clarão da borda do visor (mesmas cores do .edge-flash). */
+const FLASH: Record<Flash["tone"], { stroke: string; fill: string }> = {
+  ok: { stroke: "#7fcf5a", fill: "rgb(127 207 90 / 0.12)" },
+  gold: { stroke: "#f2c554", fill: "rgb(242 197 84 / 0.12)" },
 };
 
 const NOT_A_CARD = LIVE_OPTIONS.minCardness ?? 0;
@@ -34,34 +35,40 @@ export function guidance(r: FrameReport | null, running: boolean): Guidance {
   return { text: "Lendo a carta…", tone: "brass" };
 }
 
+/** Carta de 63 × 88 com folga em volta: em cima fica o contador, embaixo o aviso do visor. */
+const CARD_W = 63;
+const CARD_H = 88;
+const MARGIN_X = 7;
+const MARGIN_TOP = 12;
+const MARGIN_BOTTOM = 23; // o aviso do visor é mais alto que o contador
+
 /**
- * Contorno da carta detectada sobre o vídeo. O SVG usa "slice", o equivalente exato do
- * object-fit: cover do <video>, então as coordenadas do frame caem no lugar certo.
+ * Moldura fixa com formato de carta no centro do visor: mostra onde colocar a carta e pisca verde
+ * (ou dourada, carta valiosa) quando ela é lida. O contorno detectado não aparece: ele tremia e mudava
+ * de forma a cada frame. Com "meet" a moldura cabe inteira no espaço visível, qualquer que seja o
+ * formato do visor (tela cheia do celular, 4:3 no computador, visor encolhido pela fita de leituras).
  */
-export default function ScanOverlay({ report, width, height, showGuide }: { report: FrameReport | null; width: number; height: number; showGuide: boolean }) {
-  const quad = report?.quad;
-  // ao vivo (com guia) a carta está "anotada" quando já virou leitura; no vídeo, depois de 3 frames estáveis
-  const captured = report?.emitted || (!showGuide && report?.stable && report.groupFrames >= 3);
-  const state = !quad ? null : captured ? "captured" : "tracking";
-  const stroke = Math.max(3, width / 240);
-  const gh = Math.min(height * 0.74, (width * 0.78 * 88) / 63);
-  const gw = (gh * 63) / 88;
-  const r = gw * 0.045;
+export default function ScanOverlay({ flash }: { flash: Flash["tone"] | null }) {
+  const lit = flash ? FLASH[flash] : null;
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid slice" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
-      {showGuide && !quad && (
-        <rect x={(width - gw) / 2} y={(height - gh) / 2} width={gw} height={gh} rx={r} fill="none" stroke="#efe3c8" strokeOpacity={0.45} strokeWidth={stroke * 0.7} strokeDasharray={`${stroke * 5} ${stroke * 4}`} />
-      )}
-      {quad && state && (
-        <polygon
-          points={quad.map(([x, y]) => `${x * width},${y * height}`).join(" ")}
-          fill={state === "captured" ? "rgb(147 184 107 / 0.14)" : "none"}
-          stroke={STROKE[state]}
-          strokeWidth={state === "captured" ? stroke * 1.4 : stroke}
-          strokeLinejoin="round"
-          style={{ transition: "stroke 160ms, stroke-width 160ms" }}
-        />
-      )}
+    <svg
+      viewBox={`${-MARGIN_X} ${-MARGIN_TOP} ${CARD_W + 2 * MARGIN_X} ${CARD_H + MARGIN_TOP + MARGIN_BOTTOM}`}
+      preserveAspectRatio="xMidYMid meet"
+      className="pointer-events-none absolute inset-0 h-full w-full"
+      aria-hidden="true"
+    >
+      <rect
+        width={CARD_W}
+        height={CARD_H}
+        rx={CARD_W * 0.045}
+        fill={lit ? lit.fill : "none"}
+        stroke={lit ? lit.stroke : "#efe3c8"}
+        strokeOpacity={lit ? 1 : 0.45}
+        strokeWidth={lit ? 5 : 2.5}
+        strokeDasharray={lit ? undefined : "14 11"}
+        vectorEffect="non-scaling-stroke"
+        style={{ transition: "stroke 160ms, stroke-width 160ms, fill 160ms" }}
+      />
     </svg>
   );
 }

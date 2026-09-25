@@ -4,7 +4,6 @@ import { formatTime } from "../../lib/format";
 import type { SessionState } from "../../lib/types";
 import { Button, cx, Meter } from "../ui";
 import ReadsStrip from "./ReadsStrip";
-import ScanOverlay from "./ScanOverlay";
 import { useScanner, visionLoaded } from "./useScanner";
 
 /** Vídeo gravado folheando o deck: lido aqui no navegador, quadro a quadro, e só as cartas vão ao servidor. */
@@ -13,7 +12,6 @@ export default function VideoScanner({ sessionId, onState, onBusy }: { sessionId
   const input = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [drag, setDrag] = useState(false);
-  const [size, setSize] = useState({ w: 1280, h: 720 });
   const [done, setDone] = useState<{ name: string } | null>(null);
   const [firstLoad] = useState(() => !visionLoaded());
   const scanner = useScanner(sessionId, onState, { sound: false });
@@ -41,8 +39,7 @@ export default function VideoScanner({ sessionId, onState, onBusy }: { sessionId
   return (
     <div className="space-y-4">
       <div className={cx("viewfinder aspect-video w-full", !busy && "hidden")}>
-        <video ref={video} muted playsInline onLoadedMetadata={(e) => setSize({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })} className="absolute inset-0 h-full w-full object-cover" />
-        <ScanOverlay report={scanner.report} width={size.w} height={size.h} showGuide={false} />
+        <video ref={video} muted playsInline className="absolute inset-0 h-full w-full object-cover" />
         {scanner.counted !== null && (
           <span className="absolute top-3 left-3 z-10 rounded-sm border border-oak-600 bg-oak-950/85 px-2.5 py-1 font-serif text-subhead text-cream">
             <strong className="tabular text-title-3">{scanner.counted}</strong> {scanner.counted === 1 ? "carta" : "cartas"}

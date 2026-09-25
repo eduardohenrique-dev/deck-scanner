@@ -200,7 +200,7 @@ export default function LiveScanner({
         />
         {camera === "on" ? (
           <>
-            <ScanOverlay report={running ? scanner.report : null} width={size.w} height={size.h} showGuide />
+            <ScanOverlay flash={flash?.tone ?? null} />
             {flash && <div key={flash.id} className="edge-flash" data-tone={flash.tone} aria-hidden="true" />}
             <div className="absolute top-[max(env(safe-area-inset-top),12px)] right-3 left-3 z-10 flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
