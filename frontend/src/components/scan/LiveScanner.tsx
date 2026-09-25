@@ -1,10 +1,11 @@
 import { Camera, Flashlight, FlashlightOff, Play, Plus, Square, SwitchCamera, Volume2, VolumeX, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { brl } from "../../lib/format";
-import { useMediaQuery, usePersistentState } from "../../lib/hooks";
+import { usePersistentState } from "../../lib/hooks";
 import type { SessionState } from "../../lib/types";
 import { Lens } from "../icons";
-import { Button, cx, IconButton, Select } from "../ui";
+import { Button, cx, IconButton, popLayer, pushLayer, Select } from "../ui";
 import ReadsStrip from "./ReadsStrip";
 import ScanOverlay, { guidance } from "./ScanOverlay";
 import CardSearch from "../cards/CardSearch";
@@ -12,6 +13,9 @@ import { ALERT_KEY } from "./ScanOptions";
 import { prepareVision, useScanner, visionLoaded, type Miss } from "./useScanner";
 
 type CameraState = "off" | "opening" | "on" | "denied" | "unsupported" | "failed";
+
+/** Celular em pé: a câmera aberta ocupa a tela inteira. */
+const PHONE = "(max-width: 639px)";
 
 const DOT: Record<string, string> = {
   neutral: "bg-cream-faint",
@@ -41,6 +45,10 @@ export default function LiveScanner({
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
   const [camera, setCamera] = useState<CameraState>("off");
+  // decidido ao abrir a câmera, não a cada giro do aparelho: trocar de modo no meio da leitura
+  // recriaria o <video> que o leitor está usando
+  const [fullscreen, setFullscreen] = useState(false);
+  const shell = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 1280, h: 720 });
   const [torch, setTorch] = useState<boolean | null>(null);
   const [sound, setSound] = usePersistentState("deckscanner:sound", true);
@@ -71,6 +79,7 @@ export default function LiveScanner({
     stream.current = null;
     if (video.current) video.current.srcObject = null;
     setCamera("off");
+    setFullscreen(false);
     setTorch(null);
   }, []);
 
@@ -107,7 +116,8 @@ export default function LiveScanner({
       return;
     }
     // trocando de câmera o visor continua aberto (no celular não sai da tela cheia)
-    if (!stream.current) setCamera("opening");
+    const first = !stream.current;
+    if (first) setCamera("opening");
     void prepareVision().catch(() => undefined);
     const resolution = { width: { ideal: 1920 }, height: { ideal: 1080 } };
     const request = (id: string | null) =>
@@ -135,6 +145,7 @@ export default function LiveScanner({
       const caps = (track.getCapabilities?.() ?? {}) as MediaTrackCapabilities & { torch?: boolean };
       setTorch(caps.torch ? false : null);
       setActiveId(track.getSettings?.().deviceId ?? null);
+      if (first) setFullscreen(window.matchMedia(PHONE).matches);
       setCamera("on");
       // os nomes das câmeras só aparecem depois da permissão
       void listCameras();
@@ -170,20 +181,28 @@ export default function LiveScanner({
   const tip = guidance(scanner.report, running);
   const counted = scanner.counted;
   // no celular a câmera aberta ocupa a tela inteira: visor em cima, controles e leituras embaixo
-  const phone = useMediaQuery("(max-width: 639px)");
-  const immersive = phone && camera === "on";
+  const immersive = fullscreen && camera === "on";
 
-  useEffect(() => {
-    if (!immersive) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+  // em tela cheia é uma camada como as janelas: a página por trás fica inerte e sem rolar, e uma janela
+  // aberta por cima (Adicionar carta) deixa a câmera inerte até fechar
+  useLayoutEffect(() => {
+    const el = shell.current;
+    if (!immersive || !el) return;
+    pushLayer(el);
+    return () => popLayer(el);
   }, [immersive]);
 
-  return (
-    <div className={immersive ? "fixed inset-0 z-50 flex flex-col bg-oak-950" : "space-y-4"} data-immersive={immersive || undefined}>
+  // entrar e sair da tela cheia recria o <video>: o novo recebe o mesmo stream
+  useLayoutEffect(() => {
+    const el = video.current;
+    const media = stream.current;
+    if (!el || !media || el.srcObject === media) return;
+    el.srcObject = media;
+    void el.play().catch(() => undefined);
+  }, [immersive, camera]);
+
+  const view = (
+    <div ref={shell} className={immersive ? "fixed inset-0 z-50 flex flex-col bg-oak-950" : "space-y-4"}>
       <div
         className={cx(
           "viewfinder",
@@ -334,6 +353,9 @@ export default function LiveScanner({
       </div>
     </div>
   );
+  // a tela cheia vai direto no <body>: nenhum painel da página (vidro com desfoque, animação com
+  // transform) consegue prender o position: fixed dela
+  return immersive ? createPortal(view, document.body) : view;
 }
 
 /** A câmera não reconheceu a carta: mostrar de novo (automático) ou dizer o nome. */

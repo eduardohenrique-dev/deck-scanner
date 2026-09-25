@@ -311,13 +311,6 @@
     -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.45);
     backdrop-filter: blur(var(--blur-glass)) saturate(1.45);
   }
-  /* a câmera em tela cheia do celular mora dentro do painel: com desfoque, o position: fixed dela
-     ficaria preso no painel (altura zero) em vez de cobrir a tela */
-  .glass:has([data-immersive]),
-  .board:has([data-immersive]) {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
   /* 2 · flutuante: barra do app, menus, avisos */
   .glass-float {
     position: relative;

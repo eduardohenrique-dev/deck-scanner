@@ -391,7 +391,8 @@ export function Count({ children, className }: { children: ReactNode; className?
 const layers: HTMLElement[] = [];
 let scrollLocks = 0;
 
-function pushLayer(el: HTMLElement) {
+/** Camada por cima da página (janela, gaveta, câmera em tela cheia): o que está embaixo fica inerte. */
+export function pushLayer(el: HTMLElement) {
   layers.forEach((l) => (l.inert = true));
   const root = document.getElementById("root");
   if (root) root.inert = true;
@@ -399,7 +400,7 @@ function pushLayer(el: HTMLElement) {
   if (scrollLocks++ === 0) document.body.style.overflow = "hidden";
 }
 
-function popLayer(el: HTMLElement) {
+export function popLayer(el: HTMLElement) {
   const i = layers.indexOf(el);
   if (i >= 0) layers.splice(i, 1);
   const top = layers[layers.length - 1];
