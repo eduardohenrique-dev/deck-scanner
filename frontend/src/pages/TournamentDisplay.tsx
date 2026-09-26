@@ -39,13 +39,13 @@ function Pairings({ t }: { t: Tournament }) {
   return (
     <div className="columns-1 gap-6 md:columns-2 2xl:columns-3">
       {rows.map((x) => (
-        <div key={`${x.name}-${x.table}`} className={cx("mb-3 flex break-inside-avoid items-center gap-5 rounded-lg px-5 py-4", x.done ? "bg-cream/4 opacity-60" : "glass")}>
-          <span className="tabular grid size-16 shrink-0 place-items-center rounded-md bg-[linear-gradient(180deg,var(--color-brass-200),var(--color-brass-400))] text-title-1 font-bold text-ink-900 shadow-[inset_0_1px_0_rgb(255_252_240/0.7)]">
+        <div key={`${x.name}-${x.table}`} className={cx("mb-3 flex break-inside-avoid items-center gap-5 rounded-lg px-5 py-4", x.done ? "bg-mist/4 opacity-60" : "glass")}>
+          <span className="tabular grid size-16 shrink-0 place-items-center rounded-md bg-[linear-gradient(180deg,var(--color-arcane-200),var(--color-arcane-400))] text-title-1 font-bold text-ink-900 shadow-[inset_0_1px_0_rgb(246_243_255/0.7)]">
             {x.table ?? "—"}
           </span>
           <span className="min-w-0">
-            <span className="block truncate text-title-2 font-semibold text-cream">{x.name}</span>
-            <span className="block truncate text-headline text-cream-dim">{x.opponent ?? "Folga: vitória por 2 a 0"}</span>
+            <span className="block truncate text-title-2 font-semibold text-mist">{x.name}</span>
+            <span className="block truncate text-headline text-mist-dim">{x.opponent ?? "Folga: vitória por 2 a 0"}</span>
           </span>
         </div>
       ))}
@@ -60,11 +60,11 @@ function FinalScreen({ t }: { t: Tournament }) {
   const name = (id: string) => names.get(id) ?? "?";
   return (
     <div className="mx-auto max-w-4xl space-y-6 text-center">
-      <Crown size={72} className="mx-auto text-brass-300 drop-shadow-[0_4px_18px_rgb(235_198_116/0.6)]" />
-      <p className="text-title-2 text-cream-dim">{pod.result ? podResultText(pod.result, name) : "Empate na liderança · sem tempo limite"}</p>
+      <Crown size={72} className="mx-auto text-arcane-300 drop-shadow-[0_4px_18px_rgb(185_164_255/0.6)]" />
+      <p className="text-title-2 text-mist-dim">{pod.result ? podResultText(pod.result, name) : "Empate na liderança · sem tempo limite"}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         {pod.players.map((id) => (
-          <div key={id} className="glass px-6 py-5 text-title-1 font-semibold text-cream">
+          <div key={id} className="glass px-6 py-5 text-title-1 font-semibold text-mist">
             {name(id)}
           </div>
         ))}
@@ -132,7 +132,7 @@ export default function TournamentDisplay({ id }: { id: string }) {
           <BrandMark size={44} />
           <div className="min-w-0">
             <p className="eyebrow">{t.name}</p>
-            <h1 className="truncate font-display text-display font-semibold text-cream">{title}</h1>
+            <h1 className="truncate font-display text-display font-semibold text-mist">{title}</h1>
           </div>
         </div>
         {r && active === "pairings" && t.settings.roundMinutes ? (
@@ -163,7 +163,7 @@ export default function TournamentDisplay({ id }: { id: string }) {
           <IconButton label="Próxima tela" onClick={() => setScreen(screens[(screens.indexOf(active) + 1) % screens.length])}>
             <ChevronRight className="size-5" />
           </IconButton>
-          <span className="ml-2 text-footnote text-cream-faint">Atualiza sozinho · ← → trocam a tela · F tela cheia</span>
+          <span className="ml-2 text-footnote text-mist-faint">Atualiza sozinho · ← → trocam a tela · F tela cheia</span>
         </div>
         <div className="flex items-center gap-1">
           <IconButton label="Tela cheia" onClick={() => void document.documentElement.requestFullscreen?.().catch(() => undefined)}>

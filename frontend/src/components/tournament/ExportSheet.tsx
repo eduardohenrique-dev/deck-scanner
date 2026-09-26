@@ -46,7 +46,7 @@ export async function bracketImage(t: Tournament): Promise<Blob | null> {
   if (!t.playoff) return null;
   const view = bracketView(t.playoff);
   const names = new Map(t.players.map((p) => [p.id, p.name]));
-  await Promise.all([document.fonts.load('600 40px "Grenze Variable"'), document.fonts.load('600 20px "Instrument Sans Variable"'), document.fonts.load('400 16px "Instrument Sans Variable"')]).catch(() => undefined);
+  await Promise.all([document.fonts.load('600 40px "Cinzel Variable"'), document.fonts.load('600 20px "Instrument Sans Variable"'), document.fonts.load('400 16px "Instrument Sans Variable"')]).catch(() => undefined);
   const colW = 300;
   const gap = 56;
   const slotH = 84;
@@ -63,17 +63,17 @@ export async function bracketImage(t: Tournament): Promise<Blob | null> {
   if (!g) return null;
   g.scale(dpr, dpr);
   // madeira escura com a luz de vela no alto
-  g.fillStyle = "#16100c";
+  g.fillStyle = "#08051f";
   g.fillRect(0, 0, width, height);
   const glow = g.createRadialGradient(width * 0.15, -40, 0, width * 0.15, -40, width * 0.7);
   glow.addColorStop(0, "rgba(236,184,96,0.22)");
   glow.addColorStop(1, "rgba(236,184,96,0)");
   g.fillStyle = glow;
   g.fillRect(0, 0, width, height);
-  g.fillStyle = "#f2e8d5";
-  g.font = '600 44px "Grenze Variable", Georgia, serif';
+  g.fillStyle = "#ece8ff";
+  g.font = '600 44px "Cinzel Variable", Georgia, serif';
   g.fillText(t.name, pad, pad + 40);
-  g.fillStyle = "#9c8a74";
+  g.fillStyle = "#9188c4";
   g.font = '500 18px "Instrument Sans Variable", system-ui, sans-serif';
   g.fillText([t.gameFormat, `${t.players.length} jogadores`, `Top ${t.playoff.cut}`].filter(Boolean).join(" · "), pad, pad + 74);
 
@@ -82,7 +82,7 @@ export async function bracketImage(t: Tournament): Promise<Blob | null> {
   const pos: { x: number; y: number }[][] = [];
   view.rounds.forEach((round, r) => {
     const x = pad + r * (colW + gap);
-    g.fillStyle = "#9c8a74";
+    g.fillStyle = "#9188c4";
     g.font = '600 14px "Instrument Sans Variable", system-ui, sans-serif';
     g.fillText(roundName(round.length, r).toUpperCase(), x, areaTop - 14);
     const cell = areaH / round.length;
@@ -102,18 +102,18 @@ export async function bracketImage(t: Tournament): Promise<Blob | null> {
             g.fillStyle = "rgba(235,198,116,0.14)";
             roundRect(g, x + 6, yy - 2, colW - 12, 30, 8);
             g.fill();
-            g.fillStyle = "#ebc674";
+            g.fillStyle = "#b9a4ff";
             g.fillRect(x + 6, yy - 2, 3, 30);
           }
-          g.fillStyle = "#9c8a74";
+          g.fillStyle = "#9188c4";
           g.font = '600 13px "Instrument Sans Variable", system-ui, sans-serif';
           g.fillText(seat ? String(seat.seed) : "", x + 18, yy + 19);
-          g.fillStyle = seat ? (won ? "#f2e8d5" : "#cdbb9f") : "#9c8a74";
+          g.fillStyle = seat ? (won ? "#ece8ff" : "#bdb4e6") : "#9188c4";
           g.font = `${won ? 600 : 500} 17px "Instrument Sans Variable", system-ui, sans-serif`;
           const label = seat ? (names.get(seat.playerId) ?? "?") : slot.bye ? "Folga" : "A definir";
           g.fillText(fit(g, label, colW - 90), x + 44, yy + 19);
           if (games !== null) {
-            g.fillStyle = won ? "#f5dca0" : "#9c8a74";
+            g.fillStyle = won ? "#d9ccff" : "#9188c4";
             g.font = '700 17px "Instrument Sans Variable", system-ui, sans-serif';
             g.textAlign = "right";
             g.fillText(String(games), x + colW - 16, yy + 19);
@@ -148,13 +148,13 @@ export async function bracketImage(t: Tournament): Promise<Blob | null> {
   const champ = champion(t);
   const lastX = pad + view.rounds.length * (colW + gap);
   const cy = areaTop + areaH / 2;
-  g.fillStyle = "#ebc674";
+  g.fillStyle = "#b9a4ff";
   g.font = '600 14px "Instrument Sans Variable", system-ui, sans-serif';
   g.fillText("CAMPEÃO", lastX, cy - 24);
-  g.fillStyle = champ ? "#f2e8d5" : "#9c8a74";
-  g.font = '600 34px "Grenze Variable", Georgia, serif';
+  g.fillStyle = champ ? "#ece8ff" : "#9188c4";
+  g.font = '600 34px "Cinzel Variable", Georgia, serif';
   g.fillText(fit(g, champ ? (names.get(champ) ?? "?") : "A definir", 240), lastX, cy + 14);
-  g.fillStyle = "#9c8a74";
+  g.fillStyle = "#9188c4";
   g.font = '500 13px "Instrument Sans Variable", system-ui, sans-serif';
   g.fillText("Deck Scanner · torneio", lastX, height - pad / 2);
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
@@ -174,10 +174,10 @@ function fit(g: CanvasRenderingContext2D, text: string, max: number) {
 
 function Row({ title, text, children }: { title: string; text: string; children: ReactNode }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-cream/6 py-4 last:border-b-0">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-mist/6 py-4 last:border-b-0">
       <div className="min-w-0">
-        <p className="text-headline font-semibold text-cream">{title}</p>
-        <p className="text-footnote text-cream-faint">{text}</p>
+        <p className="text-headline font-semibold text-mist">{title}</p>
+        <p className="text-footnote text-mist-faint">{text}</p>
       </div>
       <div className="flex gap-2">{children}</div>
     </div>
@@ -238,7 +238,7 @@ export default function ExportSheet({ t, onClose }: { t: Tournament; onClose: ()
             {canShare && <Button size="sm" variant="ghost" icon={<Share2 className="size-4" />} onClick={() => void image("share")} aria-label="Compartilhar a imagem do bracket" />}
           </Row>
         )}
-        {!texts.length && <p className="py-6 text-center text-subhead text-cream-faint">Assim que a primeira rodada sair, os textos e as planilhas aparecem aqui.</p>}
+        {!texts.length && <p className="py-6 text-center text-subhead text-mist-faint">Assim que a primeira rodada sair, os textos e as planilhas aparecem aqui.</p>}
       </div>
     </Modal>
   );

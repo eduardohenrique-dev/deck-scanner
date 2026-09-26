@@ -95,18 +95,18 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
     <section className="space-y-3">
       <SectionTitle aside={<Tag tone="warn">{total}</Tag>}>
         <span className="inline-flex items-center gap-2">
-          <SearchCheck className="size-5 text-brass-300" /> Confira primeiro
+          <SearchCheck className="size-5 text-arcane-300" /> Confira primeiro
         </span>
       </SectionTitle>
       <ul className="space-y-4">
         {valuable.map((d) => {
           const cap = capById.get(d.capture_id);
           return (
-            <Case key={`valor:${d.id}`} image={d.crop_url} title={<><Sparkles className="size-4 text-brass-300" /> Carta valiosa: confira a edição</>}>
-              <p className="text-subhead text-cream">
-                {cardName(d.card)} <span className="text-cream-faint">· {d.card?.set_code?.toUpperCase()}</span>
+            <Case key={`valor:${d.id}`} image={d.crop_url} title={<><Sparkles className="size-4 text-arcane-300" /> Carta valiosa: confira a edição</>}>
+              <p className="text-subhead text-mist">
+                {cardName(d.card)} <span className="text-mist-faint">· {d.card?.set_code?.toUpperCase()}</span>
               </p>
-              <p className="text-subhead text-brass-200">{brl(cardBrl(d, fx) ?? 0)}</p>
+              <p className="text-subhead text-arcane-200">{brl(cardBrl(d, fx) ?? 0)}</p>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="secondary" onClick={() => dismiss(`valor:${d.id}`)}>
                   Está certa
@@ -125,29 +125,29 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
           const cap = capById.get(d.capture_id);
           return (
             <Case key={d.id} image={d.crop_url} title={<><CircleHelp className="size-5 text-wine-300" /> Carta não identificada</>}>
-              <p className="text-footnote text-cream-faint">
+              <p className="text-footnote text-mist-faint">
                 {positionLabel(d, cap?.idx, cap?.type !== "image")}
                 {cap?.image_url && (
-                  <button type="button" onClick={() => onShowCapture(cap, d.id)} className="ml-2 inline-flex items-center gap-1 font-medium text-brass-300 hover:underline">
+                  <button type="button" onClick={() => onShowCapture(cap, d.id)} className="ml-2 inline-flex items-center gap-1 font-medium text-arcane-300 hover:underline">
                     <Eye className="size-3.5" /> Ver na foto
                   </button>
                 )}
               </p>
               {d.notes.filter((n) => !n.includes("multimodal")).slice(0, 2).map((n) => (
-                <p key={n} className="text-footnote text-cream-faint">
+                <p key={n} className="text-footnote text-mist-faint">
                   {n}
                 </p>
               ))}
               {d.candidates.length > 0 && (
                 <div>
-                  <p className="mb-2 text-footnote text-cream-faint">Parece com</p>
+                  <p className="mb-2 text-footnote text-mist-faint">Parece com</p>
                   <div className="flex flex-wrap gap-2">
                     {d.candidates.slice(0, 4).map((c) => (
                       <button
                         key={c.card_ref_id}
                         onClick={() => run(() => api.identify(d.id, c.card_ref_id), `Identificada como ${cardName(c.card)}`)}
                         type="button"
-                        className="chip gap-2 py-1 pr-3 pl-1.5 text-cream-dim hover:text-cream"
+                        className="chip gap-2 py-1 pr-3 pl-1.5 text-mist-dim hover:text-mist"
                       >
                         <ArtThumb card={c.card} size={32} />
                         {cardName(c.card)}
@@ -174,7 +174,7 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
 
         {pairs.map(([a, b, reasons]) => (
           <li key={a.id + b.id} className="glass p-4">
-            <p className="mb-3 flex items-center gap-2 text-headline font-semibold text-cream">
+            <p className="mb-3 flex items-center gap-2 text-headline font-semibold text-mist">
               <Layers className="size-5 text-ember-300" /> A mesma carta em duas fotos?
             </p>
             <div className="flex flex-wrap items-start gap-3">
@@ -183,10 +183,10 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
                 return (
                   <figure key={d.id} className="w-[112px]">
                     {d.crop_url && <CardImage src={d.crop_url} alt="recorte" />}
-                    <figcaption className="mt-1 text-footnote leading-tight text-cream-faint">
+                    <figcaption className="mt-1 text-footnote leading-tight text-mist-faint">
                       {cardName(d.card)}
                       {cap?.image_url && (
-                        <button type="button" onClick={() => onShowCapture(cap, d.id)} className="block font-medium text-brass-300 hover:underline">
+                        <button type="button" onClick={() => onShowCapture(cap, d.id)} className="block font-medium text-arcane-300 hover:underline">
                           foto {cap.idx}
                         </button>
                       )}
@@ -195,12 +195,12 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
                 );
               })}
               <div className="min-w-[180px] flex-1 space-y-2">
-                <ul className="list-disc space-y-0.5 pl-4 text-subhead text-cream-dim">
+                <ul className="list-disc space-y-0.5 pl-4 text-subhead text-mist-dim">
                   {reasons.map((r) => (
                     <li key={r}>{r}</li>
                   ))}
                 </ul>
-                <p className="text-footnote text-cream-faint">Na dúvida as duas são contadas — o sistema nunca apaga uma carta sozinho.</p>
+                <p className="text-footnote text-mist-faint">Na dúvida as duas são contadas — o sistema nunca apaga uma carta sozinho.</p>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="primary" icon={<CopyCheck className="size-4" />} onClick={() => run(() => api.duplicate(a.id, b.id, true), "Contada uma vez")}>
                     Mesma carta
@@ -221,7 +221,7 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
           const entry = state.entries.find((e) => e.detection_ids.includes(d.id) || e.card_ref_id === d.card_ref_id);
           return (
             <Case key={d.id} image={d.crop_url} secondImage={prev && !isLong ? prev.crop_url : undefined} title={cardName(d.card)}>
-              <p className="text-subhead text-cream-dim">
+              <p className="text-subhead text-mist-dim">
                 {isSplit ? "Parece que duas cópias iguais passaram seguidas (a posição da carta mudou no meio)." : isLong ? "Esta carta ficou na câmera o dobro do normal — podem ser duas cópias." : "A mesma carta apareceu duas vezes seguidas e foi contada duas vezes."}
               </p>
               <div className="flex flex-wrap gap-2">
@@ -256,8 +256,8 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
 
         {impossible.map((d) => (
           <Case key={`print-${d.id}`} image={d.crop_url} title={<>Impressão que não existe no registro · {cardName(d.card)}</>}>
-            <p className="text-subhead text-cream-dim">{d.print_check!.message}</p>
-            <p className="text-footnote text-cream-faint">
+            <p className="text-subhead text-mist-dim">{d.print_check!.message}</p>
+            <p className="text-footnote text-mist-faint">
               Pode ser leitura errada da linha de coleção ou uma carta falsificada. Vale olhar a carta de perto.
               {d.raw.set && ` Lido: ${d.raw.set.toUpperCase()} ${d.raw.number ?? ""} ${d.raw.language ?? ""}.`}
             </p>
@@ -279,7 +279,7 @@ function Case({ image, secondImage, title, children }: { image: string | null; s
         {image ? <CardImage src={image} className="w-[108px]" alt="recorte" /> : null}
       </div>
       <div className="min-w-0 flex-1 space-y-3">
-        <p className="flex items-center gap-2 text-headline font-semibold text-cream">{title}</p>
+        <p className="flex items-center gap-2 text-headline font-semibold text-mist">{title}</p>
         {children}
       </div>
     </li>

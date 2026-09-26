@@ -140,12 +140,15 @@ cada etapa sempre à mão (desabilitada com o motivo: "faltam os placares das me
 
 ### Visual
 
-Taverna premium: madeira escura com luz de vela ao fundo, **vidro âmbar** (quatro níveis: painel, flutuante, folha,
-mais o poço dos campos) e latão polido só no que é ação. Tudo sai dos tokens em `frontend/src/index.css`: cores
-(latão, verdete como secundário, musgo/brasa/lacre para estados), escala de 10 tamanhos com nome, raios com intenção,
-sombras e desfoque por nível e duas molas em `linear()`. Fontes: **Grenze** nos títulos e nomes, **Instrument Sans**
-na interface (números tabulares) e Grenze Gotisch só na marca. Botões de 44 px, janelas com foco preso (`inert`),
-"reduzir movimento" e "reduzir transparência" respeitados.
+Arcano, a partir da logo (o olho que lê a carta): noite índigo com estrelas e o halo violeta do olho ao fundo,
+**vidro violeta** (quatro níveis: painel, flutuante, folha, mais o poço dos campos) e luz lavanda só no que é ação.
+Tudo sai dos tokens em `frontend/src/index.css`, com as cores tiradas da logo: `night` (fundos), `mist` (texto, AA até
+no vidro mais claro), `arcane` (o violeta da íris, acento), `astral` (azul de mana, secundário), velino lavanda para
+o que é papel e musgo/brasa/lacre para estados. Escala de 10 tamanhos com nome, raios com intenção, sombras e desfoque
+por nível e duas molas em `linear()`. Fontes: **Cinzel** (as capitulares da logo) nos títulos e na marca, **Instrument
+Sans** nos nomes e na interface (números tabulares). A marca e o favicon redesenham o emblema da logo em SVG; o ícone
+da tela inicial do iPhone é o próprio emblema. Botões de 44 px, janelas com foco preso (`inert`), "reduzir movimento"
+e "reduzir transparência" respeitados.
 
 ---
 

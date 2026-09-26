@@ -130,16 +130,16 @@ export default function DeckPage({ id }: { id: string }) {
     <div className="space-y-6">
       <header className="glass relative overflow-hidden">
         {art && <img src={art} alt="" className="absolute inset-0 h-full w-full object-cover object-[center_30%] opacity-40" />}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(22_16_12/0.96)_18%,rgb(22_16_12/0.8)_55%,rgb(22_16_12/0.45))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(9_6_30/0.96)_18%,rgb(9_6_30/0.8)_55%,rgb(9_6_30/0.45))]" />
         <div className="relative flex flex-wrap items-end justify-between gap-4 px-5 pt-12 pb-5 sm:px-8 sm:pt-20 sm:pb-6">
           <div className="min-w-0 flex-1 space-y-2 max-sm:basis-full">
             <p className="eyebrow">Deck · atualizado {relativeDay(deck.updated_at ?? deck.created_at)}</p>
-            <h1 className="font-display text-title-1 font-semibold text-cream sm:text-display">
+            <h1 className="font-display text-title-2 font-semibold text-mist sm:text-display">
               <InlineEdit label="Nome do deck" value={deck.name} placeholder="Deck sem nome" onSave={async (name) => name && apply(await api.patchDeck(deck.id, { name }))} className="font-display" />
             </h1>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-subhead text-cream-dim">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-subhead text-mist-dim">
               {identity.length > 0 && <IdentityPips colors={identity} size={18} />}
-              {commanders.length > 0 && <span className="font-serif text-cream">{commanders.map((e) => cardName(e.card)).join(" & ")}</span>}
+              {commanders.length > 0 && <span className="font-serif text-mist">{commanders.map((e) => cardName(e.card)).join(" & ")}</span>}
               <span className="inline-block w-56">
                 <Select
                   aria-label="Formato do deck"
@@ -284,7 +284,7 @@ function ImportDialog({ deck, onClose, onDone }: { deck: DeckState; onClose: () 
     >
       {report ? (
         <div className="space-y-3 text-subhead">
-          <p className="text-cream-dim">{report.imported} cartas entraram.</p>
+          <p className="text-mist-dim">{report.imported} cartas entraram.</p>
           {report.unresolved.length > 0 && (
             <ul className="well max-h-48 space-y-1 overflow-y-auto px-4 py-3 font-mono text-footnote text-wine-300">
               {report.unresolved.map((u) => (
@@ -311,7 +311,7 @@ function ImportDialog({ deck, onClose, onDone }: { deck: DeckState; onClose: () 
             ]}
           />
           <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={12} autoFocus className="font-mono text-body" placeholder={"1 Sol Ring\n4 Raio (M11) 149\n\nSideboard\n2 Pyroblast"} aria-label="Lista para importar" />
-          <p className="text-footnote text-cream-faint">Aceita listas do Moxfield, LigaMagic, Arena e Archidekt, com nomes em português ou inglês.</p>
+          <p className="text-footnote text-mist-faint">Aceita listas do Moxfield, LigaMagic, Arena e Archidekt, com nomes em português ou inglês.</p>
         </div>
       )}
     </Modal>

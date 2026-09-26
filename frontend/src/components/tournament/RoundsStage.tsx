@@ -79,12 +79,12 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
     <Board className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 p-5 sm:p-6">
       <div className="min-w-0">
         <p className="eyebrow">{isCurrent ? (roundComplete(round) ? "Rodada completa" : "Em jogo") : "Rodada anterior"}</p>
-        <h2 className="mt-1 font-display text-title-1 font-semibold text-cream sm:text-display">
-          Rodada {round.number} <span className="text-cream-faint">de {plannedRounds(t)}</span>
+        <h2 className="mt-1 font-display text-title-1 font-semibold text-mist sm:text-display">
+          Rodada {round.number} <span className="text-mist-faint">de {plannedRounds(t)}</span>
         </h2>
-        <p className="mt-1 text-subhead text-cream-dim">
+        <p className="mt-1 text-subhead text-mist-dim">
           <span className="tabular">{played}</span> de <span className="tabular">{tables}</span> {tables === 1 ? "mesa lançada" : "mesas lançadas"}
-          {isPods && <span className="text-cream-faint"> · mesas de {[...new Set(pods.map((p) => p.players.length))].sort((a, b) => b - a).join(" e ")}</span>}
+          {isPods && <span className="text-mist-faint"> · mesas de {[...new Set(pods.map((p) => p.players.length))].sort((a, b) => b - a).join(" e ")}</span>}
         </p>
       </div>
       {isCurrent && t.settings.roundMinutes ? (
@@ -125,14 +125,14 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
           ]}
         />
         <div className="relative min-w-44 flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-cream-faint" />
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-mist-faint" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Procurar jogador ou mesa" aria-label="Procurar jogador ou mesa" className="pl-9" />
         </div>
       </div>
       {swapping && (
         <div className="glass-float flex items-center gap-3 px-4 py-3" role="status">
-          <ArrowLeftRight className="size-5 shrink-0 text-brass-300" />
-          <p className="min-w-0 flex-1 text-subhead text-cream">
+          <ArrowLeftRight className="size-5 shrink-0 text-arcane-300" />
+          <p className="min-w-0 flex-1 text-subhead text-mist">
             {picked ? `Agora toque em quem vai para o lugar de ${players.get(picked)?.name}.` : isPods ? "Toque em dois jogadores de mesas diferentes para trocá-los de lugar." : "Toque em dois jogadores para trocá-los de mesa (vale também para a folga)."}
           </p>
           <Button size="sm" variant="ghost" icon={<X className="size-4" />} onClick={() => (setSwapping(false), setPicked(null))}>
@@ -157,7 +157,7 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
             ))}
           </div>
         ) : (
-          <p className="glass px-4 py-8 text-center text-subhead text-cream-faint">{filter === "pending" && !q ? "Todas as mesas desta rodada já têm resultado." : "Nenhuma mesa com esse nome."}</p>
+          <p className="glass px-4 py-8 text-center text-subhead text-mist-faint">{filter === "pending" && !q ? "Todas as mesas desta rodada já têm resultado." : "Nenhuma mesa com esse nome."}</p>
         )
       ) : matches.length ? (
         <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
@@ -175,10 +175,10 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
           ))}
         </div>
       ) : (
-        <p className="glass px-4 py-8 text-center text-subhead text-cream-faint">{filter === "pending" && !q ? "Todas as mesas desta rodada já têm placar." : "Nenhuma mesa com esse nome."}</p>
+        <p className="glass px-4 py-8 text-center text-subhead text-mist-faint">{filter === "pending" && !q ? "Todas as mesas desta rodada já têm placar." : "Nenhuma mesa com esse nome."}</p>
       )}
       {locked && (
-        <p className="text-footnote text-cream-faint">
+        <p className="text-footnote text-mist-faint">
           {t.tiebreak ? "A final já foi montada: os resultados das rodadas ficaram travados. Para corrigir, desfaça a final na etapa Final." : "O corte já foi feito: os placares do suíço ficaram travados. Para corrigir, desfaça o corte na etapa Corte."}
         </p>
       )}
@@ -194,7 +194,7 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
           tabs={t.rounds.map((r) => ({
             value: String(r.number),
             label: `Rodada ${r.number}`,
-            badge: roundComplete(r) ? null : <span className="size-2 rounded-full bg-verdigris-300" aria-label="em jogo" />,
+            badge: roundComplete(r) ? null : <span className="size-2 rounded-full bg-astral-300" aria-label="em jogo" />,
           }))}
         />
       )}
@@ -215,11 +215,11 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
         <div className={cx(mobileView !== "tables" && "max-lg:hidden")}>{grid}</div>
         <aside className={cx("space-y-3", mobileView !== "standings" && "max-lg:hidden")}>
           <div className="flex items-baseline justify-between gap-3">
-            <h2 className="font-display text-title-3 font-semibold text-cream">Classificação</h2>
-            {cutOf(t.structure) !== null && <Tag tone="brass">Top {cutOf(t.structure)}</Tag>}
+            <h2 className="font-display text-title-3 font-semibold text-mist">Classificação</h2>
+            {cutOf(t.structure) !== null && <Tag tone="arcane">Top {cutOf(t.structure)}</Tag>}
           </div>
           <StandingsTable rows={table} players={players} cut={cutOf(t.structure)} onPlayer={onPlayer} compact variant={isPods ? "pods" : "duel"} />
-          <p className="px-1 text-footnote text-cream-faint">
+          <p className="px-1 text-footnote text-mist-faint">
             {isPods
               ? "Ordem: pontos, vitórias e força dos adversários. Empate em 1º depois da última rodada vai para a final. Toque num jogador para ver o histórico."
               : "Desempates: pontos, OMW, GW e OGW, com piso de 33% (regra da Wizards). Toque num jogador para ver o histórico."}

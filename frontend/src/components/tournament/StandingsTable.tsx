@@ -47,7 +47,7 @@ export default function StandingsTable({
     <div className="glass overflow-hidden">
       <table className="w-full border-collapse text-subhead">
         <thead>
-          <tr className="text-caption font-semibold tracking-[0.06em] text-cream-faint uppercase">
+          <tr className="text-caption font-semibold tracking-[0.06em] text-mist-faint uppercase">
             <th className="w-12 py-3 pl-4 text-left font-semibold">#</th>
             <th className="py-3 text-left font-semibold">Jogador</th>
             <th className="py-3 pr-3 text-right font-semibold">Pts</th>
@@ -85,10 +85,10 @@ export default function StandingsTable({
             return (
               <Fragment key={r.playerId}>
                 <tr
-                  className={cx("border-t border-cream/6 transition-colors", onPlayer && "cursor-pointer hover:bg-cream/5", r.dropped && "text-cream-faint")}
+                  className={cx("border-t border-mist/6 transition-colors", onPlayer && "cursor-pointer hover:bg-mist/5", r.dropped && "text-mist-faint")}
                   onClick={onPlayer ? () => onPlayer(r.playerId) : undefined}
                 >
-                  <td className={cx("tabular py-3 pl-4 font-bold", top ? "text-brass-200" : r.dropped ? "text-cream-faint" : "text-cream")}>{rank}</td>
+                  <td className={cx("tabular py-3 pl-4 font-bold", top ? "text-arcane-200" : r.dropped ? "text-mist-faint" : "text-mist")}>{rank}</td>
                   <td className="min-w-0 py-2.5 pr-2">
                     {onPlayer ? (
                       <button type="button" className="flex w-full min-w-0 items-center gap-2 text-left outline-offset-4" onClick={(e) => (e.stopPropagation(), onPlayer(r.playerId))}>
@@ -100,22 +100,22 @@ export default function StandingsTable({
                       </div>
                     )}
                   </td>
-                  <td className={cx("tabular py-3 pr-3 text-right text-headline font-bold", r.dropped ? "text-cream-faint" : "text-cream")}>{r.points}</td>
+                  <td className={cx("tabular py-3 pr-3 text-right text-headline font-bold", r.dropped ? "text-mist-faint" : "text-mist")}>{r.points}</td>
                   {pods ? (
                     <>
-                      <td className="tabular py-3 pr-3 text-right whitespace-nowrap text-cream-dim">{podRecord(r.wins, r.draws, r.losses)}</td>
-                      <td className={cx("tabular py-3 pr-4 text-right text-cream-dim", wide ? "max-sm:hidden" : "hidden")}>{r.matchesPlayed ? pct(r.omw) : "—"}</td>
+                      <td className="tabular py-3 pr-3 text-right whitespace-nowrap text-mist-dim">{podRecord(r.wins, r.draws, r.losses)}</td>
+                      <td className={cx("tabular py-3 pr-4 text-right text-mist-dim", wide ? "max-sm:hidden" : "hidden")}>{r.matchesPlayed ? pct(r.omw) : "—"}</td>
                     </>
                   ) : (
                     <>
-                      <td className={cx("tabular py-3 pr-3 text-right text-cream-dim", wide ? "max-sm:hidden" : "hidden")}>{record(r.wins, r.losses, r.draws)}</td>
-                      <td className="tabular py-3 pr-3 text-right text-cream-dim">{r.matchesPlayed ? pct(r.omw) : "—"}</td>
-                      <td className={cx("tabular py-3 pr-3 text-right text-cream-dim", wide ? "max-md:hidden" : "hidden")}>{r.matchesPlayed ? pct(r.gwp) : "—"}</td>
-                      <td className={cx("tabular py-3 pr-4 text-right text-cream-dim", wide ? "max-md:hidden" : "hidden")}>{r.matchesPlayed ? pct(r.ogw) : "—"}</td>
+                      <td className={cx("tabular py-3 pr-3 text-right text-mist-dim", wide ? "max-sm:hidden" : "hidden")}>{record(r.wins, r.losses, r.draws)}</td>
+                      <td className="tabular py-3 pr-3 text-right text-mist-dim">{r.matchesPlayed ? pct(r.omw) : "—"}</td>
+                      <td className={cx("tabular py-3 pr-3 text-right text-mist-dim", wide ? "max-md:hidden" : "hidden")}>{r.matchesPlayed ? pct(r.gwp) : "—"}</td>
+                      <td className={cx("tabular py-3 pr-4 text-right text-mist-dim", wide ? "max-md:hidden" : "hidden")}>{r.matchesPlayed ? pct(r.ogw) : "—"}</td>
                     </>
                   )}
                   {onPlayer && (
-                    <td className="pr-3 text-cream-faint">
+                    <td className="pr-3 text-mist-faint">
                       <ChevronRight className="size-4" />
                     </td>
                   )}
@@ -123,8 +123,8 @@ export default function StandingsTable({
                 {cutAfter.has(r.playerId) && r !== shown[shown.length - 1] && (
                   <tr aria-hidden="true">
                     <td colSpan={8} className="p-0">
-                      <div className="relative h-[2px] bg-[linear-gradient(90deg,transparent,var(--color-brass-400)_12%,var(--color-brass-400)_88%,transparent)]">
-                        <span className="absolute top-1/2 right-4 -translate-y-1/2 rounded-full bg-brass-300 px-2 text-caption leading-[18px] font-semibold tracking-[0.08em] text-ink-900 uppercase">
+                      <div className="relative h-[2px] bg-[linear-gradient(90deg,transparent,var(--color-arcane-400)_12%,var(--color-arcane-400)_88%,transparent)]">
+                        <span className="absolute top-1/2 right-4 -translate-y-1/2 rounded-full bg-arcane-300 px-2 text-caption leading-[18px] font-semibold tracking-[0.08em] text-ink-900 uppercase">
                           Corte · Top {cut}
                         </span>
                       </div>
@@ -144,8 +144,8 @@ function Who({ player, dropped }: { player: Player | undefined; dropped: boolean
   return (
     <>
       <span className="min-w-0">
-        <span className={cx("block truncate font-semibold", dropped ? "text-cream-faint" : "text-cream")}>{player?.name ?? "?"}</span>
-        {player?.deck?.name && <span className="block truncate text-footnote text-cream-faint">{player.deck.name}</span>}
+        <span className={cx("block truncate font-semibold", dropped ? "text-mist-faint" : "text-mist")}>{player?.name ?? "?"}</span>
+        {player?.deck?.name && <span className="block truncate text-footnote text-mist-faint">{player.deck.name}</span>}
       </span>
       {player?.deck?.identity?.length ? <IdentityPips colors={player.deck.identity} size={14} /> : null}
       {dropped && <Tag tone="bad">Saiu</Tag>}

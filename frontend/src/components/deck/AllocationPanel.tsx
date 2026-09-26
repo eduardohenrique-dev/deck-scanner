@@ -64,14 +64,14 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
     <div className="space-y-5">
       <div className="glass space-y-4 p-4 sm:p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <p className="text-body text-cream-dim">
-            <strong className="tabular text-title-2 font-semibold text-cream">{t.here}</strong> de {t.needed} cartas físicas neste deck
+          <p className="text-body text-mist-dim">
+            <strong className="tabular text-title-2 font-semibold text-mist">{t.here}</strong> de {t.needed} cartas físicas neste deck
           </p>
           {report.complete && <Tag tone="ok">Deck montado</Tag>}
         </div>
-        <Meter value={t.needed ? t.here / t.needed : 0} tone={report.complete ? "ok" : "brass"} label="cartas físicas no deck" />
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-subhead text-cream-dim">
-          {t.move > 0 && <span className="text-verdigris-300">{t.move} na coleção</span>}
+        <Meter value={t.needed ? t.here / t.needed : 0} tone={report.complete ? "ok" : "arcane"} label="cartas físicas no deck" />
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-subhead text-mist-dim">
+          {t.move > 0 && <span className="text-astral-300">{t.move} na coleção</span>}
           {t.conflict > 0 && <span className="text-ember-300">{t.conflict} em outros decks</span>}
           {t.buy > 0 && <span className="text-wine-300">{t.buy} para comprar</span>}
         </div>
@@ -103,7 +103,7 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
             </Button>
           )}
         </div>
-        <p className="text-footnote text-cream-faint">“Trazer da coleção” só usa cartas soltas, de pastas e caixas. Cartas de outros decks nunca saem sem você confirmar.</p>
+        <p className="text-footnote text-mist-faint">“Trazer da coleção” só usa cartas soltas, de pastas e caixas. Cartas de outros decks nunca saem sem você confirmar.</p>
       </div>
 
       {groups.conflict.length > 0 && (
@@ -151,7 +151,7 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
         <Section title="Você não tem" tone="bad" icon={<ShoppingCart className="size-4" />}>
           {groups.buy.map((item) => (
             <ItemRow key={item.oracle_id} item={item} card={cards(item)}>
-              <p className="text-footnote text-cream-faint">{item.buy === 1 ? "Falta 1 cópia" : `Faltam ${item.buy} cópias`}</p>
+              <p className="text-footnote text-mist-faint">{item.buy === 1 ? "Falta 1 cópia" : `Faltam ${item.buy} cópias`}</p>
             </ItemRow>
           ))}
         </Section>
@@ -160,8 +160,8 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
       {report.extra.length > 0 && (
         <Section title="No deck, mas fora da lista" tone="neutral" icon={<PackageOpen className="size-4" />}>
           {report.extra.map((c) => (
-            <li key={c.id} className="flex items-center gap-3 px-4 py-3 text-subhead text-cream-dim">
-              {state.entries.find((e) => e.card_ref_id === c.card_ref_id)?.card?.name_pt ?? c.card_ref_id.slice(0, 8)} {copyLabel(c) && <span className="text-cream-faint">({copyLabel(c)})</span>}
+            <li key={c.id} className="flex items-center gap-3 px-4 py-3 text-subhead text-mist-dim">
+              {state.entries.find((e) => e.card_ref_id === c.card_ref_id)?.card?.name_pt ?? c.card_ref_id.slice(0, 8)} {copyLabel(c) && <span className="text-mist-faint">({copyLabel(c)})</span>}
             </li>
           ))}
         </Section>
@@ -174,7 +174,7 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
           </summary>
           <ul className="grid gap-x-4 px-4 py-3 sm:grid-cols-2">
             {groups.ok.map((item) => (
-              <li key={item.oracle_id} className="truncate py-0.5 text-subhead text-cream-dim">
+              <li key={item.oracle_id} className="truncate py-0.5 text-subhead text-mist-dim">
                 {item.needed > 1 ? `${item.needed}× ` : ""}
                 {item.name}
               </li>
@@ -199,13 +199,13 @@ export default function AllocationPanel({ state, onState, onShop }: { state: Dec
 }
 
 function Section({ title, tone, icon, children }: { title: string; tone: "warn" | "info" | "bad" | "neutral"; icon: ReactNode; children: ReactNode }) {
-  const color = { warn: "text-ember-300", info: "text-verdigris-300", bad: "text-wine-300", neutral: "text-cream-dim" }[tone];
+  const color = { warn: "text-ember-300", info: "text-astral-300", bad: "text-wine-300", neutral: "text-mist-dim" }[tone];
   return (
     <section className="glass overflow-hidden">
       <h3 className={cx("panel-head", color)}>
         {icon} {title}
       </h3>
-      <ul className="divide-y divide-cream/6">{children}</ul>
+      <ul className="divide-y divide-mist/6">{children}</ul>
     </section>
   );
 }
@@ -216,8 +216,8 @@ function ItemRow({ item, card, children }: { item: AllocationItem; card: CardSum
       <ArtThumb card={card} size={48} />
       <div className="min-w-0 flex-1 space-y-1">
         <p className="flex items-baseline justify-between gap-2">
-          <span className="truncate font-serif text-body font-semibold text-cream">{item.name}</span>
-          <span className="tabular shrink-0 text-footnote text-cream-faint">
+          <span className="truncate font-serif text-body font-semibold text-mist">{item.name}</span>
+          <span className="tabular shrink-0 text-footnote text-mist-faint">
             {item.here}/{item.needed} no deck
           </span>
         </p>

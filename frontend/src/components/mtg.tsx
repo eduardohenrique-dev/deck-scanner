@@ -12,7 +12,7 @@ export function ManaCost({ cost, size = 17, className }: { cost: string | null |
     <span className={cx("inline-flex flex-wrap items-center gap-[2px]", className)} aria-label={`custo ${cost}`}>
       {symbols.map((s, i) =>
         s === "//" ? (
-          <span key={i} className="px-0.5 text-cream-faint">
+          <span key={i} className="px-0.5 text-mist-faint">
             /
           </span>
         ) : (
@@ -52,7 +52,7 @@ export function SetSymbol({ card, size = 18, className }: { card: CardSummary | 
 export function PrintLabel({ card, className }: { card: CardSummary | null | undefined; className?: string }) {
   if (!card) return null;
   return (
-    <span className={cx("inline-flex items-center gap-1.5 text-footnote text-cream-faint", className)}>
+    <span className={cx("inline-flex items-center gap-1.5 text-footnote text-mist-faint", className)}>
       <SetSymbol card={card} size={15} />
       <span className="font-mono uppercase tracking-tight">{card.set_code}</span>
       <span className="tabular">#{card.collector_number}</span>
@@ -64,8 +64,8 @@ export function CardName({ card, className, sub = true }: { card: CardSummary | 
   const secondary = sub ? secondaryName(card) : null;
   return (
     <span className={cx("min-w-0", className)}>
-      <span className="block truncate font-serif text-headline leading-tight font-semibold text-cream">{cardName(card)}</span>
-      {secondary && <span className="block truncate text-footnote text-cream-faint italic">{secondary}</span>}
+      <span className="block truncate font-serif text-headline leading-tight font-semibold text-mist">{cardName(card)}</span>
+      {secondary && <span className="block truncate text-footnote text-mist-faint italic">{secondary}</span>}
     </span>
   );
 }
@@ -119,8 +119,8 @@ export function CardImage({ card, src, alt, className, eager }: { card?: CardSum
   const url = src ?? card?.image_normal ?? card?.faces?.[0]?.image_normal ?? null;
   const [loaded, setLoaded] = useState(false);
   return (
-    <div className={cx("card-img relative aspect-[488/680] overflow-hidden bg-oak-800 ring-1 ring-black/60", className)}>
-      {!loaded && <div className="absolute inset-0 animate-pulse bg-[linear-gradient(135deg,var(--color-oak-750),var(--color-oak-850))]" />}
+    <div className={cx("card-img relative aspect-[488/680] overflow-hidden bg-night-800 ring-1 ring-black/60", className)}>
+      {!loaded && <div className="absolute inset-0 animate-pulse bg-[linear-gradient(135deg,var(--color-night-750),var(--color-night-850))]" />}
       {url && (
         <img
           src={url}
@@ -138,7 +138,7 @@ export function ArtThumb({ card, className, size = 44 }: { card: CardSummary | n
   const url = artCrop(card);
   return (
     <span
-      className={cx("inline-block shrink-0 overflow-hidden rounded-xs bg-oak-750 ring-1 ring-brass-700/60", className)}
+      className={cx("inline-block shrink-0 overflow-hidden rounded-xs bg-night-750 ring-1 ring-arcane-700/60", className)}
       style={{ width: size, height: Math.round(size * 0.73) }}
     >
       {url && <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />}
@@ -147,9 +147,9 @@ export function ArtThumb({ card, className, size = 44 }: { card: CardSummary | n
 }
 
 export function Money({ brl, className, muted }: { brl: number | null | undefined; className?: string; muted?: boolean }) {
-  if (brl === null || brl === undefined) return <span className={cx("text-cream-faint", className)}>—</span>;
+  if (brl === null || brl === undefined) return <span className={cx("text-mist-faint", className)}>—</span>;
   return (
-    <span className={cx("tabular whitespace-nowrap", muted ? "text-cream-faint" : "text-brass-200", className)}>
+    <span className={cx("tabular whitespace-nowrap", muted ? "text-mist-faint" : "text-arcane-200", className)}>
       {brl.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
     </span>
   );

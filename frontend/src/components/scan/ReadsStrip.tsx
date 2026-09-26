@@ -35,12 +35,12 @@ export default function ReadsStrip({ reads, className }: { reads: ReadItem[]; cl
           return (
             <li key={r.key} className="animate-rise w-[74px] shrink-0">
               <div className="relative">
-                <img src={r.preview} alt="" className="card-img aspect-[488/680] w-full object-cover ring-1 ring-cream/12" />
+                <img src={r.preview} alt="" className="card-img aspect-[488/680] w-full object-cover ring-1 ring-mist/12" />
                 <Seal size={22} tone={d.tone} className="animate-stamp absolute -top-1.5 -right-1.5">
                   {d.icon}
                 </Seal>
               </div>
-              <p className="mt-1 truncate text-caption leading-tight text-cream-dim" title={d.label}>
+              <p className="mt-1 truncate text-caption leading-tight text-mist-dim" title={d.label}>
                 {d.label}
               </p>
             </li>

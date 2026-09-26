@@ -24,13 +24,13 @@ export default function FinalStage({ t, dispatch, onPlayer }: { t: Tournament; d
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div className="space-y-6">
         <Board className="flex flex-wrap items-center gap-x-6 gap-y-4 p-5 sm:p-6">
-          <span className="grid size-14 shrink-0 place-items-center rounded-full bg-brass-300/12 text-brass-300 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.25)]">
+          <span className="grid size-14 shrink-0 place-items-center rounded-full bg-arcane-300/12 text-arcane-300 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.25)]">
             <Crown size={28} />
           </span>
           <div className="min-w-0 flex-1">
             <p className="eyebrow">Empate na liderança</p>
-            <h2 className="mt-1 font-display text-title-1 font-semibold text-cream">{t.tiebreak ? "A final" : `${tied.length} empatados com ${points.get(tied[0]) ?? 0} pontos`}</h2>
-            <p className="mt-1 text-subhead text-cream-dim">
+            <h2 className="mt-1 font-display text-title-1 font-semibold text-mist">{t.tiebreak ? "A final" : `${tied.length} empatados com ${points.get(tied[0]) ?? 0} pontos`}</h2>
+            <p className="mt-1 text-subhead text-mist-dim">
               {t.tiebreak
                 ? "Sem tempo limite: vale até alguém vencer. Se os finalistas combinarem, dá para dividir o prêmio."
                 : `${listPt(names)} jogam uma final só entre eles, sem tempo limite. Quem vencer é o campeão; os finalistas também podem combinar dividir o prêmio.`}
@@ -64,7 +64,7 @@ export default function FinalStage({ t, dispatch, onPlayer }: { t: Tournament; d
       </div>
 
       <aside className="space-y-3">
-        <h2 className="font-display text-title-3 font-semibold text-cream">Classificação das rodadas</h2>
+        <h2 className="font-display text-title-3 font-semibold text-mist">Classificação das rodadas</h2>
         <StandingsTable rows={table} players={players} onPlayer={onPlayer} compact variant="pods" />
       </aside>
     </div>

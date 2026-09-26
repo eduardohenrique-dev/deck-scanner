@@ -25,7 +25,7 @@ const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("
 
 // ------------------------------------------------------------------ botões
 /** primary: latão polido (a ação da tela) · secondary: vidro · tertiary: texto de latão · ghost: neutro · danger: lacre. */
-type Variant = "primary" | "secondary" | "tertiary" | "ghost" | "danger" | "brass" | "outline" | "quiet";
+type Variant = "primary" | "secondary" | "tertiary" | "ghost" | "danger" | "arcane" | "outline" | "quiet";
 
 const VARIANTS: Record<Variant, string> = {
   primary: "btn-primary",
@@ -34,7 +34,7 @@ const VARIANTS: Record<Variant, string> = {
   ghost: "btn-ghost",
   danger: "btn-danger",
   // nomes antigos
-  brass: "btn-primary",
+  arcane: "btn-primary",
   outline: "btn-secondary",
   quiet: "btn-ghost",
 };
@@ -101,7 +101,7 @@ export function Parchment({ className, children }: { className?: string; childre
 export function SectionTitle({ children, aside, className }: { children: ReactNode; aside?: ReactNode; className?: string }) {
   return (
     <div className={cx("flex flex-wrap items-end justify-between gap-x-3 gap-y-2", className)}>
-      <h2 className="font-display text-title-3 font-semibold text-cream first-letter:uppercase">{children}</h2>
+      <h2 className="font-display text-title-3 font-semibold text-mist first-letter:uppercase">{children}</h2>
       {aside}
     </div>
   );
@@ -111,17 +111,17 @@ export function PageTitle({ kicker, title, children, className }: { kicker?: Rea
   return (
     <header className={cx("space-y-2", className)}>
       {kicker && <p className="eyebrow">{kicker}</p>}
-      <h1 className="font-display text-title-1 font-semibold text-cream sm:text-display">{title}</h1>
-      {children && <div className="max-w-2xl text-subhead text-cream-dim">{children}</div>}
+      <h1 className="font-display text-title-2 font-semibold text-mist sm:text-display">{title}</h1>
+      {children && <div className="max-w-2xl text-subhead text-mist-dim">{children}</div>}
     </header>
   );
 }
 
 /** Link de texto em latão, para "ver tudo", "abrir" e afins. */
-export const LINK = "rounded-xs text-subhead font-medium text-brass-300 underline-offset-4 hover:text-brass-200 hover:underline";
+export const LINK = "rounded-xs text-subhead font-medium text-arcane-300 underline-offset-4 hover:text-arcane-200 hover:underline";
 
 // ------------------------------------------------------------------ selos e etiquetas
-export type Tone = "neutral" | "ok" | "warn" | "bad" | "info" | "brass" | "live";
+export type Tone = "neutral" | "ok" | "warn" | "bad" | "info" | "arcane" | "live";
 
 export function Tag({ tone = "neutral", children, className, title, dot }: { tone?: Tone; children: ReactNode; className?: string; title?: string; dot?: boolean }) {
   return (
@@ -133,17 +133,17 @@ export function Tag({ tone = "neutral", children, className, title, dot }: { ton
 }
 
 const WAX: Record<Tone, string> = {
-  neutral: "from-oak-500 to-oak-700 text-cream",
-  ok: "from-moss-400 to-moss-600 text-oak-950",
-  warn: "from-ember-300 to-ember-600 text-oak-950",
+  neutral: "from-night-500 to-night-700 text-mist",
+  ok: "from-moss-400 to-moss-600 text-night-950",
+  warn: "from-ember-300 to-ember-600 text-night-950",
   bad: "from-wine-400 to-wine-600 text-parchment-50",
-  info: "from-verdigris-300 to-verdigris-600 text-oak-950",
-  live: "from-verdigris-300 to-verdigris-600 text-oak-950",
-  brass: "from-brass-300 to-brass-600 text-ink-900",
+  info: "from-astral-300 to-astral-600 text-night-950",
+  live: "from-astral-300 to-astral-600 text-night-950",
+  arcane: "from-arcane-300 to-arcane-600 text-ink-900",
 };
 
 /** Selo de cera: número ou ícone curto num disco com borda irregular. */
-export function Seal({ tone = "brass", size = 30, children, title, className }: { tone?: Tone; size?: number; children: ReactNode; title?: string; className?: string }) {
+export function Seal({ tone = "arcane", size = 30, children, title, className }: { tone?: Tone; size?: number; children: ReactNode; title?: string; className?: string }) {
   return (
     <span
       title={title}
@@ -166,8 +166,8 @@ export function Plate({ children, className, muted }: { children: ReactNode; cla
       className={cx(
         "tabular inline-grid h-7 min-w-8 shrink-0 place-items-center rounded-[8px] px-2 font-sans text-footnote font-bold",
         muted
-          ? "bg-oak-700/70 text-cream-dim shadow-[inset_0_1px_0_rgb(255_234_200/0.1)]"
-          : "bg-[linear-gradient(180deg,var(--color-brass-200),var(--color-brass-400))] text-ink-900 shadow-[inset_0_1px_0_rgb(255_252_240/0.7),inset_0_-1px_0_rgb(96_60_16/0.3),0_1px_2px_rgb(0_0_0/0.4)]",
+          ? "bg-night-700/70 text-mist-dim shadow-[inset_0_1px_0_rgb(226_220_255/0.1)]"
+          : "bg-[linear-gradient(180deg,var(--color-arcane-200),var(--color-arcane-400))] text-ink-900 shadow-[inset_0_1px_0_rgb(246_243_255/0.7),inset_0_-1px_0_rgb(38_24_110/0.3),0_1px_2px_rgb(0_0_0/0.4)]",
         className,
       )}
     >
@@ -180,8 +180,8 @@ export function Plate({ children, className, muted }: { children: ReactNode; cla
 export function Label({ children, htmlFor, hint }: { children: ReactNode; htmlFor?: string; hint?: ReactNode }) {
   return (
     <label htmlFor={htmlFor} className="mb-1.5 flex items-baseline justify-between gap-2">
-      <span className="inline-block text-footnote font-medium text-cream-dim first-letter:uppercase">{children}</span>
-      {hint && <span className="text-footnote text-cream-faint">{hint}</span>}
+      <span className="inline-block text-footnote font-medium text-mist-dim first-letter:uppercase">{children}</span>
+      {hint && <span className="text-footnote text-mist-faint">{hint}</span>}
     </label>
   );
 }
@@ -285,13 +285,13 @@ export function Switch({ checked, onChange, label, disabled }: { checked: boolea
       onClick={() => onChange(!checked)}
       className={cx(
         "relative inline-flex h-[31px] w-[51px] shrink-0 items-center rounded-full p-[2px] shadow-[inset_0_1px_2px_rgb(0_0_0/0.4)] transition-colors duration-200 disabled:opacity-45",
-        checked ? "bg-moss-600" : "bg-oak-700",
+        checked ? "bg-moss-600" : "bg-night-700",
       )}
     >
       <span
         aria-hidden="true"
         className={cx(
-          "size-[27px] rounded-full bg-[linear-gradient(180deg,#fffaf0,#eadfca)] shadow-[0_2px_5px_rgb(0_0_0/0.4)] transition-transform duration-500 ease-spring",
+          "size-[27px] rounded-full bg-[linear-gradient(180deg,#ffffff,#e2dcf5)] shadow-[0_2px_5px_rgb(0_0_0/0.4)] transition-transform duration-500 ease-spring",
           checked ? "translate-x-5" : "translate-x-0",
         )}
       />
@@ -316,13 +316,13 @@ export function Stepper({
   label?: string;
   size?: "sm" | "md";
 }) {
-  const btn = cx("grid place-items-center text-cream-dim transition-colors hover:text-cream disabled:opacity-30", size === "sm" ? "size-9" : "size-11");
+  const btn = cx("grid place-items-center text-mist-dim transition-colors hover:text-mist disabled:opacity-30", size === "sm" ? "size-9" : "size-11");
   return (
     <div className="well inline-flex items-center" role="group" aria-label={label}>
       <button type="button" onClick={() => onChange(Math.max(min, value - 1))} disabled={busy || value <= min} className={btn} aria-label="Diminuir">
         <Minus className="size-4" />
       </button>
-      <span className="tabular w-9 text-center text-headline font-semibold text-cream" aria-live="polite">
+      <span className="tabular w-9 text-center text-headline font-semibold text-mist" aria-live="polite">
         {value}
       </span>
       <button type="button" onClick={() => onChange(Math.min(max, value + 1))} disabled={busy || value >= max} className={btn} aria-label="Aumentar">
@@ -380,7 +380,7 @@ export function Tabs<T extends string>({ value, onChange, tabs, className }: { v
 
 /** Contador ao lado do nome da aba. */
 export function Count({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cx("tabular rounded-full bg-cream/8 px-1.5 py-0.5 text-caption font-semibold text-cream-dim", className)}>{children}</span>;
+  return <span className={cx("tabular rounded-full bg-mist/8 px-1.5 py-0.5 text-caption font-semibold text-mist-dim", className)}>{children}</span>;
 }
 
 // ------------------------------------------------------------------ camadas (janelas, gavetas)
@@ -512,10 +512,10 @@ export function Modal({
         <div className="sheet-handle mx-auto mt-2 sm:hidden" aria-hidden="true" />
         <div className="flex items-start justify-between gap-3 px-5 pt-4 pb-3 sm:px-6 sm:pt-5">
           <div className="min-w-0 pt-1.5">
-            <h2 id={titleId} className="font-display text-title-3 font-semibold text-cream">
+            <h2 id={titleId} className="font-display text-title-3 font-semibold text-mist">
               {title}
             </h2>
-            {description && <p className="mt-1 text-subhead text-cream-dim">{description}</p>}
+            {description && <p className="mt-1 text-subhead text-mist-dim">{description}</p>}
           </div>
           <IconButton label="Fechar" onClick={onClose} className="-mr-2">
             <X className="size-5" />
@@ -524,7 +524,7 @@ export function Modal({
         <div className="hairline" />
         <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6">{children}</div>
         {footer && (
-          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-cream/8 bg-oak-950/30 px-5 py-3 pb-[max(env(safe-area-inset-bottom),12px)] sm:px-6">{footer}</div>
+          <div className="flex flex-wrap items-center justify-end gap-2 border-t border-mist/8 bg-night-950/30 px-5 py-3 pb-[max(env(safe-area-inset-bottom),12px)] sm:px-6">{footer}</div>
         )}
       </div>
     </div>,
@@ -569,7 +569,7 @@ export function Confirm({
         </>
       }
     >
-      <div className="space-y-2 text-body text-cream-dim">{children}</div>
+      <div className="space-y-2 text-body text-mist-dim">{children}</div>
     </Modal>
   );
 }
@@ -593,7 +593,7 @@ export function Drawer({ open, onClose, title, children }: { open: boolean; onCl
         className="glass-sheet drawer relative flex h-full w-full max-w-lg flex-col rounded-none outline-none sm:rounded-l-xl"
       >
         <div className="flex items-start justify-between gap-3 px-5 pt-[max(env(safe-area-inset-top),16px)] pb-3 sm:px-6">
-          <h2 id={titleId} className="min-w-0 pt-2 font-display text-title-3 font-semibold text-cream">
+          <h2 id={titleId} className="min-w-0 pt-2 font-display text-title-3 font-semibold text-mist">
             {title}
           </h2>
           <IconButton label="Fechar" onClick={onClose} className="-mr-2">
@@ -670,10 +670,10 @@ export function Menu({ items, label = "Mais ações", align = "right", trigger }
               }}
               className={cx(
                 "flex min-h-11 w-full items-center gap-3 rounded-sm px-3 text-left text-subhead font-medium outline-none transition-colors disabled:opacity-40",
-                it.tone === "danger" ? "text-wine-300 hover:bg-wine-600/20 focus-visible:bg-wine-600/20" : "text-cream hover:bg-cream/8 focus-visible:bg-cream/8",
+                it.tone === "danger" ? "text-wine-300 hover:bg-wine-600/20 focus-visible:bg-wine-600/20" : "text-mist hover:bg-mist/8 focus-visible:bg-mist/8",
               )}
             >
-              <span className={cx("grid size-5 place-items-center", it.tone === "danger" ? "text-wine-300" : "text-cream-dim")}>{it.icon}</span>
+              <span className={cx("grid size-5 place-items-center", it.tone === "danger" ? "text-wine-300" : "text-mist-dim")}>{it.icon}</span>
               {it.label}
             </button>
           ))}
@@ -720,7 +720,7 @@ export function InlineEdit({ value, placeholder, onSave, className, label }: { v
             setEditing(false);
           }
         }}
-        className={cx("w-full rounded-sm bg-oak-950/60 px-2 outline-none shadow-[inset_0_0_0_1px_var(--color-brass-400),var(--ring)]", className)}
+        className={cx("w-full rounded-sm bg-night-950/60 px-2 outline-none shadow-[inset_0_0_0_1px_var(--color-arcane-400),var(--ring)]", className)}
       />
     );
   return (
@@ -728,17 +728,17 @@ export function InlineEdit({ value, placeholder, onSave, className, label }: { v
       type="button"
       onClick={() => setEditing(true)}
       title={`${label}: toque para mudar`}
-      className={cx("group -mx-1.5 inline-flex max-w-full items-center gap-2 rounded-sm px-1.5 text-left transition-colors hover:bg-cream/6", className)}
+      className={cx("group -mx-1.5 inline-flex max-w-full items-center gap-2 rounded-sm px-1.5 text-left transition-colors hover:bg-mist/6", className)}
     >
-      <span className={cx("min-w-0 truncate", !value && "text-cream-dim")}>{value || placeholder}</span>
-      <Pencil aria-hidden="true" className="size-[0.45em] min-h-4 min-w-4 shrink-0 text-cream-faint opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 [@media(hover:none)]:opacity-60" />
+      <span className={cx("min-w-0 truncate", !value && "text-mist-dim")}>{value || placeholder}</span>
+      <Pencil aria-hidden="true" className="size-[0.45em] min-h-4 min-w-4 shrink-0 text-mist-faint opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 [@media(hover:none)]:opacity-60" />
     </button>
   );
 }
 
 // ------------------------------------------------------------------ estados
 export function Spinner({ className, label = "carregando" }: { className?: string; label?: string }) {
-  return <Loader2 aria-label={label} className={cx("size-5 animate-spin text-brass-300", className)} />;
+  return <Loader2 aria-label={label} className={cx("size-5 animate-spin text-arcane-300", className)} />;
 }
 
 export function Skeleton({ className }: { className?: string }) {
@@ -748,26 +748,26 @@ export function Skeleton({ className }: { className?: string }) {
 export function EmptyState({ art, title, children, action }: { art: ReactNode; title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-      <div className="relative grid size-20 place-items-center text-brass-300">
-        <span aria-hidden="true" className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgb(235_198_116/0.18),transparent_68%)]" />
+      <div className="relative grid size-20 place-items-center text-arcane-300">
+        <span aria-hidden="true" className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgb(185_164_255/0.18),transparent_68%)]" />
         <span className="relative">{art}</span>
       </div>
-      <p className="font-display text-title-3 font-semibold text-cream">{title}</p>
-      {children && <div className="max-w-md text-subhead text-cream-dim">{children}</div>}
+      <p className="font-display text-title-3 font-semibold text-mist">{title}</p>
+      {children && <div className="max-w-md text-subhead text-mist-dim">{children}</div>}
       {action && <div className="mt-2">{action}</div>}
     </div>
   );
 }
 
-export function Meter({ value, tone = "brass", className, label }: { value: number | null; tone?: Tone; className?: string; label?: string }) {
+export function Meter({ value, tone = "arcane", className, label }: { value: number | null; tone?: Tone; className?: string; label?: string }) {
   const color = {
-    brass: "bg-[linear-gradient(180deg,var(--color-brass-200),var(--color-brass-400))]",
+    arcane: "bg-[linear-gradient(180deg,var(--color-arcane-200),var(--color-arcane-400))]",
     ok: "bg-moss-400",
     warn: "bg-ember-400",
     bad: "bg-wine-400",
-    info: "bg-verdigris-400",
-    live: "bg-verdigris-400",
-    neutral: "bg-cream-faint",
+    info: "bg-astral-400",
+    live: "bg-astral-400",
+    neutral: "bg-mist-faint",
   }[tone];
   return (
     <div
@@ -787,7 +787,7 @@ export function Meter({ value, tone = "brass", className, label }: { value: numb
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd className="rounded-xs bg-oak-950/70 px-1.5 py-0.5 font-mono text-caption text-cream-dim shadow-[inset_0_0_0_1px_rgb(255_226_184/0.12)]">{children}</kbd>;
+  return <kbd className="rounded-xs bg-night-950/70 px-1.5 py-0.5 font-mono text-caption text-mist-dim shadow-[inset_0_0_0_1px_rgb(214_204_255/0.12)]">{children}</kbd>;
 }
 
 // ------------------------------------------------------------------ etapas
@@ -809,15 +809,15 @@ export function StepIndicator({ steps, onSelect, current, className }: { steps: 
                 disabled={!reachable}
                 onClick={() => onSelect?.(s.id)}
                 aria-current={s.state === "now" ? "step" : undefined}
-                className={cx("group flex min-h-11 min-w-0 items-center gap-2.5 rounded-full pr-2 text-left disabled:cursor-default", reachable && "hover:text-cream")}
+                className={cx("group flex min-h-11 min-w-0 items-center gap-2.5 rounded-full pr-2 text-left disabled:cursor-default", reachable && "hover:text-mist")}
               >
                 <span
                   className={cx(
                     "tabular grid size-7 shrink-0 place-items-center rounded-full text-footnote font-semibold transition-shadow",
-                    s.state === "done" && "bg-brass-400 text-ink-900 shadow-[inset_0_1px_0_rgb(255_250_235/0.5)]",
-                    s.state === "now" && "bg-brass-300/14 text-brass-200 shadow-[inset_0_0_0_1.5px_var(--color-brass-300),0_0_0_5px_rgb(235_198_116/0.12)]",
-                    s.state === "todo" && "bg-oak-950/45 text-cream-faint shadow-[inset_0_0_0_1px_rgb(255_226_184/0.12)]",
-                    viewing && s.state === "done" && "shadow-[0_0_0_3px_rgb(235_198_116/0.35)]",
+                    s.state === "done" && "bg-arcane-400 text-ink-900 shadow-[inset_0_1px_0_rgb(243_240_255/0.5)]",
+                    s.state === "now" && "bg-arcane-300/14 text-arcane-200 shadow-[inset_0_0_0_1.5px_var(--color-arcane-300),0_0_0_5px_rgb(185_164_255/0.12)]",
+                    s.state === "todo" && "bg-night-950/45 text-mist-faint shadow-[inset_0_0_0_1px_rgb(214_204_255/0.12)]",
+                    viewing && s.state === "done" && "shadow-[0_0_0_3px_rgb(185_164_255/0.35)]",
                   )}
                 >
                   {s.state === "done" ? <Check className="size-4 [--icon-stroke:2.4]" /> : i + 1}
@@ -825,7 +825,7 @@ export function StepIndicator({ steps, onSelect, current, className }: { steps: 
                 <span
                   className={cx(
                     "truncate text-subhead",
-                    s.state === "now" ? "font-semibold text-cream" : s.state === "done" ? "text-cream-dim" : "text-cream-faint",
+                    s.state === "now" ? "font-semibold text-mist" : s.state === "done" ? "text-mist-dim" : "text-mist-faint",
                     "max-sm:hidden",
                   )}
                 >
@@ -833,7 +833,7 @@ export function StepIndicator({ steps, onSelect, current, className }: { steps: 
                 </span>
               </button>
               {i < steps.length - 1 && (
-                <span aria-hidden="true" className={cx("mx-1 h-px min-w-3 flex-1 sm:mx-2", i < now ? "bg-[linear-gradient(90deg,var(--color-brass-500),rgb(216_166_76/0.3))]" : "bg-cream/12")} />
+                <span aria-hidden="true" className={cx("mx-1 h-px min-w-3 flex-1 sm:mx-2", i < now ? "bg-[linear-gradient(90deg,var(--color-arcane-500),rgb(140_110_245/0.3))]" : "bg-mist/12")} />
               )}
             </li>
           );
@@ -841,8 +841,8 @@ export function StepIndicator({ steps, onSelect, current, className }: { steps: 
       </ol>
       {/* no celular os nomes somem dos pontos; a etapa atual aparece por extenso embaixo */}
       {now >= 0 && (
-        <p className="mt-1 px-1 text-footnote text-cream-dim sm:hidden">
-          Etapa {now + 1} de {steps.length} · <span className="font-semibold text-cream">{steps.find((s) => s.id === current)?.label ?? steps[now].label}</span>
+        <p className="mt-1 px-1 text-footnote text-mist-dim sm:hidden">
+          Etapa {now + 1} de {steps.length} · <span className="font-semibold text-mist">{steps.find((s) => s.id === current)?.label ?? steps[now].label}</span>
         </p>
       )}
     </nav>

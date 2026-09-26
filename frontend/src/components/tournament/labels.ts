@@ -5,7 +5,7 @@ import type { Tone } from "../ui";
 import type { StageId, Status, Structure, Summary, Tournament } from "../../tournament/types.ts";
 
 export const STATUS_LABEL: Record<Status, string> = { draft: "Rascunho", running: "Em andamento", finished: "Finalizado" };
-export const STATUS_TONE: Record<Status, Tone> = { draft: "neutral", running: "live", finished: "brass" };
+export const STATUS_TONE: Record<Status, Tone> = { draft: "neutral", running: "live", finished: "arcane" };
 
 export const STAGE_LABEL: Record<StageId, string> = {
   setup: "Configurar",

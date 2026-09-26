@@ -62,10 +62,10 @@ export default function Collection() {
       <button
         onClick={() => setLocationId("")}
         aria-current={!locationId ? "page" : undefined}
-        className={cx("flex min-h-11 w-full items-center justify-between rounded-sm px-3 text-left text-headline font-semibold transition-colors", !locationId ? "bg-brass-300/12 text-brass-200 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.2)]" : "text-cream hover:bg-cream/5")}
+        className={cx("flex min-h-11 w-full items-center justify-between rounded-sm px-3 text-left text-headline font-semibold transition-colors", !locationId ? "bg-arcane-300/12 text-arcane-200 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.2)]" : "text-mist hover:bg-mist/5")}
       >
         Tudo
-        <span className="tabular text-footnote text-cream-faint">{all.reduce((n, l) => n + l.card_count, 0)}</span>
+        <span className="tabular text-footnote text-mist-faint">{all.reduce((n, l) => n + l.card_count, 0)}</span>
       </button>
       {groups.map(
         (g) =>
@@ -78,11 +78,11 @@ export default function Collection() {
                     <button
                       onClick={() => setLocationId(l.id)}
                       aria-current={locationId === l.id ? "page" : undefined}
-                      className={cx("flex min-h-10 w-full items-center gap-2 rounded-sm px-3 text-left text-subhead transition-colors", locationId === l.id ? "bg-brass-300/12 text-brass-200 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.2)]" : "text-cream-dim hover:bg-cream/5 hover:text-cream")}
+                      className={cx("flex min-h-10 w-full items-center gap-2 rounded-sm px-3 text-left text-subhead transition-colors", locationId === l.id ? "bg-arcane-300/12 text-arcane-200 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.2)]" : "text-mist-dim hover:bg-mist/5 hover:text-mist")}
                     >
-                      {l.type === "deck" ? <Tome size={15} className="shrink-0 text-cream-faint" /> : <Chest size={15} className="shrink-0 text-cream-faint" />}
+                      {l.type === "deck" ? <Tome size={15} className="shrink-0 text-mist-faint" /> : <Chest size={15} className="shrink-0 text-mist-faint" />}
                       <span className="min-w-0 flex-1 truncate">{locName(l)}</span>
-                      <span className="tabular text-footnote text-cream-faint">{l.card_count}</span>
+                      <span className="tabular text-footnote text-mist-faint">{l.card_count}</span>
                     </button>
                   </li>
                 ))}
@@ -131,7 +131,7 @@ export default function Collection() {
                 {l.id ? locName(l) : "Tudo"} <span className="tabular opacity-70">{l.card_count}</span>
               </button>
             ))}
-            <button type="button" onClick={() => setCreating("binder")} className="chip chip-pill shrink-0 border border-dashed border-cream/20 bg-none text-cream-dim shadow-none">
+            <button type="button" onClick={() => setCreating("binder")} className="chip chip-pill shrink-0 border border-dashed border-mist/20 bg-none text-mist-dim shadow-none">
               <Plus className="size-4" /> Pasta
             </button>
           </div>
@@ -141,11 +141,11 @@ export default function Collection() {
               <div className="min-w-0">
                 <p className="eyebrow">{LOCATION_LABEL[current.type]}</p>
                 {current.type === "deck" ? (
-                  <Link to={`/decks/${current.deck_id}`} className="font-serif text-title-3 font-semibold text-cream hover:text-brass-200">
+                  <Link to={`/decks/${current.deck_id}`} className="font-serif text-title-3 font-semibold text-mist hover:text-arcane-200">
                     {current.name}
                   </Link>
                 ) : (
-                  <p className="font-serif text-title-3 font-semibold text-cream">
+                  <p className="font-serif text-title-3 font-semibold text-mist">
                     <InlineEdit
                       label="Nome do lugar"
                       value={current.name}
@@ -175,7 +175,7 @@ export default function Collection() {
 
           <div className="flex flex-wrap gap-2">
             <div className="relative min-w-[200px] flex-1">
-              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-cream-faint" />
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-mist-faint" />
               <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar carta (português ou inglês)" className="pl-9" aria-label="Buscar na coleção" />
             </div>
             <span className="inline-block w-44">
@@ -194,15 +194,15 @@ export default function Collection() {
               ))}
             </div>
           ) : data.data?.items.length ? (
-            <ul className="glass divide-y divide-cream/6 overflow-hidden">
+            <ul className="glass divide-y divide-mist/6 overflow-hidden">
               {data.data.items.map((g) => (
                 <li key={g.oracle_id}>
-                  <button type="button" onClick={() => setOpen(g)} className="flex min-h-16 w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-cream/5">
-                    <span className="well tabular grid size-10 shrink-0 place-items-center text-headline font-semibold text-cream">{g.count}</span>
+                  <button type="button" onClick={() => setOpen(g)} className="flex min-h-16 w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-mist/5">
+                    <span className="well tabular grid size-10 shrink-0 place-items-center text-headline font-semibold text-mist">{g.count}</span>
                     <ArtThumb card={g.card} size={52} />
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-serif text-headline font-semibold text-cream">{cardName(g.card)}</span>
-                      <span className="flex flex-wrap gap-x-2 text-footnote text-cream-faint">
+                      <span className="block truncate font-serif text-headline font-semibold text-mist">{cardName(g.card)}</span>
+                      <span className="flex flex-wrap gap-x-2 text-footnote text-mist-faint">
                         {g.locations.slice(0, 3).map((l) => (
                           <span key={`${l.id}`} className="truncate">
                             {l.type === "loose" ? "Solto" : l.name}
@@ -214,7 +214,7 @@ export default function Collection() {
                     </span>
                     <span className="hidden items-center gap-1.5 sm:flex">
                       <SetSymbol card={g.card} size={16} />
-                      {g.prints.length > 1 && <span className="text-caption text-cream-faint">+{g.prints.length - 1}</span>}
+                      {g.prints.length > 1 && <span className="text-caption text-mist-faint">+{g.prints.length - 1}</span>}
                     </span>
                     <Money brl={g.value_brl || null} muted={!g.value_brl} className="w-24 text-right text-subhead font-semibold" />
                   </button>
@@ -264,8 +264,8 @@ export default function Collection() {
 function Stat({ label, value }: { label: string; value: ReactNode | undefined }) {
   return (
     <div className="well px-4 py-3">
-      <div className="text-caption font-medium text-cream-faint">{label}</div>
-      <div className="tabular mt-0.5 truncate text-title-3 font-semibold text-cream">{value ?? <Skeleton className="mt-1 h-5 w-12" />}</div>
+      <div className="text-caption font-medium text-mist-faint">{label}</div>
+      <div className="tabular mt-0.5 truncate text-title-3 font-semibold text-mist">{value ?? <Skeleton className="mt-1 h-5 w-12" />}</div>
     </div>
   );
 }
@@ -336,14 +336,14 @@ function WhereIs({ group, locations, onClose, onChanged }: { group: CollectionGr
       <div className="space-y-5">
         <div className="flex gap-4">
           <CardImage card={group.card} className="w-32 shrink-0" eager />
-          <div className="space-y-1 text-subhead text-cream-dim">
+          <div className="space-y-1 text-subhead text-mist-dim">
             <p>{plural(group.count, "cópia física", "cópias físicas")}</p>
             {group.value_brl > 0 && (
               <p>
                 valor estimado <Money brl={group.value_brl} />
               </p>
             )}
-            <p className="text-footnote text-cream-faint">Marque as cópias para mover de lugar ou tirar da coleção.</p>
+            <p className="text-footnote text-mist-faint">Marque as cópias para mover de lugar ou tirar da coleção.</p>
           </div>
         </div>
 
@@ -354,22 +354,22 @@ function WhereIs({ group, locations, onClose, onChanged }: { group: CollectionGr
             const place = items[0];
             return (
               <section key={placeId}>
-                <p className="mb-2 flex items-center gap-2 text-footnote font-semibold tracking-[0.06em] text-brass-300 uppercase">
+                <p className="mb-2 flex items-center gap-2 text-footnote font-semibold tracking-[0.06em] text-arcane-300 uppercase">
                   {place.location_type === "deck" ? <Tome size={15} /> : <Chest size={15} />}
                   {place.location_type === "loose" ? "Solto" : `${LOCATION_LABEL[place.location_type ?? ""] ?? ""} ${place.location_name ?? ""}`}
                 </p>
-                <ul className="well divide-y divide-cream/6">
+                <ul className="well divide-y divide-mist/6">
                   {items.map((c) => (
                     <li key={c.id}>
                       <label className="flex min-h-11 cursor-pointer items-center gap-3 px-4 py-2">
-                        <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} className="size-5 accent-[var(--color-brass-400)]" />
+                        <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} className="size-5 accent-[var(--color-arcane-400)]" />
                         <SetSymbol card={c.card} size={16} />
-                        <span className="font-mono text-caption text-cream-faint uppercase">
+                        <span className="font-mono text-caption text-mist-faint uppercase">
                           {c.card?.set_code} {c.card?.collector_number}
                         </span>
                         <LanguagePill lang={c.language} />
                         <FinishMark finish={c.finish} />
-                        {c.condition && <span className="text-footnote text-cream-dim">{c.condition}</span>}
+                        {c.condition && <span className="text-footnote text-mist-dim">{c.condition}</span>}
                       </label>
                     </li>
                   ))}
@@ -381,7 +381,7 @@ function WhereIs({ group, locations, onClose, onChanged }: { group: CollectionGr
 
         {selected.size > 0 && (
           <div className="glass-float sticky bottom-0 space-y-3 p-4">
-            <p className="text-subhead text-cream-dim">{plural(selected.size, "cópia marcada", "cópias marcadas")}</p>
+            <p className="text-subhead text-mist-dim">{plural(selected.size, "cópia marcada", "cópias marcadas")}</p>
             <div className="flex flex-wrap gap-2">
               <span className="inline-block min-w-40 flex-1">
                 <Select value={target} onChange={(e) => setTarget(e.target.value)} aria-label="Mover para">
@@ -399,7 +399,7 @@ function WhereIs({ group, locations, onClose, onChanged }: { group: CollectionGr
                 Tirar
               </Button>
             </div>
-            <p className="text-caption text-cream-faint">Para colocar num deck, use a aba “Cartas físicas” do deck: ela avisa se a carta já estiver em outro.</p>
+            <p className="text-caption text-mist-faint">Para colocar num deck, use a aba “Cartas físicas” do deck: ela avisa se a carta já estiver em outro.</p>
           </div>
         )}
       </div>
@@ -495,11 +495,11 @@ function AddCard({ locations, defaultLocation, onClose, onAdded }: { locations: 
             <CardImage card={card} className="w-28 shrink-0" eager />
             <div className="min-w-0 space-y-3">
               <div>
-                <p className="font-serif text-title-3 font-semibold text-cream">{cardName(card)}</p>
-                <p className="text-footnote text-cream-faint">
+                <p className="font-serif text-title-3 font-semibold text-mist">{cardName(card)}</p>
+                <p className="text-footnote text-mist-faint">
                   {card.set_name} · #{card.collector_number} · {card.lang.toUpperCase()}
                 </p>
-                <button onClick={() => setCard(null)} className="text-footnote text-brass-300 hover:underline">
+                <button onClick={() => setCard(null)} className="text-footnote text-arcane-300 hover:underline">
                   Trocar carta
                 </button>
               </div>

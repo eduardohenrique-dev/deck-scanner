@@ -59,7 +59,7 @@ export default function ExportPanel({ kind, id, exporters, name }: { kind: "sess
     <section className="space-y-3">
       <SectionTitle>
         <span className="inline-flex items-center gap-2">
-          <Scroll size={20} className="text-brass-300" /> Levar a lista
+          <Scroll size={20} className="text-arcane-300" /> Levar a lista
         </span>
       </SectionTitle>
       <div className="glass space-y-3 p-4 sm:p-5">
@@ -79,10 +79,10 @@ export default function ExportPanel({ kind, id, exporters, name }: { kind: "sess
           )}
         </div>
         {HELP[format] && (
-          <p className="text-footnote text-cream-faint">
+          <p className="text-footnote text-mist-faint">
             {HELP[format].hint}{" "}
             {HELP[format].url && (
-              <a href={HELP[format].url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-brass-300 hover:underline">
+              <a href={HELP[format].url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-arcane-300 hover:underline">
                 Abrir <ExternalLink className="size-3.5" />
               </a>
             )}
@@ -94,7 +94,7 @@ export default function ExportPanel({ kind, id, exporters, name }: { kind: "sess
           <textarea
             readOnly
             value={text ?? ""}
-            className="field scrollbar-thin h-44 resize-y py-3 font-mono text-footnote leading-relaxed text-cream-dim"
+            className="field scrollbar-thin h-44 resize-y py-3 font-mono text-footnote leading-relaxed text-mist-dim"
             aria-label="Prévia da exportação"
           />
         )}

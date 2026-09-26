@@ -8,7 +8,7 @@ import { Button, cx, Meter, SectionTitle } from "../ui";
 const SEVERITY: Record<Issue["severity"], { pin: string; stripe: string; label: string }> = {
   error: { pin: "bg-wine-400", stripe: "border-l-wine-600", label: "impede o formato" },
   warning: { pin: "bg-ember-400", stripe: "border-l-ember-600", label: "confira" },
-  info: { pin: "bg-verdigris-400", stripe: "border-l-verdigris-600", label: "nota" },
+  info: { pin: "bg-astral-400", stripe: "border-l-astral-600", label: "nota" },
 };
 
 /** Quadro de avisos: estado da validação atualizado a cada mudança da lista. */
@@ -44,9 +44,9 @@ export default function NoticeBoard({
       <div className="glass space-y-4 p-4 sm:p-5">
         <div>
           <div className="flex items-baseline justify-between gap-2">
-            <span className="font-serif text-headline font-semibold text-cream">{validation.format_name}</span>
-            <span className="tabular text-subhead text-cream-dim">
-              <strong className="text-title-3 text-cream">{count}</strong>
+            <span className="font-serif text-headline font-semibold text-mist">{validation.format_name}</span>
+            <span className="tabular text-subhead text-mist-dim">
+              <strong className="text-title-3 text-mist">{count}</strong>
               {target ? ` de ${target}` : " cartas"}
             </span>
           </div>
@@ -54,11 +54,11 @@ export default function NoticeBoard({
             <Meter
               className="mt-2"
               value={Math.min(1, count / target)}
-              tone={count === target || (size?.min && !size.exact && count >= size.min) ? "ok" : count > target ? "warn" : "brass"}
+              tone={count === target || (size?.min && !size.exact && count >= size.min) ? "ok" : count > target ? "warn" : "arcane"}
               label="tamanho do deck"
             />
           ) : null}
-          <p className="mt-1.5 text-footnote text-cream-faint">
+          <p className="mt-1.5 text-footnote text-mist-faint">
             {validation.totals.missing > 0
               ? `Faltam ${validation.totals.missing}`
               : validation.totals.excess > 0
@@ -72,8 +72,8 @@ export default function NoticeBoard({
         {format.requires_commander && (
           <div className="well flex items-center justify-between gap-3 px-4 py-3">
             <div className="min-w-0">
-              <p className="text-footnote text-cream-faint">Comandante</p>
-              <p className={cx("truncate font-serif text-body font-semibold", commanderNames.length ? "text-cream" : "text-ember-300")}>
+              <p className="text-footnote text-mist-faint">Comandante</p>
+              <p className={cx("truncate font-serif text-body font-semibold", commanderNames.length ? "text-mist" : "text-ember-300")}>
                 {commanderNames.length ? commanderNames.join(" & ") : "Ainda não marcado"}
               </p>
             </div>
@@ -94,7 +94,7 @@ export default function NoticeBoard({
                   <span className={cx("absolute -top-1 left-1/2 size-2.5 -translate-x-1/2 rounded-full shadow-[0_1px_1px_rgb(0_0_0/0.5)]", s.pin)} aria-hidden="true" />
                   <p className="text-ink-900">{issue.message}</p>
                   {issue.entry_ids.length > 0 && onJump && (
-                    <button type="button" onClick={() => onJump(issue.entry_ids[0])} className="mt-1 text-footnote font-semibold text-brass-700 underline-offset-2 hover:underline">
+                    <button type="button" onClick={() => onJump(issue.entry_ids[0])} className="mt-1 text-footnote font-semibold text-arcane-700 underline-offset-2 hover:underline">
                       Ver na lista
                     </button>
                   )}
@@ -106,21 +106,21 @@ export default function NoticeBoard({
 
         {lands?.applicable && applySuggestion && (
           <div className="well space-y-2 px-4 py-4">
-            <p className="font-serif text-body font-semibold text-cream">Terrenos básicos sugeridos</p>
-            <p className="text-subhead text-cream-dim">{lands.summary}</p>
-            <ul className="space-y-1 text-footnote text-cream-faint">
+            <p className="font-serif text-body font-semibold text-mist">Terrenos básicos sugeridos</p>
+            <p className="text-subhead text-mist-dim">{lands.summary}</p>
+            <ul className="space-y-1 text-footnote text-mist-faint">
               {lands.by_color?.filter((c) => c.add > 0).map((c) => (
                 <li key={c.color} className="flex items-center gap-2">
                   <IdentityPips colors={[c.color]} size={15} />
                   <span>
-                    +{c.add} {c.basic} <span className="text-cream-faint">({c.final_sources} fontes)</span>
+                    +{c.add} {c.basic} <span className="text-mist-faint">({c.final_sources} fontes)</span>
                   </span>
                 </li>
               ))}
             </ul>
             {lands.reasoning?.length ? (
-              <details className="text-footnote text-cream-faint">
-                <summary className="cursor-pointer text-brass-300">Por que essa divisão</summary>
+              <details className="text-footnote text-mist-faint">
+                <summary className="cursor-pointer text-arcane-300">Por que essa divisão</summary>
                 <ul className="mt-1 list-disc space-y-0.5 pl-5">
                   {lands.reasoning.map((r) => (
                     <li key={r}>{r}</li>

@@ -62,13 +62,13 @@ export default function RoundTimer({
   return (
     <div className={cx("flex items-center", big ? "gap-6" : "gap-3")}>
       <svg width={box} height={box} viewBox={`0 0 ${box} ${box}`} aria-hidden="true" className="shrink-0">
-        <circle cx={box / 2} cy={box / 2} r={R} fill="none" stroke="rgb(255 226 184 / 0.1)" strokeWidth={stroke} />
+        <circle cx={box / 2} cy={box / 2} r={R} fill="none" stroke="rgb(214 204 255 / 0.1)" strokeWidth={stroke} />
         <circle
           cx={box / 2}
           cy={box / 2}
           r={R}
           fill="none"
-          stroke={over ? "var(--color-ember-400)" : "var(--color-verdigris-300)"}
+          stroke={over ? "var(--color-ember-400)" : "var(--color-astral-300)"}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circ}
@@ -78,10 +78,10 @@ export default function RoundTimer({
         />
       </svg>
       <div className="min-w-0">
-        <p className={cx("tabular font-semibold tracking-[-0.02em]", big ? "text-[5rem] leading-none" : "text-title-2", over ? "text-ember-300" : "text-cream")} role="timer" aria-live="off">
+        <p className={cx("tabular font-semibold tracking-[-0.02em]", big ? "text-[5rem] leading-none" : "text-title-2", over ? "text-ember-300" : "text-mist")} role="timer" aria-live="off">
           {left === null ? `${minutes}:00` : clock(left)}
         </p>
-        <p className={cx(big ? "mt-2 text-title-3" : "text-caption", over ? "text-ember-300" : "text-cream-faint")}>
+        <p className={cx(big ? "mt-2 text-title-3" : "text-caption", over ? "text-ember-300" : "text-mist-faint")}>
           {left === null ? `${minutes} min · parado` : over ? overNote : round.timer.pausedAt ? "Pausado" : `de ${minutes} min`}
         </p>
       </div>

@@ -40,11 +40,11 @@ function Side({ player, points, won, lost, picked, onPick }: { player: Player | 
   const content = (
     <>
       <span className="min-w-0 flex-1">
-        <span className={cx("flex items-center gap-1.5 truncate text-headline font-semibold", won ? "text-cream" : lost ? "text-cream-dim" : "text-cream")}>
+        <span className={cx("flex items-center gap-1.5 truncate text-headline font-semibold", won ? "text-mist" : lost ? "text-mist-dim" : "text-mist")}>
           <span className="truncate">{player?.name ?? "?"}</span>
           {won && <Check className="size-4 shrink-0 text-moss-300 [--icon-stroke:2.4]" aria-label="venceu" />}
         </span>
-        <span className="mt-0.5 flex min-w-0 items-center gap-2 text-footnote text-cream-faint">
+        <span className="mt-0.5 flex min-w-0 items-center gap-2 text-footnote text-mist-faint">
           {player?.deck?.identity?.length ? <IdentityPips colors={player.deck.identity} size={13} /> : null}
           <span className="truncate">{[player?.deck?.name, points !== undefined ? `${points} pts` : null].filter(Boolean).join(" · ")}</span>
         </span>
@@ -57,7 +57,7 @@ function Side({ player, points, won, lost, picked, onPick }: { player: Player | 
         type="button"
         onClick={onPick}
         aria-pressed={picked}
-        className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", picked ? "bg-brass-300/15 shadow-[inset_0_0_0_1.5px_var(--color-brass-300)]" : "hover:bg-cream/5")}
+        className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", picked ? "bg-arcane-300/15 shadow-[inset_0_0_0_1.5px_var(--color-arcane-300)]" : "hover:bg-mist/5")}
       >
         {content}
       </button>
@@ -94,19 +94,19 @@ export default function MatchCard({
       <article className="glass flex flex-col p-4">
         <header className="flex items-center gap-3">
           <Plate muted>—</Plate>
-          <h3 className="text-headline font-semibold text-cream">Folga</h3>
+          <h3 className="text-headline font-semibold text-mist">Folga</h3>
           <Tag tone="ok" className="ml-auto">
             Vitória 2–0
           </Tag>
         </header>
         <div className="flex flex-1 flex-col items-center justify-center gap-2 py-4 text-center">
-          <Tankard size={28} className="text-brass-300" />
+          <Tankard size={28} className="text-arcane-300" />
           {swap ? (
             <Side player={a} won={false} lost={false} picked={swap.picked === match.a} onPick={() => swap.onPick(match.a)} />
           ) : (
-            <p className="text-headline font-semibold text-cream">{a?.name}</p>
+            <p className="text-headline font-semibold text-mist">{a?.name}</p>
           )}
-          <p className="max-w-60 text-footnote text-cream-faint">Sem adversário nesta rodada: conta como vitória por 2 a 0.</p>
+          <p className="max-w-60 text-footnote text-mist-faint">Sem adversário nesta rodada: conta como vitória por 2 a 0.</p>
         </div>
       </article>
     );
@@ -123,10 +123,10 @@ export default function MatchCard({
   }
 
   return (
-    <article className={cx("glass flex flex-col overflow-hidden", result && !editing && "shadow-[inset_0_0_0_1px_rgb(143_189_98/0.18),var(--shadow-raised)]")} aria-label={`Mesa ${match.table}`}>
+    <article className={cx("glass flex flex-col overflow-hidden", result && !editing && "shadow-[inset_0_0_0_1px_rgb(95_207_138/0.18),var(--shadow-raised)]")} aria-label={`Mesa ${match.table}`}>
       <header className="flex items-center gap-3 px-4 pt-4 pb-2">
         <Plate>{match.table}</Plate>
-        <h3 className="text-headline font-semibold text-cream">Mesa {match.table}</h3>
+        <h3 className="text-headline font-semibold text-mist">Mesa {match.table}</h3>
         <span className="ml-auto flex items-center gap-2">
           {rematch && (
             <Tag tone="warn" title="Os dois já se enfrentaram: não havia outro emparelhamento possível">
@@ -139,7 +139,7 @@ export default function MatchCard({
               <Check className="size-3.5 [--icon-stroke:2.4]" /> Lançada
             </Tag>
           ) : (
-            !rematch && !match.manual && <span className="text-footnote text-cream-faint">Aguardando placar</span>
+            !rematch && !match.manual && <span className="text-footnote text-mist-faint">Aguardando placar</span>
           )}
         </span>
       </header>
@@ -149,22 +149,22 @@ export default function MatchCard({
           <div className="min-w-0 flex-1">
             <Side player={a} points={points?.get(match.a)} won={outcome === "win" && !editing} lost={outcome === "loss" && !editing} picked={swap?.picked === match.a} onPick={swap ? () => swap.onPick(match.a) : undefined} />
           </div>
-          {result && !editing && <span className={cx("tabular w-10 pr-3 text-right text-title-2 font-bold", outcome === "win" ? "text-cream" : "text-cream-faint")}>{result.a}</span>}
+          {result && !editing && <span className={cx("tabular w-10 pr-3 text-right text-title-2 font-bold", outcome === "win" ? "text-mist" : "text-mist-faint")}>{result.a}</span>}
         </div>
-        <div className="flex items-center gap-3 px-3 py-0.5 text-caption font-semibold tracking-[0.1em] text-cream-faint uppercase" aria-hidden="true">
-          <span className="h-px flex-1 bg-cream/8" /> contra <span className="h-px flex-1 bg-cream/8" />
+        <div className="flex items-center gap-3 px-3 py-0.5 text-caption font-semibold tracking-[0.1em] text-mist-faint uppercase" aria-hidden="true">
+          <span className="h-px flex-1 bg-mist/8" /> contra <span className="h-px flex-1 bg-mist/8" />
         </div>
         <div className="flex items-center">
           <div className="min-w-0 flex-1">
             <Side player={b} points={points?.get(match.b)} won={outcome === "loss" && !editing} lost={outcome === "win" && !editing} picked={swap?.picked === match.b} onPick={swap ? () => swap.onPick(match.b!) : undefined} />
           </div>
-          {result && !editing && <span className={cx("tabular w-10 pr-3 text-right text-title-2 font-bold", outcome === "loss" ? "text-cream" : "text-cream-faint")}>{result.b}</span>}
+          {result && !editing && <span className={cx("tabular w-10 pr-3 text-right text-title-2 font-bold", outcome === "loss" ? "text-mist" : "text-mist-faint")}>{result.b}</span>}
         </div>
       </div>
 
       {showChips ? (
         <div className="mt-auto px-3 pt-3 pb-4">
-          <div className="mb-2 flex justify-between px-1 text-caption text-cream-faint" aria-hidden="true">
+          <div className="mb-2 flex justify-between px-1 text-caption text-mist-faint" aria-hidden="true">
             <span>← {firstName(a?.name ?? "A")}</span>
             <span>{firstName(b?.name ?? "B")} →</span>
           </div>
@@ -198,7 +198,7 @@ export default function MatchCard({
         onScore &&
         !swap && (
           <div className="mt-auto flex items-center justify-between px-4 pt-2 pb-3">
-            <span className="text-footnote text-cream-faint">{outcome === "draw" ? `Empate · ${scoreLabel(result)}` : `${outcome === "win" ? a?.name : b?.name} venceu · ${scoreLabel(outcome === "win" ? result : { a: result.b, b: result.a, draws: result.draws })}`}</span>
+            <span className="text-footnote text-mist-faint">{outcome === "draw" ? `Empate · ${scoreLabel(result)}` : `${outcome === "win" ? a?.name : b?.name} venceu · ${scoreLabel(outcome === "win" ? result : { a: result.b, b: result.a, draws: result.draws })}`}</span>
             <Button size="sm" variant="tertiary" icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>
               Editar
             </Button>
@@ -256,7 +256,7 @@ export function ScoreSheet({
           { key: "draws" as const, label: "Games empatados", max: 3 },
         ].map((row) => (
           <div key={row.key} className="flex items-center justify-between gap-4">
-            <span className="min-w-0 truncate text-headline text-cream">{row.label}</span>
+            <span className="min-w-0 truncate text-headline text-mist">{row.label}</span>
             <Stepper value={s[row.key]} max={row.max} label={row.label} onChange={(v) => setS((x) => ({ ...x, [row.key]: v }))} />
           </div>
         ))}

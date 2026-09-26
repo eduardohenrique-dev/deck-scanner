@@ -41,7 +41,7 @@ export default function VideoScanner({ sessionId, onState, onBusy }: { sessionId
       <div className={cx("viewfinder aspect-video w-full", !busy && "hidden")}>
         <video ref={video} muted playsInline className="absolute inset-0 h-full w-full object-cover" />
         {scanner.counted !== null && (
-          <span className="absolute top-3 left-3 z-10 rounded-sm border border-oak-600 bg-oak-950/85 px-2.5 py-1 font-serif text-subhead text-cream">
+          <span className="absolute top-3 left-3 z-10 rounded-sm border border-night-600 bg-night-950/85 px-2.5 py-1 font-serif text-subhead text-mist">
             <strong className="tabular text-title-3">{scanner.counted}</strong> {scanner.counted === 1 ? "carta" : "cartas"}
           </span>
         )}
@@ -50,11 +50,11 @@ export default function VideoScanner({ sessionId, onState, onBusy }: { sessionId
       {busy ? (
         <div className="space-y-2">
           <div className="flex flex-wrap items-baseline justify-between gap-2 text-subhead">
-            <span className="truncate text-cream-dim">
-              <Film className="mr-1.5 inline size-4 text-brass-400" />
+            <span className="truncate text-mist-dim">
+              <Film className="mr-1.5 inline size-4 text-arcane-400" />
               {file?.name}
             </span>
-            <span className="tabular text-cream-faint">
+            <span className="tabular text-mist-faint">
               {scanner.phase === "loading"
                 ? firstLoad
                   ? "Preparando a lente (download único de ~13 MB)…"
@@ -69,7 +69,7 @@ export default function VideoScanner({ sessionId, onState, onBusy }: { sessionId
             <Button icon={<Square className="size-4 fill-current" />} onClick={scanner.stop} disabled={scanner.phase !== "running"}>
               Parar aqui
             </Button>
-            <p className="text-footnote text-cream-faint">Deixe esta aba aberta até terminar. O que já foi lido fica guardado mesmo se você parar.</p>
+            <p className="text-footnote text-mist-faint">Deixe esta aba aberta até terminar. O que já foi lido fica guardado mesmo se você parar.</p>
           </div>
         </div>
       ) : (
@@ -82,14 +82,14 @@ export default function VideoScanner({ sessionId, onState, onBusy }: { sessionId
           onDrop={onDrop}
           className={cx(
             "flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-[background-color,border-color] duration-200",
-            drag ? "border-brass-400 bg-brass-400/8" : "border-cream/12 hover:border-brass-400/50",
+            drag ? "border-arcane-400 bg-arcane-400/8" : "border-mist/12 hover:border-arcane-400/50",
           )}
         >
-          <span className="mb-2 grid size-16 place-items-center rounded-full bg-brass-300/10 text-brass-300 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.2)]">
+          <span className="mb-2 grid size-16 place-items-center rounded-full bg-arcane-300/10 text-arcane-300 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.2)]">
             <Upload className="size-7" />
           </span>
-          <span className="font-display text-title-2 font-semibold text-cream">{done ? "Ler outro vídeo" : "Envie o vídeo do deck"}</span>
-          <span className="max-w-md text-subhead text-cream-dim">
+          <span className="font-display text-title-2 font-semibold text-mist">{done ? "Ler outro vídeo" : "Envie o vídeo do deck"}</span>
+          <span className="max-w-md text-subhead text-mist-dim">
             Grave passando uma carta por vez, cada uma parada por meio segundo, com luz boa e fundo liso. O vídeo é lido aqui mesmo; não sobe inteiro para o servidor.
           </span>
           <span className="btn btn-primary mt-3">Escolher vídeo</span>
@@ -113,7 +113,7 @@ export default function VideoScanner({ sessionId, onState, onBusy }: { sessionId
         </p>
       )}
       {scanner.error && (
-        <p className="rounded-md bg-wine-600/14 px-4 py-3 text-subhead text-wine-300 shadow-[inset_0_0_0_1px_rgb(214_96_79/0.35)]" role="alert">
+        <p className="rounded-md bg-wine-600/14 px-4 py-3 text-subhead text-wine-300 shadow-[inset_0_0_0_1px_rgb(240_96_127/0.35)]" role="alert">
           {scanner.error}
         </p>
       )}

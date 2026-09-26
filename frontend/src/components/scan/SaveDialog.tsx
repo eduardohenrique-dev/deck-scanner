@@ -153,7 +153,7 @@ export default function SaveDialog({ state, open, onClose, onSaved }: { state: S
               )}
             </Field>
           ) : (
-            <p className="text-subhead text-cream-faint">Nenhum deck salvo ainda.</p>
+            <p className="text-subhead text-mist-faint">Nenhum deck salvo ainda.</p>
           ))}
 
         {target === "collection" && (
@@ -191,11 +191,11 @@ export default function SaveDialog({ state, open, onClose, onSaved }: { state: S
         )}
 
         {target !== "collection" && (
-          <label className="flex items-start gap-3 text-subhead text-cream-dim">
-            <input type="checkbox" checked={register} onChange={(e) => setRegister(e.target.checked)} className="mt-0.5 size-5 accent-[var(--color-brass-400)]" />
+          <label className="flex items-start gap-3 text-subhead text-mist-dim">
+            <input type="checkbox" checked={register} onChange={(e) => setRegister(e.target.checked)} className="mt-0.5 size-5 accent-[var(--color-arcane-400)]" />
             <span>
               Registrar as cartas físicas neste deck
-              <span className="block text-footnote text-cream-faint">Assim o app sabe onde cada cópia está e avisa quando a mesma carta for usada em outro deck.</span>
+              <span className="block text-footnote text-mist-faint">Assim o app sabe onde cada cópia está e avisa quando a mesma carta for usada em outro deck.</span>
             </span>
           </label>
         )}
@@ -209,26 +209,26 @@ export default function SaveDialog({ state, open, onClose, onSaved }: { state: S
           </div>
         ) : (
           <div className="space-y-4">
-            <p className="flex items-center gap-2 text-subhead text-cream">
-              {target === "collection" ? <Chest size={18} className="text-brass-400" /> : <Tome size={18} className="text-brass-400" />}
+            <p className="flex items-center gap-2 text-subhead text-mist">
+              {target === "collection" ? <Chest size={18} className="text-arcane-400" /> : <Tome size={18} className="text-arcane-400" />}
               {preview.physical_cards} {preview.physical_cards === 1 ? "carta física lida" : "cartas físicas lidas"}
             </p>
 
             {preview.already_here.length > 0 && (
-              <p className="text-footnote text-cream-faint">
+              <p className="text-footnote text-mist-faint">
                 {preview.already_here.length === 1 ? "1 carta já está registrada" : `${preview.already_here.length} cartas já estão registradas`} no destino e não serão duplicadas.
               </p>
             )}
 
             {(target === "collection" || register) && preview.elsewhere.length > 0 && (
               <div className="space-y-2">
-                <p className="text-subhead text-cream-dim">Você já tem estas cartas em outro lugar. É a mesma carta física que mudou de lugar, ou outra cópia?</p>
-                <ul className="well divide-y divide-cream/6">
+                <p className="text-subhead text-mist-dim">Você já tem estas cartas em outro lugar. É a mesma carta física que mudou de lugar, ou outra cópia?</p>
+                <ul className="well divide-y divide-mist/6">
                   {preview.elsewhere.map((item) => (
                     <li key={item.oracle_id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
                       <div className="min-w-0 flex-1">
-                        <p className="truncate font-serif text-body text-cream">{item.name}</p>
-                        <p className="truncate text-footnote text-cream-faint">
+                        <p className="truncate font-serif text-body text-mist">{item.name}</p>
+                        <p className="truncate text-footnote text-mist-faint">
                           em {[...new Set(item.copies.map((c) => (c.location_type === "loose" ? "Solto" : c.location_name)))].join(", ")}
                         </p>
                       </div>
@@ -244,13 +244,13 @@ export default function SaveDialog({ state, open, onClose, onSaved }: { state: S
                     </li>
                   ))}
                 </ul>
-                <p className="text-footnote text-cream-faint">Na dúvida fica “outra cópia”: contar a mais é fácil de corrigir; sumir com uma carta, não.</p>
+                <p className="text-footnote text-mist-faint">Na dúvida fica “outra cópia”: contar a mais é fácil de corrigir; sumir com uma carta, não.</p>
               </div>
             )}
 
             {target === "existing_deck" && register && preview.not_scanned_in_target.length > 0 && (
-              <div className={cx("space-y-3 rounded-md bg-ember-600/12 px-4 py-3 shadow-[inset_0_0_0_1px_rgb(232_132_74/0.3)]")}>
-                <p className="text-subhead text-cream-dim">
+              <div className={cx("space-y-3 rounded-md bg-ember-600/12 px-4 py-3 shadow-[inset_0_0_0_1px_rgb(245_158_66/0.3)]")}>
+                <p className="text-subhead text-mist-dim">
                   {preview.not_scanned_in_target.length === 1 ? "1 carta registrada no deck não apareceu" : `${preview.not_scanned_in_target.length} cartas registradas no deck não apareceram`} neste scan.
                 </p>
                 <Segmented

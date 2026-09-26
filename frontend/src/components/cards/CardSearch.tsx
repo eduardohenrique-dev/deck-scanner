@@ -70,7 +70,7 @@ export default function CardSearch({
   return (
     <div className={cx("relative", className)}>
       <div className="relative">
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-[18px] -translate-y-1/2 text-cream-faint" />
+        <Search className="pointer-events-none absolute top-1/2 left-3 size-[18px] -translate-y-1/2 text-mist-faint" />
         <input
           ref={input}
           value={text}
@@ -121,15 +121,15 @@ export default function CardSearch({
                 pick(card);
               }}
               onMouseEnter={() => setActive(i)}
-              className={cx("flex min-h-12 cursor-pointer items-center gap-3 rounded-sm px-2 py-1.5", i === active && "bg-cream/8")}
+              className={cx("flex min-h-12 cursor-pointer items-center gap-3 rounded-sm px-2 py-1.5", i === active && "bg-mist/8")}
             >
               <ArtThumb card={card} size={46} />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
-                  <span className="truncate font-serif text-body font-semibold text-cream">{card.name_pt || card.name_en}</span>
+                  <span className="truncate font-serif text-body font-semibold text-mist">{card.name_pt || card.name_en}</span>
                   <ManaCost cost={card.mana_cost} size={14} />
                 </span>
-                <span className="block truncate text-footnote text-cream-faint">
+                <span className="block truncate text-footnote text-mist-faint">
                   {card.name_pt && card.name_pt !== card.name_en ? `${card.name_en} · ` : ""}
                   {card.type_line}
                 </span>
@@ -140,7 +140,7 @@ export default function CardSearch({
         </ul>
       )}
       {open && query.length >= 2 && !loading && results.length === 0 && (
-        <p className={cx("glass-float absolute inset-x-0 z-30 px-4 py-3 text-footnote text-cream-faint", place)}>
+        <p className={cx("glass-float absolute inset-x-0 z-30 px-4 py-3 text-footnote text-mist-faint", place)}>
           Nenhuma carta com esse nome.
         </p>
       )}

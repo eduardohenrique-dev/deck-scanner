@@ -43,8 +43,8 @@ function Card({ title, text, children }: { title: string; text?: string; childre
   return (
     <Board className="space-y-5 p-5 sm:p-6">
       <div>
-        <h2 className="font-display text-title-3 font-semibold text-cream">{title}</h2>
-        {text && <p className="mt-1 text-subhead text-cream-dim">{text}</p>}
+        <h2 className="font-display text-title-3 font-semibold text-mist">{title}</h2>
+        {text && <p className="mt-1 text-subhead text-mist-dim">{text}</p>}
       </div>
       {children}
     </Board>
@@ -89,13 +89,13 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                   onClick={() => choose(o.id)}
                   className={cx(
                     "well relative flex min-h-24 flex-col items-start gap-1 px-4 py-4 text-left transition-[box-shadow,transform] duration-500 ease-spring active:scale-[0.98] active:duration-100 disabled:opacity-40",
-                    on && "bg-brass-300/8 shadow-[inset_0_0_0_1.5px_var(--color-brass-400),0_10px_24px_-14px_rgb(216_166_76/0.5)]",
+                    on && "bg-arcane-300/8 shadow-[inset_0_0_0_1.5px_var(--color-arcane-400),0_10px_24px_-14px_rgb(140_110_245/0.5)]",
                   )}
                 >
-                  <span className={cx("text-headline font-semibold", on ? "text-brass-100" : "text-cream")}>{o.title}</span>
-                  <span className="pr-6 text-footnote text-cream-dim">{o.text}</span>
+                  <span className={cx("text-headline font-semibold", on ? "text-arcane-100" : "text-mist")}>{o.title}</span>
+                  <span className="pr-6 text-footnote text-mist-dim">{o.text}</span>
                   {on && (
-                    <span aria-hidden="true" className="animate-pop absolute top-3 right-3 grid size-6 place-items-center rounded-full bg-brass-400 text-ink-900">
+                    <span aria-hidden="true" className="animate-pop absolute top-3 right-3 grid size-6 place-items-center rounded-full bg-arcane-400 text-ink-900">
                       <Check className="size-4 [--icon-stroke:2.4]" />
                     </span>
                   )}
@@ -107,27 +107,27 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
           {s.kind === "swiss" && (
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <p className="mb-1.5 text-footnote font-medium text-cream-dim">Rodadas</p>
+                <p className="mb-1.5 text-footnote font-medium text-mist-dim">Rodadas</p>
                 <div className="flex flex-wrap items-center gap-3">
                   <Stepper value={s.rounds || suggested} min={Math.max(1, t.rounds.length)} max={20} label="Rodadas do suíço" onChange={(v) => setStructure({ ...s, rounds: v })} />
                   {s.rounds !== 0 && s.rounds !== suggested && n >= 2 && draft && (
-                    <button type="button" className="text-footnote font-semibold text-brass-300 hover:underline" onClick={() => setStructure({ ...s, rounds: 0 })}>
+                    <button type="button" className="text-footnote font-semibold text-arcane-300 hover:underline" onClick={() => setStructure({ ...s, rounds: 0 })}>
                       Usar a sugestão ({suggested})
                     </button>
                   )}
                 </div>
-                <p className="mt-1.5 text-footnote text-cream-faint">
+                <p className="mt-1.5 text-footnote text-mist-faint">
                   {s.rounds === 0 ? `Automático: ${suggested} para ${Math.max(n, 2)} jogadores, pela tabela da MTR.` : `A tabela da MTR sugere ${suggested} para ${Math.max(n, 2)} jogadores.`}
                 </p>
               </div>
               {s.cut !== null && (
                 <div>
-                  <p className="mb-1.5 text-footnote font-medium text-cream-dim">Corte para o mata-mata</p>
+                  <p className="mb-1.5 text-footnote font-medium text-mist-dim">Corte para o mata-mata</p>
                   <div className="flex items-center gap-3">
-                    <span className="text-headline font-semibold text-cream">Top</span>
+                    <span className="text-headline font-semibold text-mist">Top</span>
                     <Stepper value={s.cut} min={2} max={Math.max(2, n || 64)} label="Tamanho do corte" onChange={(v) => setStructure({ ...s, cut: v })} />
                   </div>
-                  <p className="mt-1.5 text-footnote text-cream-faint">
+                  <p className="mt-1.5 text-footnote text-mist-faint">
                     {(s.cut & (s.cut - 1)) === 0 ? "Chave completa, sem folgas." : `Não fecha uma chave: os ${2 ** Math.ceil(Math.log2(s.cut)) - s.cut} melhores seeds folgam na primeira fase.`}
                   </p>
                 </div>
@@ -137,36 +137,36 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
           {pods && (
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <p className="mb-1.5 text-footnote font-medium text-cream-dim">Rodadas</p>
+                <p className="mb-1.5 text-footnote font-medium text-mist-dim">Rodadas</p>
                 <div className="flex flex-wrap items-center gap-3">
                   <Stepper value={s.rounds || suggested} min={Math.max(1, t.rounds.length)} max={20} label="Rodadas do mesão" onChange={(v) => setStructure({ ...s, rounds: v })} />
                   {s.rounds !== 0 && s.rounds !== suggested && n >= 3 && draft && (
-                    <button type="button" className="text-footnote font-semibold text-brass-300 hover:underline" onClick={() => setStructure({ ...s, rounds: 0 })}>
+                    <button type="button" className="text-footnote font-semibold text-arcane-300 hover:underline" onClick={() => setStructure({ ...s, rounds: 0 })}>
                       Usar a sugestão ({suggested})
                     </button>
                   )}
                 </div>
-                <p className="mt-1.5 text-footnote text-cream-faint">
+                <p className="mt-1.5 text-footnote text-mist-faint">
                   {n >= 3 ? `${n} jogadores: ${podsLine(n)} por rodada, remontadas a cada rodada.` : "As mesas saem da lista de inscritos (mínimo 3)."}
                 </p>
               </div>
               <div>
-                <p className="mb-1.5 text-footnote font-medium text-cream-dim">Empate na liderança</p>
-                <p className="text-footnote text-cream-faint">
+                <p className="mb-1.5 text-footnote font-medium text-mist-dim">Empate na liderança</p>
+                <p className="text-footnote text-mist-faint">
                   Os empatados em 1º jogam uma final só entre eles, sem tempo limite. Quem vencer é o campeão; os finalistas também podem combinar dividir o prêmio.
                 </p>
               </div>
             </div>
           )}
-          {s.kind === "round-robin" && <p className="text-footnote text-cream-faint">{n >= 2 ? `${plannedRounds(t)} rodadas para ${n} jogadores${n % 2 ? ", cada um com uma folga" : ""}.` : "O número de rodadas sai da lista de inscritos."}</p>}
-          {s.kind === "single-elimination" && <p className="text-footnote text-cream-faint">Com um número de jogadores que não fecha a chave, os primeiros da lista (ou do sorteio) folgam na primeira fase.</p>}
+          {s.kind === "round-robin" && <p className="text-footnote text-mist-faint">{n >= 2 ? `${plannedRounds(t)} rodadas para ${n} jogadores${n % 2 ? ", cada um com uma folga" : ""}.` : "O número de rodadas sai da lista de inscritos."}</p>}
+          {s.kind === "single-elimination" && <p className="text-footnote text-mist-faint">Com um número de jogadores que não fecha a chave, os primeiros da lista (ou do sorteio) folgam na primeira fase.</p>}
         </Card>
 
         <Card title="Partidas">
           {!pods && (
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
-              <p className="mb-1.5 text-footnote font-medium text-cream-dim">{s.kind === "single-elimination" ? "Cada partida" : "Rodadas"}</p>
+              <p className="mb-1.5 text-footnote font-medium text-mist-dim">{s.kind === "single-elimination" ? "Cada partida" : "Rodadas"}</p>
               <Segmented
                 label="Melhor de"
                 value={String(s.kind === "single-elimination" ? t.settings.playoffBestOf : t.settings.bestOf) as "1" | "3"}
@@ -179,7 +179,7 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
             </div>
             {cut !== null && (
               <div>
-                <p className="mb-1.5 text-footnote font-medium text-cream-dim">Mata-mata</p>
+                <p className="mb-1.5 text-footnote font-medium text-mist-dim">Mata-mata</p>
                 <Segmented
                   label="Mata-mata em melhor de"
                   value={String(t.settings.playoffBestOf) as "1" | "3"}
@@ -195,7 +195,7 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
           )}
           {s.kind !== "single-elimination" && (
             <div>
-              <p className="mb-2 text-footnote font-medium text-cream-dim">{pods ? "Pontos por mesa" : "Pontos por partida"}</p>
+              <p className="mb-2 text-footnote font-medium text-mist-dim">{pods ? "Pontos por mesa" : "Pontos por partida"}</p>
               <div className="flex flex-wrap gap-4">
                 {(
                   [
@@ -205,20 +205,20 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                   ] as const
                 ).map(([k, label]) => (
                   <div key={k} className="flex items-center gap-2">
-                    <span className={cx("text-subhead text-cream", pods ? "min-w-16" : "w-16")}>{label}</span>
+                    <span className={cx("text-subhead text-mist", pods ? "min-w-16" : "w-16")}>{label}</span>
                     <Stepper size="sm" value={t.settings.points[k]} min={0} max={10} label={`Pontos: ${label.toLowerCase()}`} busy={!draft} onChange={(v) => setSettings({ points: { ...t.settings.points, [k]: v } })} />
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-footnote text-cream-faint">
+              <p className="mt-2 text-footnote text-mist-faint">
                 {pods ? "Regra da casa: 3 para quem vence; sem vencedor no fim do tempo, 1 para cada jogador ainda vivo e 0 para quem já tinha saído." : "Padrão da Wizards: 3, 1 e 0. A folga vale uma vitória."}
               </p>
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <p className="text-subhead font-medium text-cream">{pods ? "Tempo da partida" : "Relógio da rodada"}</p>
-              <p className="text-footnote text-cream-faint">
+              <p className="text-subhead font-medium text-mist">{pods ? "Tempo da partida" : "Relógio da rodada"}</p>
+              <p className="text-footnote text-mist-faint">
                 {pods
                   ? "Quando acaba, o turno em andamento termina e cada jogador vivo que ainda não jogou faz mais 1 turno. A final não tem tempo."
                   : "Aparece nas mesas e no telão; passa a contar o acréscimo quando o tempo acaba."}
@@ -244,7 +244,7 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                 { value: "random", label: "Sorteio" },
               ]}
             />
-            <p className="text-footnote text-cream-faint">
+            <p className="text-footnote text-mist-faint">
               {t.settings.seeding === "standings"
                 ? s.kind === "single-elimination"
                   ? "Seeds na ordem da lista de inscritos: 1º × último, e 1º e 2º só se cruzam na final."

@@ -97,12 +97,12 @@ export default function TournamentPage({ id }: { id: string }) {
             {t.gameFormat && <span>· {t.gameFormat}</span>}
             <span>· {structureLabel(t.structure, plannedRounds(t))}</span>
           </p>
-          <h1 className="font-display text-title-1 font-semibold text-cream sm:text-display">
+          <h1 className="font-display text-title-2 font-semibold text-mist sm:text-display">
             <InlineEdit label="Nome do torneio" value={t.name} placeholder="Torneio sem nome" onSave={async (name) => void (name && dispatch({ type: "rename", name }))} className="font-display" />
           </h1>
           <div className="flex flex-wrap items-center gap-3">
             <Tag tone={STATUS_TONE[st]}>{STATUS_LABEL[st]}</Tag>
-            <span className={cx("inline-flex items-center gap-1.5 text-footnote", save === "offline" || save === "error" ? "text-ember-300" : "text-cream-faint")} aria-live="polite">
+            <span className={cx("inline-flex items-center gap-1.5 text-footnote", save === "offline" || save === "error" ? "text-ember-300" : "text-mist-faint")} aria-live="polite">
               {SAVE[save].icon}
               {SAVE[save].label}
             </span>
@@ -135,7 +135,7 @@ export default function TournamentPage({ id }: { id: string }) {
       {/* no celular a ação da etapa fica sempre à mão, acima da barra de navegação */}
       {action && <div className="h-20 sm:hidden" aria-hidden="true" />}
       {action && (
-        <div className="bar-glass fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 px-4 py-3 shadow-[inset_0_1px_0_rgb(255_226_184/0.1),0_-8px_24px_-16px_rgb(0_0_0/0.8)] sm:hidden">
+        <div className="bar-glass fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 px-4 py-3 shadow-[inset_0_1px_0_rgb(214_204_255/0.1),0_-8px_24px_-16px_rgb(0_0_0/0.8)] sm:hidden">
           <ActionButton action={action} className="w-full" />
         </div>
       )}
@@ -166,7 +166,7 @@ function ActionButton({ action, className }: { action: Action | null; className?
         {action.label}
       </Button>
       {action.reason && (
-        <span className="flex items-center gap-1.5 text-footnote text-cream-dim max-sm:justify-center">
+        <span className="flex items-center gap-1.5 text-footnote text-mist-dim max-sm:justify-center">
           <TriangleAlert className="size-3.5 shrink-0 text-ember-300" /> {action.reason}
         </span>
       )}
@@ -243,7 +243,7 @@ function StartConfirm({ t, open, onClose, dispatch, onStarted }: { t: Tournament
       <p>
         As inscrições fecham com {t.players.length} jogadores. {text}
       </p>
-      <p className="text-footnote text-cream-faint">Enquanto nenhum placar for lançado, dá para desfazer.</p>
+      <p className="text-footnote text-mist-faint">Enquanto nenhum placar for lançado, dá para desfazer.</p>
     </Confirm>
   );
 }

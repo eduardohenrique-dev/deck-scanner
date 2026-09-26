@@ -43,12 +43,12 @@ export default function Home() {
       <div className="space-y-10">
         <section className="max-w-3xl space-y-5 pt-2">
           <p className="eyebrow">a mesa está posta</p>
-          <h1 className="font-display text-display font-semibold text-cream sm:text-hero">
+          <h1 className="font-display text-display font-semibold text-mist sm:text-hero">
             Espalhe as cartas.
             <br />
-            <span className="text-brass-300">A taverna anota.</span>
+            <span className="text-arcane-300">A taverna anota.</span>
           </h1>
-          <p className="max-w-xl text-body text-cream-dim">
+          <p className="max-w-xl text-body text-mist-dim">
             Folheie o baralho diante da câmera ou fotografe a mesa. A lista sai pronta para LigaMagic, Moxfield e Arena, e cada carta física fica registrada no deck, na pasta ou na caixa onde está.
           </p>
         </section>
@@ -74,7 +74,7 @@ export default function Home() {
       <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
         <div className="space-y-1">
           <p className="eyebrow">{greeting()}</p>
-          <h1 className="font-display text-title-1 font-semibold text-cream sm:text-display">Taverna</h1>
+          <h1 className="font-display text-title-2 font-semibold text-mist sm:text-display">Taverna</h1>
         </div>
         {cards > 0 && (
           <dl className="grid w-full grid-cols-3 gap-2 sm:w-auto sm:min-w-[26rem]">
@@ -87,17 +87,17 @@ export default function Home() {
 
       {live && (
         <Link to={`/torneios/${live.id}`} className="group glass flex items-center gap-4 px-5 py-4 transition-transform duration-500 ease-spring hover:-translate-y-0.5 active:scale-[0.99] active:duration-100">
-          <span className="grid size-11 shrink-0 place-items-center rounded-md bg-verdigris-600/30 text-verdigris-200 shadow-[inset_0_0_0_1px_rgb(95_176_160/0.35)]">
+          <span className="grid size-11 shrink-0 place-items-center rounded-md bg-astral-600/30 text-astral-200 shadow-[inset_0_0_0_1px_rgb(86_185_224/0.35)]">
             <Goblet size={24} />
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
-              <span className="truncate font-display text-title-3 font-semibold text-cream group-hover:text-brass-100">{live.name}</span>
+              <span className="truncate text-headline font-semibold text-mist group-hover:text-arcane-100">{live.name}</span>
               <Tag tone="live">Em andamento</Tag>
             </span>
-            <span className="block truncate text-footnote text-cream-faint">{progressLine({ ...live.summary, status: live.status })}</span>
+            <span className="block truncate text-footnote text-mist-faint">{progressLine({ ...live.summary, status: live.status })}</span>
           </span>
-          <ChevronRight className="size-5 shrink-0 text-cream-faint group-hover:text-brass-300" />
+          <ChevronRight className="size-5 shrink-0 text-mist-faint group-hover:text-arcane-300" />
         </Link>
       )}
 
@@ -120,7 +120,7 @@ export default function Home() {
                 ))}
               </ul>
             ) : (
-              <p className="px-4 py-8 text-center text-subhead text-cream-faint">Nenhum scan ainda. As mesas que você abrir aparecem aqui.</p>
+              <p className="px-4 py-8 text-center text-subhead text-mist-faint">Nenhum scan ainda. As mesas que você abrir aparecem aqui.</p>
             )}
           </Board>
         </section>
@@ -133,10 +133,10 @@ export default function Home() {
                 ? [0, 1, 2].map((i) => <Skeleton key={i} className="aspect-[4/3.6] rounded-lg" />)
                 : decks.data?.slice(0, 6).map((d) => <DeckTome key={d.id} deck={d} />)}
               {!decks.loading && !decks.data?.length && (
-                <Link to="/escanear" className="glass col-span-full flex items-center gap-4 px-5 py-5 text-cream-dim transition-colors hover:text-cream">
-                  <Tome size={28} className="shrink-0 text-brass-300" />
+                <Link to="/escanear" className="glass col-span-full flex items-center gap-4 px-5 py-5 text-mist-dim transition-colors hover:text-mist">
+                  <Tome size={28} className="shrink-0 text-arcane-300" />
                   <span className="min-w-0 flex-1 text-subhead">Os decks que você salvar a partir de um scan ficam aqui, com versões e cartas físicas.</span>
-                  <ChevronRight className="size-5 shrink-0 text-cream-faint" />
+                  <ChevronRight className="size-5 shrink-0 text-mist-faint" />
                 </Link>
               )}
             </div>
@@ -151,7 +151,7 @@ export default function Home() {
                     {topCards.data.map((card, i) => (
                       <li key={card.id} className="flex items-center gap-3 rounded-md px-3 py-2">
                         <ArtThumb card={card} size={44} />
-                        <span className="min-w-0 flex-1 truncate font-serif text-headline font-semibold text-cream">{cardName(card)}</span>
+                        <span className="min-w-0 flex-1 truncate font-serif text-headline font-semibold text-mist">{cardName(card)}</span>
                         <Money brl={summary.data?.top[i]?.unit_brl} className="text-subhead font-semibold" />
                       </li>
                     ))}
@@ -164,7 +164,7 @@ export default function Home() {
                 )}
               </Board>
               {summary.data?.value.fx && (
-                <p className="mt-2 px-1 text-caption text-cream-faint">
+                <p className="mt-2 px-1 text-caption text-mist-faint">
                   Estimativa pela Scryfall (USD) × dólar PTAX {summary.data.value.fx.rate.toFixed(2).replace(".", ",")}. Preço de loja: LigaMagic.
                 </p>
               )}
@@ -186,12 +186,12 @@ function ActionTile({ icon, title, text, onClick, primary }: { icon: ReactNode; 
         primary ? "btn-primary rounded-lg" : "glass hover:-translate-y-0.5",
       )}
     >
-      <span className={cx("grid size-11 shrink-0 place-items-center rounded-md", primary ? "bg-ink-900/12 text-ink-900" : "bg-brass-300/10 text-brass-300 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.18)]")}>{icon}</span>
+      <span className={cx("grid size-11 shrink-0 place-items-center rounded-md", primary ? "bg-ink-900/12 text-ink-900" : "bg-arcane-300/10 text-arcane-300 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.18)]")}>{icon}</span>
       <span className="min-w-0 flex-1">
-        <span className={cx("block text-headline font-semibold", primary ? "text-ink-900" : "text-cream group-hover:text-brass-100")}>{title}</span>
-        <span className={cx("mt-0.5 block text-footnote", primary ? "text-ink-700" : "text-cream-faint")}>{text}</span>
+        <span className={cx("block text-headline font-semibold", primary ? "text-ink-900" : "text-mist group-hover:text-arcane-100")}>{title}</span>
+        <span className={cx("mt-0.5 block text-footnote", primary ? "text-ink-700" : "text-mist-faint")}>{text}</span>
       </span>
-      <ChevronRight className={cx("size-5 shrink-0 sm:hidden", primary ? "text-ink-700" : "text-cream-faint")} />
+      <ChevronRight className={cx("size-5 shrink-0 sm:hidden", primary ? "text-ink-700" : "text-mist-faint")} />
     </button>
   );
 }
@@ -199,8 +199,8 @@ function ActionTile({ icon, title, text, onClick, primary }: { icon: ReactNode; 
 function Stat({ label, value }: { label: string; value: ReactNode | null }) {
   return (
     <div className="well px-4 py-3">
-      <dt className="text-caption font-medium text-cream-faint">{label}</dt>
-      <dd className="tabular mt-0.5 truncate text-title-3 font-semibold text-cream">{value ?? <Skeleton className="mt-1 h-6 w-14" />}</dd>
+      <dt className="text-caption font-medium text-mist-faint">{label}</dt>
+      <dd className="tabular mt-0.5 truncate text-title-3 font-semibold text-mist">{value ?? <Skeleton className="mt-1 h-6 w-14" />}</dd>
     </div>
   );
 }

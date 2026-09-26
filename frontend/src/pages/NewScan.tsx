@@ -90,14 +90,14 @@ export default function NewScan() {
               onClick={() => setPurpose(p.id)}
               className={cx(
                 "glass relative grid grid-cols-[auto_1fr] items-start gap-x-4 gap-y-1 px-4 py-4 text-left transition-[transform,box-shadow] duration-500 ease-spring active:scale-[0.98] active:duration-100 sm:grid-cols-1 sm:gap-y-2 sm:px-5 sm:py-5",
-                active ? "shadow-[inset_0_0_0_1.5px_var(--color-brass-400),0_12px_32px_-14px_rgb(216_166_76/0.45)]" : "hover:-translate-y-0.5",
+                active ? "shadow-[inset_0_0_0_1.5px_var(--color-arcane-400),0_12px_32px_-14px_rgb(140_110_245/0.45)]" : "hover:-translate-y-0.5",
               )}
             >
-              <span className={cx("row-span-2 grid size-11 place-items-center rounded-md sm:row-span-1", active ? "bg-brass-300/15 text-brass-200" : "bg-cream/6 text-cream-dim")}>{p.icon}</span>
-              <span className={cx("text-headline font-semibold", active ? "text-brass-100" : "text-cream")}>{p.title}</span>
-              <span className="text-subhead text-cream-dim">{p.text}</span>
+              <span className={cx("row-span-2 grid size-11 place-items-center rounded-md sm:row-span-1", active ? "bg-arcane-300/15 text-arcane-200" : "bg-mist/6 text-mist-dim")}>{p.icon}</span>
+              <span className={cx("text-headline font-semibold", active ? "text-arcane-100" : "text-mist")}>{p.title}</span>
+              <span className="text-subhead text-mist-dim">{p.text}</span>
               {active && (
-                <span className="absolute top-4 right-4 grid size-6 place-items-center rounded-full bg-brass-400 text-ink-900 animate-pop" aria-hidden="true">
+                <span className="absolute top-4 right-4 grid size-6 place-items-center rounded-full bg-arcane-400 text-ink-900 animate-pop" aria-hidden="true">
                   <Check className="size-4 [--icon-stroke:2.4]" />
                 </span>
               )}
@@ -124,13 +124,13 @@ export default function NewScan() {
                 )}
               </Field>
             ) : (
-              <p className="text-subhead text-cream-dim">
-                Você ainda não tem decks salvos. <Link to="/escanear" className="text-brass-300 underline" onClick={() => setPurpose("build")}>Monte a lista primeiro</Link> ou{" "}
-                <Link to="/decks?novo=1" className="text-brass-300 underline">importe um deck</Link>.
+              <p className="text-subhead text-mist-dim">
+                Você ainda não tem decks salvos. <Link to="/escanear" className="text-arcane-300 underline" onClick={() => setPurpose("build")}>Monte a lista primeiro</Link> ou{" "}
+                <Link to="/decks?novo=1" className="text-arcane-300 underline">importe um deck</Link>.
               </p>
             )}
             {targetDeck && (
-              <p className="mt-2 flex items-center gap-2 text-footnote text-cream-faint">
+              <p className="mt-2 flex items-center gap-2 text-footnote text-mist-faint">
                 <IdentityPips colors={targetDeck.identity} size={15} />
                 {targetDeck.format_name ?? targetDeck.format_id}
                 {targetDeck.commanders?.length ? ` · ${targetDeck.commanders.join(" & ")}` : ""}
@@ -158,7 +158,7 @@ export default function NewScan() {
                     ))}
                   </Select>
                   {format?.description && (
-                    <p id={`${id}-desc`} className="mt-1.5 text-footnote text-cream-faint">
+                    <p id={`${id}-desc`} className="mt-1.5 text-footnote text-mist-faint">
                       {format.description}
                     </p>
                   )}
@@ -195,7 +195,7 @@ export default function NewScan() {
 
         <div className="hairline" />
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="max-w-md text-footnote text-cream-faint">
+          <p className="max-w-md text-footnote text-mist-faint">
             {purpose === "check"
               ? "Passe o deck inteiro. No fim aparece o que falta, o que sobra e o que foi trocado de edição."
               : purpose === "collection"

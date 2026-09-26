@@ -133,7 +133,7 @@ function NewDeckDialog({ onClose }: { onClose: () => void }) {
         }
       >
         <div className="space-y-4 text-subhead">
-          <p className="text-cream-dim">
+          <p className="text-mist-dim">
             {result.report.imported} cartas entraram. {result.report.unresolved.length > 0 && `${result.report.unresolved.length} linhas não foram reconhecidas.`}
           </p>
           {result.report.unresolved.length > 0 && (
@@ -147,7 +147,7 @@ function NewDeckDialog({ onClose }: { onClose: () => void }) {
           )}
           {result.report.print_warnings.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-cream-dim">Impressões que não existem no registro (a carta entrou na impressão mais comum):</p>
+              <p className="text-mist-dim">Impressões que não existem no registro (a carta entrou na impressão mais comum):</p>
               <ul className="space-y-1 text-subhead text-ember-300">
                 {result.report.print_warnings.map((w) => (
                   <li key={w.line}>
@@ -211,7 +211,7 @@ function NewDeckDialog({ onClose }: { onClose: () => void }) {
             />
           )}
         </Field>
-        <p className="text-footnote text-cream-faint">Nomes em português ou inglês. Edição e número entre parênteses fixam a impressão; *F* marca foil.</p>
+        <p className="text-footnote text-mist-faint">Nomes em português ou inglês. Edição e número entre parênteses fixam a impressão; *F* marca foil.</p>
       </div>
     </Modal>
   );

@@ -58,21 +58,21 @@ export default function PlayersStage({ t, dispatch, onPlayer }: { t: Tournament;
             </EmptyState>
           </Board>
         ) : (
-          <ol className="glass divide-y divide-cream/6 overflow-hidden">
+          <ol className="glass divide-y divide-mist/6 overflow-hidden">
             {t.players.map((p, i) => (
               <li key={p.id} className={cx("flex min-h-16 items-center gap-3 px-3 py-2 sm:px-4", p.droppedAfter !== null && "opacity-70")}>
-                <span className="tabular w-7 shrink-0 text-center text-footnote font-semibold text-cream-faint">{i + 1}</span>
+                <span className="tabular w-7 shrink-0 text-center text-footnote font-semibold text-mist-faint">{i + 1}</span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-headline font-semibold text-cream">
+                  <p className="truncate text-headline font-semibold text-mist">
                     {onPlayer && !draft ? (
-                      <button type="button" className="max-w-full truncate text-left hover:text-brass-100" onClick={() => onPlayer(p.id)}>
+                      <button type="button" className="max-w-full truncate text-left hover:text-arcane-100" onClick={() => onPlayer(p.id)}>
                         {p.name}
                       </button>
                     ) : (
                       <InlineEdit label="Nome do jogador" value={p.name} placeholder="Sem nome" onSave={async (v) => void dispatch({ type: "updatePlayer", id: p.id, name: v })} />
                     )}
                   </p>
-                  <button type="button" onClick={() => setDeckFor(p)} className="mt-0.5 flex max-w-full items-center gap-2 rounded-xs text-footnote text-cream-faint hover:text-brass-200">
+                  <button type="button" onClick={() => setDeckFor(p)} className="mt-0.5 flex max-w-full items-center gap-2 rounded-xs text-footnote text-mist-faint hover:text-arcane-200">
                     {p.deck ? (
                       <>
                         {p.deck.identity?.length ? <IdentityPips colors={p.deck.identity} size={13} /> : <Layers className="size-3.5 shrink-0" />}
@@ -108,16 +108,16 @@ export default function PlayersStage({ t, dispatch, onPlayer }: { t: Tournament;
       <aside className="space-y-4">
         <Board className="p-5">
           <p className="eyebrow">Inscritos</p>
-          <p className="tabular mt-1 text-display font-semibold text-cream">{n}</p>
+          <p className="tabular mt-1 text-display font-semibold text-mist">{n}</p>
           {t.structure.kind === "swiss" && n >= 2 && (
-            <p className="mt-2 text-subhead text-cream-dim">
+            <p className="mt-2 text-subhead text-mist-dim">
               {t.structure.rounds ? `${t.structure.rounds} rodadas definidas` : `${suggestRounds(n, t.structure.cut)} rodadas sugeridas`} para {n} jogadores
               {t.structure.cut !== null ? `, depois Top ${t.structure.cut}` : ""}.
             </p>
           )}
-          {n % 2 === 1 && t.structure.kind !== "single-elimination" && <p className="mt-2 text-footnote text-cream-faint">Número ímpar: a cada rodada alguém folga (vale vitória por 2 a 0), nunca a mesma pessoa duas vezes.</p>}
+          {n % 2 === 1 && t.structure.kind !== "single-elimination" && <p className="mt-2 text-footnote text-mist-faint">Número ímpar: a cada rodada alguém folga (vale vitória por 2 a 0), nunca a mesma pessoa duas vezes.</p>}
         </Board>
-        {!draft && <p className="px-1 text-footnote text-cream-faint">Depois do início, a lista fica fechada. Quem for embora é marcado como “saiu”: não joga mais, mas os jogos dele continuam valendo no desempate dos outros.</p>}
+        {!draft && <p className="px-1 text-footnote text-mist-faint">Depois do início, a lista fica fechada. Quem for embora é marcado como “saiu”: não joga mais, mas os jogos dele continuam valendo no desempate dos outros.</p>}
       </aside>
 
       {pasting && <PasteList onClose={() => setPasting(false)} onAdd={(names) => dispatch({ type: "addPlayers", players: names.map((nm) => ({ id: newId(), name: nm, lot: Math.random() })) }, { undo: `${names.length} ${names.length === 1 ? "jogador inscrito" : "jogadores inscritos"}` })} />}
@@ -134,7 +134,7 @@ export default function PlayersStage({ t, dispatch, onPlayer }: { t: Tournament;
         onClose={() => setDropping(null)}
       >
         <p>Ele não entra nos próximos emparelhamentos nem no corte. As partidas que já jogou continuam valendo no desempate de quem jogou com ele.</p>
-        <p className="text-footnote text-cream-faint">Se a mesa dele desta rodada ainda não tem placar, o oponente fica de folga (vitória por 2 a 0).</p>
+        <p className="text-footnote text-mist-faint">Se a mesa dele desta rodada ainda não tem placar, o oponente fica de folga (vitória por 2 a 0).</p>
       </Confirm>
     </div>
   );
@@ -169,7 +169,7 @@ function PasteList({ onClose, onAdd }: { onClose: () => void; onAdd: (names: str
       }
     >
       <Textarea autoFocus rows={10} value={text} onChange={(e) => setText(e.target.value)} placeholder={"1. Ana Beatriz\n2. Bruno Castro\n3. Carla Menezes"} aria-label="Lista de jogadores" />
-      <p className="mt-2 text-footnote text-cream-faint">{names.length ? `${names.length} ${names.length === 1 ? "nome" : "nomes"}${lines > names.length ? ` · ${lines - names.length} repetido${lines - names.length > 1 ? "s" : ""} ou vazio${lines - names.length > 1 ? "s" : ""} ignorado${lines - names.length > 1 ? "s" : ""}` : ""}` : "Cole do WhatsApp, planilha ou bloco de notas."}</p>
+      <p className="mt-2 text-footnote text-mist-faint">{names.length ? `${names.length} ${names.length === 1 ? "nome" : "nomes"}${lines > names.length ? ` · ${lines - names.length} repetido${lines - names.length > 1 ? "s" : ""} ou vazio${lines - names.length > 1 ? "s" : ""} ignorado${lines - names.length > 1 ? "s" : ""}` : ""}` : "Cole do WhatsApp, planilha ou bloco de notas."}</p>
     </Modal>
   );
 }
@@ -199,18 +199,18 @@ function DeckPicker({ player, onClose, onPick }: { player: Player; onClose: () =
         <div>
           <p className="eyebrow mb-2">Da estante</p>
           {decks.loading ? (
-            <p className="text-footnote text-cream-faint">Buscando os decks…</p>
+            <p className="text-footnote text-mist-faint">Buscando os decks…</p>
           ) : decks.data?.length ? (
             <>
               {decks.data.length > 6 && <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filtrar decks" aria-label="Filtrar decks" className="mb-2" />}
-              <ul className="well max-h-72 divide-y divide-cream/6 overflow-y-auto">
+              <ul className="well max-h-72 divide-y divide-mist/6 overflow-y-auto">
                 {list.map((d) => (
                   <li key={d.id}>
-                    <button type="button" onClick={() => onPick(fromDeck(d))} className={cx("flex min-h-14 w-full items-center gap-3 px-4 text-left hover:bg-cream/5", player.deck?.id === d.id && "bg-brass-300/10")}>
+                    <button type="button" onClick={() => onPick(fromDeck(d))} className={cx("flex min-h-14 w-full items-center gap-3 px-4 text-left hover:bg-mist/5", player.deck?.id === d.id && "bg-arcane-300/10")}>
                       <IdentityPips colors={d.identity} size={15} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate font-serif text-headline font-semibold text-cream">{d.name}</span>
-                        <span className="block truncate text-footnote text-cream-faint">{d.format_name ?? d.format_id}</span>
+                        <span className="block truncate font-serif text-headline font-semibold text-mist">{d.name}</span>
+                        <span className="block truncate text-footnote text-mist-faint">{d.format_name ?? d.format_id}</span>
                       </span>
                     </button>
                   </li>
@@ -218,7 +218,7 @@ function DeckPicker({ player, onClose, onPick }: { player: Player; onClose: () =
               </ul>
             </>
           ) : (
-            <p className="text-footnote text-cream-faint">Nenhum deck salvo ainda. Use o nome do arquétipo acima.</p>
+            <p className="text-footnote text-mist-faint">Nenhum deck salvo ainda. Use o nome do arquétipo acima.</p>
           )}
         </div>
         {player.deck && (

@@ -58,21 +58,21 @@ export default function HistoryPanel({ state, onSnapshot }: { state: DeckState; 
           </Button>
         </div>
         {snapshots.length === 0 ? (
-          <p className="px-1 text-footnote text-cream-faint">Nenhuma versão ainda. Salvar um scan ou importar uma lista cria a primeira.</p>
+          <p className="px-1 text-footnote text-mist-faint">Nenhuma versão ainda. Salvar um scan ou importar uma lista cria a primeira.</p>
         ) : (
-          <ol className="glass divide-y divide-cream/6 overflow-hidden" aria-label="Versões">
+          <ol className="glass divide-y divide-mist/6 overflow-hidden" aria-label="Versões">
             {snapshots.map((s) => (
               <li key={s.id}>
                 <button
                   onClick={() => compare(s.id)}
                   aria-current={selected === s.id && diff?.id === s.id ? "true" : undefined}
-                  className={cx("block w-full px-4 py-3 text-left transition-colors", diff?.id === s.id ? "bg-brass-400/10 shadow-[inset_3px_0_0_var(--color-brass-300)]" : "hover:bg-cream/5")}
+                  className={cx("block w-full px-4 py-3 text-left transition-colors", diff?.id === s.id ? "bg-arcane-400/10 shadow-[inset_3px_0_0_var(--color-arcane-300)]" : "hover:bg-mist/5")}
                 >
-                  <span className="block font-serif text-body text-cream">{dateLabel(s.created_at, true)}</span>
-                  <span className="block text-footnote text-cream-faint">
+                  <span className="block font-serif text-body text-mist">{dateLabel(s.created_at, true)}</span>
+                  <span className="block text-footnote text-mist-faint">
                     {SOURCE[s.source]} · {s.card_count} cartas
                   </span>
-                  {s.note && <span className="block truncate text-footnote text-cream-dim italic">“{s.note}”</span>}
+                  {s.note && <span className="block truncate text-footnote text-mist-dim italic">“{s.note}”</span>}
                 </button>
               </li>
             ))}
@@ -102,7 +102,7 @@ function DiffView({ diff, when }: { diff: DeckDiff; when: string | null }) {
   const nothing = !diff.added.length && !diff.removed.length && !diff.changed.length && !diff.reprinted.length;
   return (
     <div className="glass space-y-5 p-4 sm:p-5">
-      <p className="text-subhead text-cream-dim">
+      <p className="text-subhead text-mist-dim">
         De {dateLabel(when, true)} ({diff.count_before} cartas) para hoje ({diff.count_after} cartas) · {diff.unchanged} sem mudança
       </p>
       {nothing && <p className="parchment px-4 py-3 font-serif text-body">Nenhuma diferença: a lista é a mesma.</p>}
@@ -129,7 +129,7 @@ function DiffView({ diff, when }: { diff: DeckDiff; when: string | null }) {
           {diff.changed.map((i) => (
             <li key={i.oracle_id}>
               {name(i)}{" "}
-              <span className="tabular text-cream-faint">
+              <span className="tabular text-mist-faint">
                 {i.before} → {i.after}
               </span>
             </li>
@@ -137,11 +137,11 @@ function DiffView({ diff, when }: { diff: DeckDiff; when: string | null }) {
         </DiffGroup>
       )}
       {diff.reprinted.length > 0 && (
-        <DiffGroup title="Trocou de edição, idioma ou acabamento" tone="text-verdigris-300" icon={<Repeat className="size-4" />}>
+        <DiffGroup title="Trocou de edição, idioma ou acabamento" tone="text-astral-300" icon={<Repeat className="size-4" />}>
           {diff.reprinted.map((i) => (
             <li key={i.oracle_id}>
               {name(i)}
-              <span className="block text-footnote text-cream-faint">
+              <span className="block text-footnote text-mist-faint">
                 {i.before.map(printLabel).join(", ")} → {i.after.map(printLabel).join(", ")}
               </span>
             </li>
@@ -158,7 +158,7 @@ function DiffGroup({ title, tone, icon, children }: { title: string; tone: strin
       <p className={cx("mb-2 flex items-center gap-2 text-footnote font-semibold tracking-[0.06em] uppercase", tone)}>
         {icon} {title}
       </p>
-      <ul className="space-y-1 pl-6 text-subhead text-cream">{children}</ul>
+      <ul className="space-y-1 pl-6 text-subhead text-mist">{children}</ul>
     </div>
   );
 }

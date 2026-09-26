@@ -41,10 +41,10 @@ export default function ScanOptions({ state, onState }: { state: SessionState; o
     <div className="well space-y-3 px-4 py-3">
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <SetField code={codes[0] ?? null} busy={busy} onPick={pickSet} />
-        <label className="flex items-center gap-2 text-subhead text-cream-dim">
-          <Sparkles className="size-4 text-brass-400" aria-hidden="true" />
+        <label className="flex items-center gap-2 text-subhead text-mist-dim">
+          <Sparkles className="size-4 text-arcane-400" aria-hidden="true" />
           Avisar acima de
-          <span className="text-cream-faint">R$</span>
+          <span className="text-mist-faint">R$</span>
           <Input
             type="number"
             min={0}
@@ -62,10 +62,10 @@ export default function ScanOptions({ state, onState }: { state: SessionState; o
         </button>
       </div>
       {tips && (
-        <ul className="grid gap-1 text-footnote text-cream-faint sm:grid-cols-2">
+        <ul className="grid gap-1 text-footnote text-mist-faint sm:grid-cols-2">
           {TIPS.map((t) => (
             <li key={t} className="flex gap-2">
-              <span className="text-brass-500">•</span>
+              <span className="text-arcane-500">•</span>
               {t}
             </li>
           ))}
@@ -110,14 +110,14 @@ function SetField({ code, busy, onPick }: { code: string | null; busy: boolean; 
   }, [query, open]);
 
   return (
-    <div className="relative flex items-center gap-2 text-subhead text-cream-dim">
+    <div className="relative flex items-center gap-2 text-subhead text-mist-dim">
       <span>Coleção destas cartas:</span>
       {code ? (
-        <span className="flex h-9 items-center gap-2 rounded-full bg-brass-300/12 pr-1 pl-3 text-cream shadow-[inset_0_0_0_1px_rgb(235_198_116/0.3)]">
+        <span className="flex h-9 items-center gap-2 rounded-full bg-arcane-300/12 pr-1 pl-3 text-mist shadow-[inset_0_0_0_1px_rgb(185_164_255/0.3)]">
           {chosen?.icon_svg_uri && <img src={chosen.icon_svg_uri} alt="" className="size-4 opacity-80 invert-[.85]" />}
           <strong className="font-semibold">{code.toUpperCase()}</strong>
-          {chosen && <span className="hidden max-w-40 truncate text-cream-faint sm:inline">{chosen.name}</span>}
-          <button type="button" onClick={() => onPick(null)} disabled={busy} aria-label="Aceitar qualquer coleção" className="grid size-7 place-items-center rounded-full text-cream-faint hover:bg-cream/10 hover:text-cream">
+          {chosen && <span className="hidden max-w-40 truncate text-mist-faint sm:inline">{chosen.name}</span>}
+          <button type="button" onClick={() => onPick(null)} disabled={busy} aria-label="Aceitar qualquer coleção" className="grid size-7 place-items-center rounded-full text-mist-faint hover:bg-mist/10 hover:text-mist">
             <X className="size-4" />
           </button>
         </span>
@@ -129,7 +129,7 @@ function SetField({ code, busy, onPick }: { code: string | null; busy: boolean; 
       {open && !code && (
         <div className="glass-float popover absolute top-full left-0 z-30 mt-2 w-[min(22rem,80vw)] p-2" data-state="open" style={{ "--origin": "top left" } as CSSProperties}>
           <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-cream-faint" />
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-mist-faint" />
             <Input ref={input} autoFocus value={text} onChange={(e) => setText(e.target.value)} placeholder="Nome ou sigla da coleção" className="pl-9" />
             {loading && <Spinner className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2" />}
           </div>
@@ -143,17 +143,17 @@ function SetField({ code, busy, onPick }: { code: string | null; busy: boolean; 
                     setText("");
                     onPick(s.code);
                   }}
-                  className={cx("flex min-h-11 w-full items-center gap-2 rounded-sm px-3 text-left hover:bg-cream/8")}
+                  className={cx("flex min-h-11 w-full items-center gap-2 rounded-sm px-3 text-left hover:bg-mist/8")}
                 >
                   {s.icon_svg_uri && <img src={s.icon_svg_uri} alt="" className="size-4 shrink-0 opacity-80 invert-[.85]" />}
-                  <span className="min-w-0 flex-1 truncate text-cream">{s.name}</span>
-                  <span className="tabular shrink-0 text-caption text-cream-faint">
+                  <span className="min-w-0 flex-1 truncate text-mist">{s.name}</span>
+                  <span className="tabular shrink-0 text-caption text-mist-faint">
                     {s.code.toUpperCase()} · {s.released_at?.slice(0, 4)}
                   </span>
                 </button>
               </li>
             ))}
-            {!loading && !sets.length && <li className="px-2 py-1.5 text-cream-faint">Nenhuma coleção com esse nome.</li>}
+            {!loading && !sets.length && <li className="px-2 py-1.5 text-mist-faint">Nenhuma coleção com esse nome.</li>}
           </ul>
         </div>
       )}

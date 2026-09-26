@@ -18,12 +18,12 @@ type CameraState = "off" | "opening" | "on" | "denied" | "unsupported" | "failed
 const PHONE = "(max-width: 639px)";
 
 const DOT: Record<string, string> = {
-  neutral: "bg-cream-faint",
-  brass: "bg-brass-300 animate-pulse",
+  neutral: "bg-mist-faint",
+  arcane: "bg-arcane-300 animate-pulse",
   ok: "bg-moss-400",
   warn: "bg-ember-400",
   bad: "bg-wine-400",
-  info: "bg-verdigris-400",
+  info: "bg-astral-400",
 };
 
 /** Câmera ao vivo: passe uma carta por vez; cada carta parada vira uma leitura enviada ao servidor. */
@@ -202,7 +202,7 @@ export default function LiveScanner({
   }, [immersive, camera]);
 
   const view = (
-    <div ref={shell} className={immersive ? "fixed inset-0 z-50 flex flex-col bg-oak-950" : "space-y-4"}>
+    <div ref={shell} className={immersive ? "fixed inset-0 z-50 flex flex-col bg-night-950" : "space-y-4"}>
       <div
         className={cx(
           "viewfinder",
@@ -224,17 +224,17 @@ export default function LiveScanner({
             <div className="absolute top-[max(env(safe-area-inset-top),12px)] right-3 left-3 z-10 flex items-start justify-between gap-2">
               <div className="flex items-center gap-2">
                 {immersive && !busy && (
-                  <IconButton label="Fechar câmera" onClick={closeCamera} className="rounded-full bg-oak-950/70 text-cream shadow-[inset_0_0_0_1px_rgb(255_226_184/0.14)] backdrop-blur-md">
+                  <IconButton label="Fechar câmera" onClick={closeCamera} className="rounded-full bg-night-950/70 text-mist shadow-[inset_0_0_0_1px_rgb(214_204_255/0.14)] backdrop-blur-md">
                     <X className="size-5" />
                   </IconButton>
                 )}
                 {(counted !== null || running) && (
-                  <span className="flex h-11 items-center gap-1.5 rounded-full bg-oak-950/70 px-4 text-subhead text-cream-dim shadow-[inset_0_0_0_1px_rgb(255_226_184/0.14)] backdrop-blur-md">
-                    <strong className="tabular text-title-3 font-semibold text-cream">{counted ?? 0}</strong> {counted === 1 ? "carta" : "cartas"}
+                  <span className="flex h-11 items-center gap-1.5 rounded-full bg-night-950/70 px-4 text-subhead text-mist-dim shadow-[inset_0_0_0_1px_rgb(214_204_255/0.14)] backdrop-blur-md">
+                    <strong className="tabular text-title-3 font-semibold text-mist">{counted ?? 0}</strong> {counted === 1 ? "carta" : "cartas"}
                   </span>
                 )}
               </div>
-              <div className="flex gap-1 rounded-full bg-oak-950/70 p-0.5 text-cream shadow-[inset_0_0_0_1px_rgb(255_226_184/0.14)] backdrop-blur-md">
+              <div className="flex gap-1 rounded-full bg-night-950/70 p-0.5 text-mist shadow-[inset_0_0_0_1px_rgb(214_204_255/0.14)] backdrop-blur-md">
                 {immersive && cameras.length > 1 && (
                   <IconButton label="Trocar de câmera" onClick={nextCamera} disabled={busy} title={busy ? "Termine a leitura para trocar de câmera" : undefined} className="rounded-full">
                     <SwitchCamera className="size-[18px]" />
@@ -250,10 +250,10 @@ export default function LiveScanner({
                 </IconButton>
               </div>
             </div>
-            <div className="absolute inset-x-3 bottom-3 z-10 flex items-center gap-3 rounded-lg bg-oak-950/75 px-4 py-3 shadow-[inset_0_0_0_1px_rgb(255_226_184/0.12)] backdrop-blur-md" role="status" aria-live="polite">
+            <div className="absolute inset-x-3 bottom-3 z-10 flex items-center gap-3 rounded-lg bg-night-950/75 px-4 py-3 shadow-[inset_0_0_0_1px_rgb(214_204_255/0.12)] backdrop-blur-md" role="status" aria-live="polite">
               <span className={cx("size-2.5 shrink-0 rounded-full", DOT[tip.tone])} />
-              <span className="text-subhead text-cream">{tip.text}</span>
-              {running && scanner.fps > 0 && <span className="tabular ml-auto shrink-0 text-caption text-cream-faint">{scanner.fps} q/s</span>}
+              <span className="text-subhead text-mist">{tip.text}</span>
+              {running && scanner.fps > 0 && <span className="tabular ml-auto shrink-0 text-caption text-mist-faint">{scanner.fps} q/s</span>}
             </div>
           </>
         ) : (
@@ -261,7 +261,7 @@ export default function LiveScanner({
         )}
       </div>
 
-      <div className={cx(immersive ? "bar-glass space-y-3 px-4 pt-4 pb-[max(env(safe-area-inset-bottom),16px)] shadow-[inset_0_1px_0_rgb(255_226_184/0.12)]" : "space-y-4")}>
+      <div className={cx(immersive ? "bar-glass space-y-3 px-4 pt-4 pb-[max(env(safe-area-inset-bottom),16px)] shadow-[inset_0_1px_0_rgb(214_204_255/0.12)]" : "space-y-4")}>
         {camera === "on" && (
           <div className="flex flex-wrap items-center gap-3">
             {running ? (
@@ -291,8 +291,8 @@ export default function LiveScanner({
               </Button>
             )}
             {!immersive && cameras.length > 1 && (
-              <label className="flex min-w-0 items-center gap-2 text-footnote text-cream-faint sm:ml-auto">
-                <Camera className="size-4 shrink-0 text-brass-400" aria-hidden="true" />
+              <label className="flex min-w-0 items-center gap-2 text-footnote text-mist-faint sm:ml-auto">
+                <Camera className="size-4 shrink-0 text-arcane-400" aria-hidden="true" />
                 <span className="sr-only">Câmera</span>
                 <Select
                   value={activeId ?? ""}
@@ -310,11 +310,11 @@ export default function LiveScanner({
               </label>
             )}
             {!immersive && size.w > 0 && (
-              <span className="tabular text-footnote text-cream-faint" title="resolução que a câmera está entregando">
+              <span className="tabular text-footnote text-mist-faint" title="resolução que a câmera está entregando">
                 {size.w}×{size.h}
               </span>
             )}
-            <p className={cx("text-footnote text-cream-faint", immersive && "basis-full text-center")}>
+            <p className={cx("text-footnote text-mist-faint", immersive && "basis-full text-center")}>
               {scanner.phase === "loading" && firstLoad
                 ? "Na primeira vez o leitor de imagem é baixado (cerca de 13 MB)."
                 : scanner.pending > 0
@@ -327,11 +327,11 @@ export default function LiveScanner({
         )}
 
         {scanner.treasure && camera === "on" && (
-          <div className="animate-pop relative z-20 flex items-center gap-3 rounded-lg bg-brass-500/14 p-3 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.45),0_12px_32px_-12px_rgb(216_166_76/0.5)]" role="status">
-            <img src={scanner.treasure.preview} alt="" className="card-img aspect-[488/680] w-11 shrink-0 object-cover ring-1 ring-brass-400/60" />
-            <p className="min-w-0 flex-1 text-subhead text-cream">
+          <div className="animate-pop relative z-20 flex items-center gap-3 rounded-lg bg-arcane-500/14 p-3 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.45),0_12px_32px_-12px_rgb(140_110_245/0.5)]" role="status">
+            <img src={scanner.treasure.preview} alt="" className="card-img aspect-[488/680] w-11 shrink-0 object-cover ring-1 ring-arcane-400/60" />
+            <p className="min-w-0 flex-1 text-subhead text-mist">
               <span className="font-serif font-semibold">{scanner.treasure.name}</span>
-              <span className="block text-subhead text-brass-200">Carta valiosa · {brl(scanner.treasure.brl)}</span>
+              <span className="block text-subhead text-arcane-200">Carta valiosa · {brl(scanner.treasure.brl)}</span>
             </p>
             <IconButton label="Fechar aviso" onClick={scanner.dismissTreasure} className="shrink-0">
               <X className="size-4" />
@@ -344,7 +344,7 @@ export default function LiveScanner({
         )}
 
         {scanner.error && (
-          <p className="rounded-md bg-wine-600/14 px-4 py-3 text-subhead text-wine-300 shadow-[inset_0_0_0_1px_rgb(214_96_79/0.35)]" role="alert">
+          <p className="rounded-md bg-wine-600/14 px-4 py-3 text-subhead text-wine-300 shadow-[inset_0_0_0_1px_rgb(240_96_127/0.35)]" role="alert">
             {scanner.error}
           </p>
         )}
@@ -364,15 +364,15 @@ function MissPanel({ miss, dropUp, onPick, onDismiss }: { miss: Miss; dropUp: bo
   const [err, setErr] = useState<string | null>(null);
   return (
     // z-20: a animação cria um contexto de empilhamento; sem isso a lista de nomes fica atrás das dicas do visor
-    <div className="animate-rise relative z-20 flex gap-3 rounded-lg bg-brass-500/10 p-3 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.32)]" role="alert">
-      <img src={miss.preview} alt="" className="card-img aspect-[488/680] w-12 shrink-0 self-start object-cover ring-1 ring-brass-400/40 sm:w-14" />
+    <div className="animate-rise relative z-20 flex gap-3 rounded-lg bg-arcane-500/10 p-3 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.32)]" role="alert">
+      <img src={miss.preview} alt="" className="card-img aspect-[488/680] w-12 shrink-0 self-start object-cover ring-1 ring-arcane-400/40 sm:w-14" />
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-headline font-semibold text-cream">
+            <p className="text-headline font-semibold text-mist">
               {miss.reason === "back" ? "Esse é o verso da carta" : "Não reconheci essa carta"}
             </p>
-            <p className="mt-0.5 text-footnote text-cream-dim">
+            <p className="mt-0.5 text-footnote text-mist-dim">
               {miss.reason === "back" ? "Vire a carta e mostre de novo, ou digite o nome." : "Mostre de novo mais perto e sem reflexo, ou digite o nome."}
             </p>
           </div>
@@ -394,7 +394,7 @@ function MissPanel({ miss, dropUp, onPick, onDismiss }: { miss: Miss; dropUp: bo
             }
           }}
         />
-        {busy && <p className="text-footnote text-cream-faint">Anotando…</p>}
+        {busy && <p className="text-footnote text-mist-faint">Anotando…</p>}
         {err && <p className="text-footnote text-ember-300">{err}</p>}
       </div>
     </div>
@@ -445,9 +445,9 @@ function CameraMessage({ state, onOpen }: { state: CameraState; onOpen: () => vo
 function Message({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
   return (
     <div className="relative z-10 flex max-w-sm flex-col items-center px-6 text-center">
-      {icon && <div className="mb-4 grid size-16 place-items-center rounded-full bg-brass-300/10 text-brass-300 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.2)]">{icon}</div>}
-      <p className="font-display text-title-2 font-semibold text-cream">{title}</p>
-      <div className="mt-2 flex flex-col items-center text-subhead text-cream-dim">{children}</div>
+      {icon && <div className="mb-4 grid size-16 place-items-center rounded-full bg-arcane-300/10 text-arcane-300 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.2)]">{icon}</div>}
+      <p className="font-display text-title-2 font-semibold text-mist">{title}</p>
+      <div className="mt-2 flex flex-col items-center text-subhead text-mist-dim">{children}</div>
     </div>
   );
 }

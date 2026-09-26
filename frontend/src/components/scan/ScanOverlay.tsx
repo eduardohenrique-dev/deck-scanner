@@ -5,7 +5,7 @@ import type { Flash } from "./useScanner";
 
 /** A moldura acende junto com o clarão da borda do visor (mesmas cores do .edge-flash). */
 const FLASH: Record<Flash["tone"], { stroke: string; fill: string }> = {
-  ok: { stroke: "#7fcf5a", fill: "rgb(127 207 90 / 0.12)" },
+  ok: { stroke: "#6ee08f", fill: "rgb(110 224 143 / 0.12)" },
   gold: { stroke: "#f2c554", fill: "rgb(242 197 84 / 0.12)" },
 };
 
@@ -32,7 +32,7 @@ export function guidance(r: FrameReport | null, running: boolean): Guidance {
   if (r.rejected) return { text: "Não reconheci — aproxime a carta ou adicione pelo nome", tone: "warn" };
   if (r.emitted) return { text: "Lida. Tire a carta do quadro e mostre a próxima", tone: "ok" };
   if (r.quality && r.quality.glare > 0.03) return { text: "Reflexo na carta — incline um pouco", tone: "warn" };
-  return { text: "Lendo a carta…", tone: "brass" };
+  return { text: "Lendo a carta…", tone: "arcane" };
 }
 
 /** Carta de 63 × 88 com folga em volta: em cima fica o contador, embaixo o aviso do visor. */
@@ -62,7 +62,7 @@ export default function ScanOverlay({ flash }: { flash: Flash["tone"] | null }) 
         height={CARD_H}
         rx={CARD_W * 0.045}
         fill={lit ? lit.fill : "none"}
-        stroke={lit ? lit.stroke : "#efe3c8"}
+        stroke={lit ? lit.stroke : "#ece8ff"}
         strokeOpacity={lit ? 1 : 0.45}
         strokeWidth={lit ? 5 : 2.5}
         strokeDasharray={lit ? undefined : "14 11"}

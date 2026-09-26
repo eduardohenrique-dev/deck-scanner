@@ -59,11 +59,11 @@ export default function AddCardSheet({ state, onState, onClose }: { state: Sessi
             <CardImage card={card} className="w-28 shrink-0" eager />
             <div className="min-w-0 space-y-3">
               <div>
-                <p className="font-serif text-title-3 font-semibold text-cream">{cardName(card)}</p>
-                <p className="text-footnote text-cream-faint">
+                <p className="font-serif text-title-3 font-semibold text-mist">{cardName(card)}</p>
+                <p className="text-footnote text-mist-faint">
                   {card.set_name} · #{card.collector_number} · {card.lang.toUpperCase()}
                 </p>
-                <button type="button" onClick={() => setCard(null)} className="min-h-11 text-footnote font-semibold text-brass-300 hover:underline">
+                <button type="button" onClick={() => setCard(null)} className="min-h-11 text-footnote font-semibold text-arcane-300 hover:underline">
                   Trocar carta
                 </button>
               </div>

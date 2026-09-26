@@ -98,10 +98,10 @@ function Columns(props: Props) {
                   {r < view.rounds.length - 1 && (
                     <span
                       aria-hidden="true"
-                      className={cx("absolute -right-5 w-5 border-cream/15", i % 2 === 0 ? "top-1/2 h-1/2 rounded-tr-md border-t border-r" : "bottom-1/2 h-1/2 rounded-br-md border-r border-b")}
+                      className={cx("absolute -right-5 w-5 border-mist/15", i % 2 === 0 ? "top-1/2 h-1/2 rounded-tr-md border-t border-r" : "bottom-1/2 h-1/2 rounded-br-md border-r border-b")}
                     />
                   )}
-                  {r > 0 && <span aria-hidden="true" className="absolute top-1/2 -left-5 w-5 border-t border-cream/15" />}
+                  {r > 0 && <span aria-hidden="true" className="absolute top-1/2 -left-5 w-5 border-t border-mist/15" />}
                   <div className="w-full">
                     <SlotCard slot={slot} {...props} compact />
                   </div>
@@ -125,14 +125,14 @@ function ChampionPlate({ id, players }: { id: string | null; players: Map<string
       className={cx(
         "rounded-lg p-5 text-center transition-[box-shadow,background] duration-700",
         p
-          ? "animate-pop bg-[radial-gradient(120%_90%_at_50%_0%,rgb(235_198_116/0.3),transparent_70%),var(--gloss),rgb(40_29_21/0.6)] shadow-[inset_0_1px_0_rgb(255_240_210/0.25),inset_0_0_0_1px_rgb(235_198_116/0.4),0_20px_50px_-20px_rgb(216_166_76/0.5)]"
+          ? "animate-pop bg-[radial-gradient(120%_90%_at_50%_0%,rgb(185_164_255/0.3),transparent_70%),var(--gloss),rgb(27_21_66/0.6)] shadow-[inset_0_1px_0_rgb(230_225_255/0.25),inset_0_0_0_1px_rgb(185_164_255/0.4),0_20px_50px_-20px_rgb(140_110_245/0.5)]"
           : "well",
       )}
     >
-      <Crown size={34} className={cx("mx-auto", p ? "text-brass-300 drop-shadow-[0_2px_8px_rgb(235_198_116/0.5)]" : "text-cream-faint")} />
-      <p className={cx("eyebrow mt-1", p && "text-brass-300")}>{p ? "Campeão" : "A definir"}</p>
-      <p className={cx("mt-1 font-display text-title-2 font-semibold", p ? "text-cream" : "text-cream-faint")}>{p?.name ?? "—"}</p>
-      {p?.deck?.name && <p className="mt-0.5 truncate text-footnote text-cream-dim">{p.deck.name}</p>}
+      <Crown size={34} className={cx("mx-auto", p ? "text-arcane-300 drop-shadow-[0_2px_8px_rgb(185_164_255/0.5)]" : "text-mist-faint")} />
+      <p className={cx("eyebrow mt-1", p && "text-arcane-300")}>{p ? "Campeão" : "A definir"}</p>
+      <p className={cx("mt-1 font-display text-title-2 font-semibold", p ? "text-mist" : "text-mist-faint")}>{p?.name ?? "—"}</p>
+      {p?.deck?.name && <p className="mt-0.5 truncate text-footnote text-mist-dim">{p.deck.name}</p>}
     </div>
   );
 }
@@ -152,16 +152,16 @@ function SlotCard({ slot, players, bestOf, onScore, compact }: Props & { slot: B
         className={cx(
           "flex items-center gap-2.5 rounded-sm px-3",
           compact ? "h-10" : "h-12",
-          won && "bg-brass-300/10 shadow-[inset_2px_0_0_var(--color-brass-300)]",
+          won && "bg-arcane-300/10 shadow-[inset_2px_0_0_var(--color-arcane-300)]",
           lost && "opacity-55",
         )}
       >
-        <span className="tabular w-5 text-center text-caption font-semibold text-cream-faint">{s?.seed ?? ""}</span>
-        <span className={cx("min-w-0 flex-1 truncate text-subhead", s ? (won ? "font-semibold text-cream" : "text-cream-dim") : "text-cream-faint italic")}>
+        <span className="tabular w-5 text-center text-caption font-semibold text-mist-faint">{s?.seed ?? ""}</span>
+        <span className={cx("min-w-0 flex-1 truncate text-subhead", s ? (won ? "font-semibold text-mist" : "text-mist-dim") : "text-mist-faint italic")}>
           {p?.name ?? (slot.bye ? "Folga" : "A definir")}
         </span>
         {p?.deck?.identity?.length ? <IdentityPips colors={p.deck.identity} size={12} /> : null}
-        {games !== null && <span className={cx("tabular w-4 text-right font-bold", won ? "text-brass-200" : "text-cream-faint")}>{games}</span>}
+        {games !== null && <span className={cx("tabular w-4 text-right font-bold", won ? "text-arcane-200" : "text-mist-faint")}>{games}</span>}
       </div>
     );
   };
@@ -177,7 +177,7 @@ function SlotCard({ slot, players, bestOf, onScore, compact }: Props & { slot: B
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className={cx("well block w-full p-1 text-left transition-[box-shadow] duration-200 hover:shadow-[inset_0_0_0_1px_rgb(235_198_116/0.45)]", !slot.result && "shadow-[inset_0_0_0_1px_rgb(235_198_116/0.25)]")}
+          className={cx("well block w-full p-1 text-left transition-[box-shadow] duration-200 hover:shadow-[inset_0_0_0_1px_rgb(185_164_255/0.45)]", !slot.result && "shadow-[inset_0_0_0_1px_rgb(185_164_255/0.25)]")}
           aria-label={`Lançar placar: ${players.get(slot.a!.playerId)?.name} contra ${players.get(slot.b!.playerId)?.name}`}
         >
           {body}
@@ -216,7 +216,7 @@ function BracketScore({ slot, a, b, bestOf, onClose, onScore }: { slot: BracketS
         </>
       }
     >
-      <div className="mb-2 flex justify-between px-1 text-caption text-cream-faint" aria-hidden="true">
+      <div className="mb-2 flex justify-between px-1 text-caption text-mist-faint" aria-hidden="true">
         <span>← {a}</span>
         <span>{b} →</span>
       </div>

@@ -86,7 +86,7 @@ export default function EntryList({ entries, detections = [], format, game, onSt
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-cream-faint" />
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-mist-faint" />
           <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filtrar por nome, tipo ou coleção" className="pl-9" aria-label="Filtrar cartas" />
         </div>
         <Segmented
@@ -107,13 +107,13 @@ export default function EntryList({ entries, detections = [], format, game, onSt
       </div>
 
       {sections.length === 0 ? (
-        <p className="glass px-4 py-8 text-center text-subhead text-cream-faint">Nada com esse filtro.</p>
+        <p className="glass px-4 py-8 text-center text-subhead text-mist-faint">Nada com esse filtro.</p>
       ) : (
         sections.map((s) => (
           <section key={s.key} className="glass overflow-hidden">
-            <h3 className="panel-head justify-between text-brass-300">
+            <h3 className="panel-head justify-between text-arcane-300">
               <span>{s.label}</span>
-              <span className="tabular tracking-normal text-cream-faint">{s.count}</span>
+              <span className="tabular tracking-normal text-mist-faint">{s.count}</span>
             </h3>
             <ul>
               {s.items.map((e) => (

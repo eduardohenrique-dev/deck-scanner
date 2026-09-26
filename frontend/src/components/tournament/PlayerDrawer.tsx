@@ -25,7 +25,7 @@ export default function PlayerDrawer({ t, playerId, onClose }: { t: Tournament; 
         <div className="space-y-6">
           <div className="space-y-2">
             {player.deck && (
-              <p className="flex items-center gap-2 text-headline text-cream-dim">
+              <p className="flex items-center gap-2 text-headline text-mist-dim">
                 {player.deck.identity?.length ? <IdentityPips colors={player.deck.identity} size={16} /> : null}
                 {player.deck.name}
               </p>
@@ -40,8 +40,8 @@ export default function PlayerDrawer({ t, playerId, onClose }: { t: Tournament; 
                 pods ? ["V–E–D", podRecord(row.wins, row.draws, row.losses)] : ["V–D–E", record(row.wins, row.losses, row.draws)],
               ].map(([k, v]) => (
                 <div key={k} className="well px-4 py-3">
-                  <dt className="text-caption text-cream-faint">{k}</dt>
-                  <dd className="tabular mt-0.5 text-title-3 font-semibold text-cream">{v}</dd>
+                  <dt className="text-caption text-mist-faint">{k}</dt>
+                  <dd className="tabular mt-0.5 text-title-3 font-semibold text-mist">{v}</dd>
                 </div>
               ))}
             </dl>
@@ -49,7 +49,7 @@ export default function PlayerDrawer({ t, playerId, onClose }: { t: Tournament; 
           <section>
             <h3 className="eyebrow mb-2">Partidas</h3>
             {games.length ? (
-              <ol className="well divide-y divide-cream/6">
+              <ol className="well divide-y divide-mist/6">
                 {games.map((g) => {
                   const o = (g.pod ? POD_OUTCOME : OUTCOME)[g.outcome];
                   const who = g.pod
@@ -60,19 +60,19 @@ export default function PlayerDrawer({ t, playerId, onClose }: { t: Tournament; 
                   const gained = g.outcome === "win" ? pts.win : g.outcome === "draw" ? pts.draw : pts.loss;
                   return (
                     <li key={`${g.round}-${g.opponent ?? g.table}`} className="flex items-center gap-3 px-4 py-3">
-                      <span className="tabular w-8 shrink-0 text-footnote font-semibold text-cream-faint">R{g.round}</span>
+                      <span className="tabular w-8 shrink-0 text-footnote font-semibold text-mist-faint">R{g.round}</span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-subhead text-cream">{who}</span>
-                        {g.table && <span className="block text-caption text-cream-faint">Mesa {g.table}</span>}
+                        <span className="block truncate text-subhead text-mist">{who}</span>
+                        {g.table && <span className="block text-caption text-mist-faint">Mesa {g.table}</span>}
                       </span>
-                      <span className={cx("tabular text-subhead font-semibold", g.outcome === "win" || g.outcome === "bye" ? "text-cream" : "text-cream-dim")}>{g.pod ? `+${gained}` : scoreLabel(g.score)}</span>
+                      <span className={cx("tabular text-subhead font-semibold", g.outcome === "win" || g.outcome === "bye" ? "text-mist" : "text-mist-dim")}>{g.pod ? `+${gained}` : scoreLabel(g.score)}</span>
                       <Tag tone={o.tone}>{o.label}</Tag>
                     </li>
                   );
                 })}
               </ol>
             ) : (
-              <p className="text-subhead text-cream-faint">Ainda sem partidas com placar.</p>
+              <p className="text-subhead text-mist-faint">Ainda sem partidas com placar.</p>
             )}
           </section>
         </div>

@@ -137,9 +137,9 @@ export default function ScanSession({ id }: { id: string }) {
       <AttentionList state={state} apply={apply} onShowCapture={(c, detectionId) => setViewer({ capture: c, detectionId })} />
       <section className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-title-3 font-semibold text-cream">A lista</h2>
+          <h2 className="font-display text-title-3 font-semibold text-mist">A lista</h2>
           <div className="flex items-center gap-3">
-            <span className="tabular text-footnote text-cream-faint">{count === 1 ? "1 carta" : `${count} cartas`}</span>
+            <span className="tabular text-footnote text-mist-faint">{count === 1 ? "1 carta" : `${count} cartas`}</span>
             <Button size="sm" variant="secondary" icon={<Plus className="size-4" />} onClick={() => setAdding(true)}>
               Adicionar carta
             </Button>
@@ -190,7 +190,7 @@ export default function ScanSession({ id }: { id: string }) {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 flex-1 space-y-2 max-sm:basis-full">
           <p className="eyebrow">{kicker}</p>
-          <h1 className="font-display text-title-1 font-semibold text-cream sm:text-display">
+          <h1 className="font-display text-title-2 font-semibold text-mist sm:text-display">
             <InlineEdit
               label="Nome do scan"
               value={session.name ?? ""}
@@ -199,7 +199,7 @@ export default function ScanSession({ id }: { id: string }) {
               className="font-display"
             />
           </h1>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-footnote text-cream-faint">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-footnote text-mist-faint">
             <Tag tone={busy ? "live" : status.tone}>{busy ? "Capturando" : status.label}</Tag>
             {!isCheck && !isCollection ? (
               <span className="inline-block w-56">
@@ -216,7 +216,7 @@ export default function ScanSession({ id }: { id: string }) {
             )}
             <span>Criado {relativeDay(session.created_at)}</span>
             {session.target_deck_id && (
-              <Link to={`/decks/${session.target_deck_id}`} className="text-brass-300 hover:underline">
+              <Link to={`/decks/${session.target_deck_id}`} className="text-arcane-300 hover:underline">
                 Deck {state.check?.available ? state.check.deck.name : (session.target_deck_name ?? "")}
               </Link>
             )}
@@ -256,8 +256,8 @@ export default function ScanSession({ id }: { id: string }) {
           <div className={cx(tab !== "capture" && "hidden")}>{capture}</div>
           {tab === "capture" && entries.length > 0 && (
             <button type="button" onClick={() => setTab("list")} className="glass flex min-h-14 w-full items-center justify-between px-4 py-3 text-left transition-transform duration-500 ease-spring active:scale-[0.98] active:duration-100">
-              <span className="text-headline font-semibold text-cream">{count === 1 ? "1 carta na lista" : `${count} cartas na lista`}</span>
-              <span className="inline-flex items-center gap-1 text-subhead font-semibold text-brass-300">
+              <span className="text-headline font-semibold text-mist">{count === 1 ? "1 carta na lista" : `${count} cartas na lista`}</span>
+              <span className="inline-flex items-center gap-1 text-subhead font-semibold text-arcane-300">
                 Revisar <ArrowRight className="size-4" />
               </span>
             </button>

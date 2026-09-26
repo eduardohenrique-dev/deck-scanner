@@ -47,7 +47,7 @@ function dismiss(id: number) {
 const ICON = {
   ok: { icon: Check, className: "bg-moss-600/40 text-moss-300" },
   bad: { icon: TriangleAlert, className: "bg-wine-600/40 text-wine-300" },
-  info: { icon: Info, className: "bg-verdigris-600/40 text-verdigris-200" },
+  info: { icon: Info, className: "bg-astral-600/40 text-astral-200" },
 };
 
 export function Toaster() {
@@ -72,7 +72,7 @@ export function Toaster() {
             <span className={cx("grid size-7 shrink-0 place-items-center rounded-full", className)}>
               <Icon className="size-4 [--icon-stroke:2.2]" />
             </span>
-            <p className="min-w-0 flex-1 text-subhead text-cream">{t.text}</p>
+            <p className="min-w-0 flex-1 text-subhead text-mist">{t.text}</p>
             {t.action && (
               <button
                 type="button"

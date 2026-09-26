@@ -1,4 +1,4 @@
-import type { SVGProps } from "react";
+import { useId, type SVGProps } from "react";
 
 /**
  * Ícones da casa, desenhados para o tema (grade 24, traço 1,75 — o mesmo do lucide no app). Os genéricos (+, ×, busca…) vêm do lucide.
@@ -177,16 +177,36 @@ export function Hourglass(props: P) {
   );
 }
 
-/** Marca: carta com lupa sobre a mesa (o reflexo na lente é o brilho do vidro do app). */
+/**
+ * Marca (a logo): o olho arcano que lê a carta. Íris violeta com pupila em fenda, a faísca no alto e o feixe
+ * de luz descendo até a carta deitada em perspectiva. Os degradês usam ids únicos por instância.
+ */
 export function BrandMark({ size = 30, ...rest }: P) {
+  const id = useId().replace(/:/g, "");
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" {...rest}>
-      <rect x="5" y="3.5" width="15" height="21" rx="2.4" transform="rotate(-9 12.5 14)" fill="#f2e8d5" stroke="#8d6529" strokeWidth="1.2" />
-      <rect x="7.8" y="6.6" width="9.4" height="7.2" rx="1" transform="rotate(-9 12.5 14)" fill="#463524" />
-      <path d="M8.9 16.8l7.4-1.2M9.3 19.2l5-.8" stroke="#8d6529" strokeWidth="1.1" strokeLinecap="round" />
-      <circle cx="20.5" cy="18.5" r="6" fill="#16100c" fillOpacity="0.5" stroke="#ebc674" strokeWidth="2" />
-      <path d="M17.6 16.2a3.6 3.6 0 0 1 3.6-1.4" stroke="#fbeccb" strokeOpacity="0.7" strokeWidth="1.2" strokeLinecap="round" />
-      <path d="m25 23 4 4" stroke="#ebc674" strokeWidth="2.6" strokeLinecap="round" />
+      <defs>
+        <radialGradient id={`${id}i`} cx="0.42" cy="0.38" r="0.7">
+          <stop offset="0" stopColor="#efe9ff" />
+          <stop offset="0.55" stopColor="#b9a4ff" />
+          <stop offset="1" stopColor="#7c5cf0" />
+        </radialGradient>
+        <linearGradient id={`${id}b`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#b9a4ff" stopOpacity="0.55" />
+          <stop offset="1" stopColor="#7c5cf0" stopOpacity="0.08" />
+        </linearGradient>
+      </defs>
+      {/* faísca */}
+      <path d="M16 .6l.45 1.25L17.7 2.3l-1.25.45L16 4l-.45-1.25L14.3 2.3l1.25-.45Z" fill="#d9ccff" />
+      {/* feixe */}
+      <path d="M13.3 14.6h5.4l3.3 6.4H10Z" fill={`url(#${id}b)`} />
+      {/* olho */}
+      <path d="M3.6 10.2Q16 1.6 28.4 10.2 16 18.8 3.6 10.2Z" fill="#160f33" stroke="#d9ccff" strokeWidth="1.3" strokeLinejoin="round" />
+      <circle cx="16" cy="10.2" r="4.4" fill={`url(#${id}i)`} />
+      <path d="M16 6.3q1.35 3.9 0 7.8-1.35-3.9 0-7.8Z" fill="#07031d" />
+      {/* carta deitada */}
+      <path d="M9.6 20.6h12.8l3.6 8.3H6Z" fill="#1b1450" stroke="#9a7ff7" strokeWidth="1.3" strokeLinejoin="round" />
+      <ellipse cx="16" cy="24.4" rx="4.4" ry="1.7" stroke="#b9a4ff" strokeWidth="1" fill="#b9a4ff" fillOpacity="0.12" />
     </svg>
   );
 }

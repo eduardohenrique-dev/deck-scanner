@@ -67,10 +67,10 @@ export default function PodCard({
   };
 
   return (
-    <article className={cx("glass flex flex-col overflow-hidden", result && !editing && "shadow-[inset_0_0_0_1px_rgb(143_189_98/0.18),var(--shadow-raised)]")} aria-label={title ?? `Mesa ${pod.table}`}>
+    <article className={cx("glass flex flex-col overflow-hidden", result && !editing && "shadow-[inset_0_0_0_1px_rgb(95_207_138/0.18),var(--shadow-raised)]")} aria-label={title ?? `Mesa ${pod.table}`}>
       <header className="flex items-center gap-3 px-4 pt-4 pb-2">
         <Plate>{final ? <Crown size={16} /> : pod.table}</Plate>
-        <h3 className="text-headline font-semibold text-cream">{title ?? `Mesa ${pod.table}`}</h3>
+        <h3 className="text-headline font-semibold text-mist">{title ?? `Mesa ${pod.table}`}</h3>
         <span className="ml-auto flex items-center gap-2">
           {repeats > 0 && (
             <Tag tone="warn" title="Pares desta mesa que já jogaram juntos: com poucos jogadores é inevitável repetir">
@@ -83,7 +83,7 @@ export default function PodCard({
               <Check className="size-3.5 [--icon-stroke:2.4]" /> Lançada
             </Tag>
           ) : (
-            !repeats && !pod.manual && <span className="text-footnote text-cream-faint">{pod.players.length} jogadores</span>
+            !repeats && !pod.manual && <span className="text-footnote text-mist-faint">{pod.players.length} jogadores</span>
           )}
         </span>
       </header>
@@ -96,16 +96,16 @@ export default function PodCard({
           const body = (
             <>
               <span className="min-w-0 flex-1">
-                <span className={cx("flex items-center gap-1.5 truncate text-headline font-semibold", outcome === "loss" ? "text-cream-dim" : "text-cream")}>
+                <span className={cx("flex items-center gap-1.5 truncate text-headline font-semibold", outcome === "loss" ? "text-mist-dim" : "text-mist")}>
                   <span className="truncate">{p?.name ?? "?"}</span>
-                  {outcome === "win" && <Crown size={16} className="shrink-0 text-brass-300" aria-label="venceu" />}
+                  {outcome === "win" && <Crown size={16} className="shrink-0 text-arcane-300" aria-label="venceu" />}
                 </span>
-                <span className="mt-0.5 flex min-w-0 items-center gap-2 text-footnote text-cream-faint">
+                <span className="mt-0.5 flex min-w-0 items-center gap-2 text-footnote text-mist-faint">
                   {p?.deck?.identity?.length ? <IdentityPips colors={p.deck.identity} size={13} /> : null}
                   <span className="truncate">{[p?.deck?.name, points?.get(id) !== undefined ? `${points.get(id)} pts` : null].filter(Boolean).join(" · ")}</span>
                 </span>
               </span>
-              {outcome && <span className={cx("tabular shrink-0 text-headline font-bold", outcome === "loss" ? "text-cream-faint" : outcome === "win" ? "text-brass-200" : "text-cream")}>{gained(id)}</span>}
+              {outcome && <span className={cx("tabular shrink-0 text-headline font-bold", outcome === "loss" ? "text-mist-faint" : outcome === "win" ? "text-arcane-200" : "text-mist")}>{gained(id)}</span>}
             </>
           );
           if (swap)
@@ -115,7 +115,7 @@ export default function PodCard({
                   type="button"
                   onClick={() => swap.onPick(id)}
                   aria-pressed={swap.picked === id}
-                  className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", swap.picked === id ? "bg-brass-300/15 shadow-[inset_0_0_0_1.5px_var(--color-brass-300)]" : "hover:bg-cream/5")}
+                  className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", swap.picked === id ? "bg-arcane-300/15 shadow-[inset_0_0_0_1.5px_var(--color-arcane-300)]" : "hover:bg-mist/5")}
                 >
                   {body}
                 </button>
@@ -129,9 +129,9 @@ export default function PodCard({
                   role="checkbox"
                   aria-checked={on}
                   onClick={() => setMarked((m) => (on ? m.filter((x) => x !== id) : pod.players.filter((x) => x === id || m.includes(x))))}
-                  className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", on ? "bg-cream/6" : "opacity-60 hover:bg-cream/5")}
+                  className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", on ? "bg-mist/6" : "opacity-60 hover:bg-mist/5")}
                 >
-                  <span className={cx("grid size-6 shrink-0 place-items-center rounded-full border-2", on ? "border-brass-300 bg-brass-400 text-ink-900" : "border-cream-faint")}>{on && <Check className="size-4 [--icon-stroke:3]" />}</span>
+                  <span className={cx("grid size-6 shrink-0 place-items-center rounded-full border-2", on ? "border-arcane-300 bg-arcane-400 text-ink-900" : "border-mist-faint")}>{on && <Check className="size-4 [--icon-stroke:3]" />}</span>
                   {body}
                 </button>
               </li>
@@ -153,7 +153,7 @@ export default function PodCard({
         <div className="mt-auto space-y-2 px-3 pt-1 pb-4">
           {mode === "survivors" ? (
             <>
-              <p className="px-1 text-footnote text-cream-dim">
+              <p className="px-1 text-footnote text-mist-dim">
                 {final ? "Marque quem divide o prêmio." : `Sem vencedor no fim do tempo: marque quem ainda estava vivo. Cada um leva ${scoring.draw} ${scoring.draw === 1 ? "ponto" : "pontos"}.`}
               </p>
               {problem && marked.length > 0 && <p className="px-1 text-footnote text-ember-300">{problem}</p>}
@@ -191,7 +191,7 @@ export default function PodCard({
         onResult &&
         !swap && (
           <div className="mt-auto flex items-center justify-between gap-3 px-4 pt-1 pb-3">
-            <span className="min-w-0 text-footnote text-cream-faint">
+            <span className="min-w-0 text-footnote text-mist-faint">
               {result.kind === "win" ? `${name(result.winner)} venceu` : result.kind === "draw" ? `Empate no tempo · ${result.survivors.length} vivos pontuam` : `Prêmio dividido entre ${result.players.length}`}
             </span>
             <Button size="sm" variant="tertiary" icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>

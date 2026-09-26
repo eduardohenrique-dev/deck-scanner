@@ -67,7 +67,7 @@ export default function Tournaments() {
           ))}
         </div>
       ) : rows.length ? (
-        <p className="glass px-4 py-8 text-center text-subhead text-cream-faint">Nenhum torneio com esse filtro.</p>
+        <p className="glass px-4 py-8 text-center text-subhead text-mist-faint">Nenhum torneio com esse filtro.</p>
       ) : (
         <Board>
           <EmptyState
@@ -94,15 +94,15 @@ function TournamentCard({ row }: { row: TournamentRow }) {
   return (
     <Link to={`/torneios/${row.id}`} className="group glass flex min-h-36 flex-col gap-3 p-5 transition-transform duration-500 ease-spring hover:-translate-y-1 active:scale-[0.98] active:duration-100">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="min-w-0 font-display text-title-3 font-semibold text-cream group-hover:text-brass-100">{row.name}</h3>
+        <h3 className="min-w-0 font-display text-title-3 font-semibold text-mist group-hover:text-arcane-100">{row.name}</h3>
         <Tag tone={STATUS_TONE[row.status]}>{STATUS_LABEL[row.status]}</Tag>
       </div>
-      <p className="text-footnote text-cream-faint">{[row.event_date ? dateLabel(row.event_date) : null, s.format, `${row.player_count} ${row.player_count === 1 ? "jogador" : "jogadores"}`].filter(Boolean).join(" · ")}</p>
+      <p className="text-footnote text-mist-faint">{[row.event_date ? dateLabel(row.event_date) : null, s.format, `${row.player_count} ${row.player_count === 1 ? "jogador" : "jogadores"}`].filter(Boolean).join(" · ")}</p>
       <div className="mt-auto flex items-center justify-between gap-3">
-        <span className="min-w-0 truncate text-subhead font-medium text-cream-dim">{progressLine({ ...s, status: row.status })}</span>
-        <span className="flex shrink-0 items-center gap-1 text-footnote text-cream-faint">
+        <span className="min-w-0 truncate text-subhead font-medium text-mist-dim">{progressLine({ ...s, status: row.status })}</span>
+        <span className="flex shrink-0 items-center gap-1 text-footnote text-mist-faint">
           {relativeDay(row.updated_at)}
-          <ChevronRight className="size-4 group-hover:text-brass-300" />
+          <ChevronRight className="size-4 group-hover:text-arcane-300" />
         </span>
       </div>
     </Link>

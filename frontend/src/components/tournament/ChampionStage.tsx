@@ -19,7 +19,7 @@ function Embers() {
       {sparks.map((i) => (
         <span
           key={i}
-          className="ember absolute bottom-0 block rounded-full bg-brass-300"
+          className="ember absolute bottom-0 block rounded-full bg-arcane-300"
           style={{
             left: `${6 + ((i * 53) % 88)}%`,
             width: 3 + (i % 3),
@@ -60,27 +60,27 @@ export default function ChampionStage({ t, dispatch, onShare }: { t: Tournament;
     <div className="space-y-8">
       <section className="glass relative overflow-hidden px-6 pt-12 pb-10 text-center sm:px-10 sm:pt-16">
         {champ?.deck?.art && <img src={champ.deck.art} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" />}
-        <div className="absolute inset-0 bg-[radial-gradient(90%_70%_at_50%_0%,rgb(235_198_116/0.28),transparent_70%),linear-gradient(180deg,transparent_40%,rgb(22_16_12/0.85))]" />
+        <div className="absolute inset-0 bg-[radial-gradient(90%_70%_at_50%_0%,rgb(185_164_255/0.28),transparent_70%),linear-gradient(180deg,transparent_40%,rgb(9_6_30/0.85))]" />
         <Embers />
         <div className="relative">
-          <Crown size={56} className="animate-pop mx-auto text-brass-300 drop-shadow-[0_4px_18px_rgb(235_198_116/0.6)]" />
-          <p className="eyebrow mt-3 text-brass-300">{shared ? "Campeões · prêmio dividido" : t.playoff || pods ? "Campeão" : "Primeiro lugar"}</p>
-          <h2 className={cx("animate-rise mt-2 font-display font-semibold text-cream", shared ? "text-title-1 sm:text-display" : "text-display sm:text-hero")}>
+          <Crown size={56} className="animate-pop mx-auto text-arcane-300 drop-shadow-[0_4px_18px_rgb(185_164_255/0.6)]" />
+          <p className="eyebrow mt-3 text-arcane-300">{shared ? "Campeões · prêmio dividido" : t.playoff || pods ? "Campeão" : "Primeiro lugar"}</p>
+          <h2 className={cx("animate-rise mt-2 font-display font-semibold text-mist", shared ? "text-title-1 sm:text-display" : "text-display sm:text-hero")}>
             {shared ? listPt(won.map((id) => players.get(id)?.name ?? "?")) : (champ?.name ?? "—")}
           </h2>
           {!shared && champ?.deck && (
-            <p className="mt-3 flex items-center justify-center gap-2 text-headline text-cream-dim">
+            <p className="mt-3 flex items-center justify-center gap-2 text-headline text-mist-dim">
               {champ.deck.identity?.length ? <IdentityPips colors={champ.deck.identity} size={18} /> : null}
               {champ.deck.name}
             </p>
           )}
           {!shared && row && (
-            <p className="mt-2 text-subhead text-cream-faint">
+            <p className="mt-2 text-subhead text-mist-faint">
               {pods ? podRecord(row.wins, row.draws, row.losses) : record(row.wins, row.losses, row.draws)} {pods ? "nas" : "no"} {phase} · {row.points} pts
               {pods && t.tiebreak?.result ? " · venceu a final" : ""}
             </p>
           )}
-          {shared && <p className="mt-3 text-subhead text-cream-faint">Os finalistas combinaram dividir o prêmio na final.</p>}
+          {shared && <p className="mt-3 text-subhead text-mist-faint">Os finalistas combinaram dividir o prêmio na final.</p>}
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button variant="primary" size="lg" icon={<Share2 className="size-5" />} onClick={onShare}>
               Compartilhar resultado
@@ -95,10 +95,10 @@ export default function ChampionStage({ t, dispatch, onShare }: { t: Tournament;
             const pl = players.get(p.playerId);
             return (
               <Board key={p.playerId} className="flex items-center gap-4 p-4">
-                <span className={cx("tabular grid size-12 shrink-0 place-items-center rounded-full text-title-3 font-bold", p.place === 2 ? "bg-cream/12 text-cream" : "bg-brass-700/40 text-brass-200")}>{p.place}º</span>
+                <span className={cx("tabular grid size-12 shrink-0 place-items-center rounded-full text-title-3 font-bold", p.place === 2 ? "bg-mist/12 text-mist" : "bg-arcane-700/40 text-arcane-200")}>{p.place}º</span>
                 <span className="min-w-0">
-                  <span className="block truncate text-headline font-semibold text-cream">{pl?.name}</span>
-                  <span className="block truncate text-footnote text-cream-faint">{pl?.deck?.name ?? (pods ? "Pela pontuação" : p.place === 2 ? "Vice-campeão" : "Semifinal")}</span>
+                  <span className="block truncate text-headline font-semibold text-mist">{pl?.name}</span>
+                  <span className="block truncate text-footnote text-mist-faint">{pl?.deck?.name ?? (pods ? "Pela pontuação" : p.place === 2 ? "Vice-campeão" : "Semifinal")}</span>
                 </span>
               </Board>
             );
@@ -108,7 +108,7 @@ export default function ChampionStage({ t, dispatch, onShare }: { t: Tournament;
 
       {t.rounds.length > 0 && (
         <section className="space-y-3">
-          <h2 className="font-display text-title-3 font-semibold text-cream">Classificação {pods ? "das" : "do"} {phase}</h2>
+          <h2 className="font-display text-title-3 font-semibold text-mist">Classificação {pods ? "das" : "do"} {phase}</h2>
           <StandingsTable rows={table} players={players} cut={cutOf(t.structure)} variant={pods ? "pods" : "duel"} />
         </section>
       )}

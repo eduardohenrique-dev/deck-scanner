@@ -27,22 +27,22 @@ export function CutStage({ t, dispatch, onDrawn, onPlayer }: { t: Tournament; di
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div className="space-y-3">
-        <h2 className="font-display text-title-3 font-semibold text-cream">Classificação final do suíço</h2>
+        <h2 className="font-display text-title-3 font-semibold text-mist">Classificação final do suíço</h2>
         <StandingsTable rows={table} players={players} cut={cut} onPlayer={onPlayer} />
       </div>
       <aside className="space-y-4">
         <Board className="space-y-5 p-5 sm:p-6">
           <div>
             <p className="eyebrow">O corte</p>
-            <h2 className="mt-1 font-display text-title-2 font-semibold text-cream">Top {cut}</h2>
-            <p className="mt-2 text-subhead text-cream-dim">
+            <h2 className="mt-1 font-display text-title-2 font-semibold text-mist">Top {cut}</h2>
+            <p className="mt-2 text-subhead text-mist-dim">
               {ids.length < cut ? `Só ${ids.length} continuam no torneio: todos entram. ` : ""}
               Chave de {size}
               {byes ? `, com folga na primeira fase para ${byes === 1 ? "o seed 1" : `os seeds 1 a ${byes}`}.` : ", sem folgas."}
             </p>
           </div>
           <div>
-            <p className="mb-2 text-footnote font-medium text-cream-dim">Como montar</p>
+            <p className="mb-2 text-footnote font-medium text-mist-dim">Como montar</p>
             <Segmented
               label="Como montar o bracket"
               value={seeding}
@@ -53,7 +53,7 @@ export function CutStage({ t, dispatch, onDrawn, onPlayer }: { t: Tournament; di
                 { value: "random", label: "Sorteio" },
               ]}
             />
-            <p className="mt-2 text-footnote text-cream-faint">{seeding === "standings" ? "1º × último do corte; 1º e 2º só se cruzam na final." : "Quem ganhou folga pela classificação fica com ela; o resto é sorteado."}</p>
+            <p className="mt-2 text-footnote text-mist-faint">{seeding === "standings" ? "1º × último do corte; 1º e 2º só se cruzam na final." : "Quem ganhou folga pela classificação fica com ela; o resto é sorteado."}</p>
           </div>
           <Button variant="primary" size="lg" className="w-full" icon={<Shuffle className="size-5" />} onClick={draw}>
             {seeding === "random" ? "Sortear bracket" : "Montar bracket"}
@@ -75,7 +75,7 @@ export function BracketStage({ t, dispatch, deal, onDealt }: { t: Tournament; di
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-subhead text-cream-dim">
+        <p className="text-subhead text-mist-dim">
           {view.champion ? "A final está decidida." : `${left} ${left === 1 ? "partida para jogar" : "partidas para jogar"}. Toque numa partida para lançar o placar; o vencedor avança sozinho.`}
         </p>
         {canUncut && (

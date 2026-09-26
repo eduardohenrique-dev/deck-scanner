@@ -55,14 +55,14 @@ export default function Login({ warning }: { warning?: string }) {
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
           <BrandMark size={60} className="animate-pop" />
           <h1 className="font-brand text-[2.75rem] leading-none font-semibold">Deck Scanner</h1>
-          <p className="max-w-sm text-body text-cream-dim">Aponte a câmera para as cartas e receba a lista pronta. E saiba onde cada carta da coleção está.</p>
+          <p className="max-w-sm text-body text-mist-dim">Aponte a câmera para as cartas e receba a lista pronta. E saiba onde cada carta da coleção está.</p>
         </div>
         <div className="parchment animate-rise px-6 py-7 sm:px-8">
           <h2 className="font-display text-title-2 font-semibold text-ink-900">Livro de hóspedes</h2>
           <p className="mt-1 mb-5 text-subhead text-ink-700">Assine para guardar decks, coleção e histórico entre aparelhos.</p>
 
           {warning && (
-            <p className="mb-5 rounded-sm bg-wine-600/10 px-4 py-3 text-subhead text-ink-900 shadow-[inset_0_0_0_1px_rgb(142_50_40/0.35)]" role="alert">
+            <p className="mb-5 rounded-sm bg-wine-600/10 px-4 py-3 text-subhead text-ink-900 shadow-[inset_0_0_0_1px_rgb(156_45_74/0.35)]" role="alert">
               {warning}
             </p>
           )}
@@ -72,7 +72,7 @@ export default function Login({ warning }: { warning?: string }) {
               type="button"
               onClick={() => void run("google", signInWithGoogle)}
               disabled={!!busy}
-              className="btn w-full bg-parchment-50 text-ink-900 shadow-[inset_0_0_0_1px_rgb(107_87_63/0.35),0_1px_2px_rgb(70_53_36/0.15)] hover:bg-white/70 disabled:opacity-60"
+              className="btn w-full bg-parchment-50 text-ink-900 shadow-[inset_0_0_0_1px_rgb(92_82_140/0.35),0_1px_2px_rgb(40_30_90/0.15)] hover:bg-white/70 disabled:opacity-60"
             >
               <svg viewBox="0 0 24 24" className="size-[18px]" aria-hidden="true">
                 <path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.6c2.1-1.9 3.3-4.8 3.3-8z" />
@@ -96,10 +96,10 @@ export default function Login({ warning }: { warning?: string }) {
               <div
                 role="radiogroup"
                 aria-label="Entrar ou criar conta"
-                className="relative isolate grid grid-cols-2 rounded-md bg-parchment-200/70 p-[3px] shadow-[inset_0_1px_2px_rgb(70_53_36/0.2)]"
+                className="relative isolate grid grid-cols-2 rounded-md bg-parchment-200/70 p-[3px] shadow-[inset_0_1px_2px_rgb(40_30_90/0.2)]"
                 style={{ "--i": mode === "entrar" ? 0 : 1 } as CSSProperties}
               >
-                <span aria-hidden="true" className="absolute top-[3px] bottom-[3px] left-[3px] -z-10 w-[calc(50%-3px)] translate-x-[calc(var(--i)*100%)] rounded-sm bg-parchment-50 shadow-[0_1px_3px_rgb(70_53_36/0.25),inset_0_1px_0_rgb(255_255_255/0.7)] transition-transform duration-500 ease-spring" />
+                <span aria-hidden="true" className="absolute top-[3px] bottom-[3px] left-[3px] -z-10 w-[calc(50%-3px)] translate-x-[calc(var(--i)*100%)] rounded-sm bg-parchment-50 shadow-[0_1px_3px_rgb(40_30_90/0.25),inset_0_1px_0_rgb(255_255_255/0.7)] transition-transform duration-500 ease-spring" />
                 {modes.map((m) => (
                   <button
                     key={m.value}

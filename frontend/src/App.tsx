@@ -50,17 +50,17 @@ export default function App() {
     return (
       <FullScreen>
         <div className="glass w-full max-w-md space-y-4 p-6 text-center">
-          <div className="mx-auto grid size-14 place-items-center rounded-full bg-brass-300/10 text-brass-300">
+          <div className="mx-auto grid size-14 place-items-center rounded-full bg-arcane-300/10 text-arcane-300">
             <Candle size={30} />
           </div>
           <div className="space-y-2">
-            <p className="font-display text-title-2 font-semibold text-cream">A taverna está fechada</p>
-            <p className="text-body text-cream-dim">
+            <p className="font-display text-title-2 font-semibold text-mist">A taverna está fechada</p>
+            <p className="text-body text-mist-dim">
               {auth.step === "session"
                 ? "Não consegui falar com o serviço de login. Se você usa bloqueador de anúncios ou uma rede do trabalho, ele pode estar barrando o acesso."
                 : "Não consegui falar com o servidor. Ele pode estar acordando: espere alguns segundos e tente de novo."}
             </p>
-            <p className="text-footnote text-cream-faint">Detalhe: {auth.message}</p>
+            <p className="text-footnote text-mist-faint">Detalhe: {auth.message}</p>
           </div>
           <Button variant="primary" onClick={() => location.reload()}>
             Tentar de novo
@@ -87,11 +87,11 @@ export default function App() {
       <a href="#conteudo" className="btn btn-primary sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50">
         Pular para o conteúdo
       </a>
-      <header className="bar-glass sticky top-0 z-40 shadow-[inset_0_-1px_0_rgb(255_226_184/0.08),0_8px_24px_-16px_rgb(0_0_0/0.8)]">
+      <header className="bar-glass sticky top-0 z-40 shadow-[inset_0_-1px_0_rgb(214_204_255/0.08),0_8px_24px_-16px_rgb(0_0_0/0.8)]">
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
           <Link to="/" className="flex items-center gap-2.5 rounded-sm" aria-label="Deck Scanner, início">
             <BrandMark size={32} />
-            <span className="font-brand text-[1.625rem] leading-none font-semibold tracking-[0.01em] text-cream">Deck Scanner</span>
+            <span className="font-brand text-[1.625rem] leading-none font-semibold tracking-[0.01em] text-mist">Deck Scanner</span>
           </Link>
           <nav className="ml-2 hidden items-center gap-1 md:flex" aria-label="Principal">
             {NAV.map((item) => {
@@ -104,8 +104,8 @@ export default function App() {
                   className={cx(
                     "flex h-10 items-center gap-2 rounded-full px-3.5 text-subhead font-medium transition-colors duration-200",
                     active
-                      ? "bg-brass-300/12 text-brass-200 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.22),inset_0_1px_0_rgb(255_240_210/0.12)]"
-                      : "text-cream-dim hover:bg-cream/5 hover:text-cream",
+                      ? "bg-arcane-300/12 text-arcane-200 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.22),inset_0_1px_0_rgb(230_225_255/0.12)]"
+                      : "text-mist-dim hover:bg-mist/5 hover:text-mist",
                   )}
                 >
                   <item.icon size={19} />
@@ -115,7 +115,7 @@ export default function App() {
             })}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            {email && <span className="hidden max-w-48 truncate text-footnote text-cream-faint lg:inline">{email}</span>}
+            {email && <span className="hidden max-w-48 truncate text-footnote text-mist-faint lg:inline">{email}</span>}
             {auth.status === "signed-in" && (
               <IconButton label="Sair" onClick={() => void signOut()}>
                 <LogOut className="size-[18px]" />
@@ -146,7 +146,7 @@ export default function App() {
       </main>
 
       <nav
-        className="bar-glass fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] shadow-[inset_0_1px_0_rgb(255_226_184/0.1),0_-8px_24px_-16px_rgb(0_0_0/0.8)] md:hidden"
+        className="bar-glass fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] shadow-[inset_0_1px_0_rgb(214_204_255/0.1),0_-8px_24px_-16px_rgb(0_0_0/0.8)] md:hidden"
         aria-label="Principal"
       >
         <div className="grid" style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}>
@@ -157,7 +157,7 @@ export default function App() {
                 key={item.to}
                 to={item.to}
                 aria-current={active ? "page" : undefined}
-                className={cx("flex h-16 flex-col items-center justify-center gap-1 text-caption font-medium transition-colors duration-200", active ? "text-brass-200" : "text-cream-faint")}
+                className={cx("flex h-16 flex-col items-center justify-center gap-1 text-caption font-medium transition-colors duration-200", active ? "text-arcane-200" : "text-mist-faint")}
               >
                 <item.icon size={24} />
                 {item.label}
@@ -184,7 +184,7 @@ function DelayedText() {
     const t = window.setTimeout(() => setShow(true), 1500);
     return () => window.clearTimeout(t);
   }, []);
-  return <p className={cx("max-w-xs text-center text-subhead text-cream-dim transition-opacity duration-500", show ? "opacity-100" : "opacity-0")}>{WAKE_TEXT}</p>;
+  return <p className={cx("max-w-xs text-center text-subhead text-mist-dim transition-opacity duration-500", show ? "opacity-100" : "opacity-0")}>{WAKE_TEXT}</p>;
 }
 
 /** Aviso discreto enquanto servidor e banco acordam (a requisição em curso não está travada). */
@@ -198,8 +198,8 @@ function WakeNotice() {
   if (!waking) return null;
   return (
     <div role="status" className="animate-rise fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 md:bottom-6">
-      <p className="glass-float flex max-w-md items-center gap-3 px-4 py-3 text-subhead text-cream-dim">
-        <Candle size={18} className="shrink-0 text-brass-300" />
+      <p className="glass-float flex max-w-md items-center gap-3 px-4 py-3 text-subhead text-mist-dim">
+        <Candle size={18} className="shrink-0 text-arcane-300" />
         {WAKE_TEXT}
       </p>
     </div>

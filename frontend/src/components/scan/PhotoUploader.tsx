@@ -122,21 +122,21 @@ export default function PhotoUploader({ sessionId, onState, onBusy }: { sessionI
         }}
         onDragLeave={() => setDrag(false)}
         onDrop={onDrop}
-        className={cx("rounded-lg border-2 border-dashed px-5 py-10 text-center transition-[background-color,border-color] duration-200", drag ? "border-brass-400 bg-brass-400/8" : "border-cream/12")}
+        className={cx("rounded-lg border-2 border-dashed px-5 py-10 text-center transition-[background-color,border-color] duration-200", drag ? "border-arcane-400 bg-arcane-400/8" : "border-mist/12")}
       >
-        <span className="mx-auto grid size-16 place-items-center rounded-full bg-brass-300/10 text-brass-300 shadow-[inset_0_0_0_1px_rgb(235_198_116/0.2)]">
+        <span className="mx-auto grid size-16 place-items-center rounded-full bg-arcane-300/10 text-arcane-300 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.2)]">
           <ImagePlus className="size-7" />
         </span>
-        <p className="mt-4 font-display text-title-2 font-semibold text-cream">Fotos da mesa</p>
-        <p className="mx-auto mt-1 max-w-md text-subhead text-cream-dim">
+        <p className="mt-4 font-display text-title-2 font-semibold text-mist">Fotos da mesa</p>
+        <p className="mx-auto mt-1 max-w-md text-subhead text-mist-dim">
           Até 9 cartas por foto, lado a lado e sem sobrepor, fotografadas de cima. Arraste as fotos para cá ou escolha abaixo.
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-2">
-          <label className="btn btn-primary cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brass-300">
+          <label className="btn btn-primary cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-arcane-300">
             <ImagePlus className="size-4" /> Escolher fotos
             <input type="file" accept="image/*" multiple className="sr-only" onChange={pick} />
           </label>
-          <label className="btn btn-secondary cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brass-300 sm:hidden">
+          <label className="btn btn-secondary cursor-pointer focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-arcane-300 sm:hidden">
             <Camera className="size-4" /> Tirar foto
             <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={pick} />
           </label>
@@ -150,13 +150,13 @@ export default function PhotoUploader({ sessionId, onState, onBusy }: { sessionI
               {item.thumb ? (
                 <img src={item.thumb} alt="" className="size-14 shrink-0 rounded-xs object-cover" />
               ) : (
-                <span className="grid size-14 shrink-0 place-items-center rounded-xs bg-oak-800 text-cream-faint">
+                <span className="grid size-14 shrink-0 place-items-center rounded-xs bg-night-800 text-mist-faint">
                   <ImagePlus className="size-5" />
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-subhead text-cream">{item.file.name || "Foto"}</p>
-                <p className={cx("flex items-center gap-1.5 text-footnote", item.status === "error" ? "text-wine-300" : item.status === "done" ? "text-moss-300" : "text-cream-faint")}>
+                <p className="truncate text-subhead text-mist">{item.file.name || "Foto"}</p>
+                <p className={cx("flex items-center gap-1.5 text-footnote", item.status === "error" ? "text-wine-300" : item.status === "done" ? "text-moss-300" : "text-mist-faint")}>
                   {item.status === "queued" && "Na fila"}
                   {item.status === "sending" && (
                     <>
