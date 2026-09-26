@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { Goblet } from "../components/icons";
 import ChampionStage from "../components/tournament/ChampionStage";
 import ExportSheet from "../components/tournament/ExportSheet";
+import FinalStage from "../components/tournament/FinalStage";
 import { STAGE_LABEL, STATUS_LABEL, STATUS_TONE } from "../components/tournament/labels";
 import PlayerDrawer from "../components/tournament/PlayerDrawer";
 import PlayersStage from "../components/tournament/PlayersStage";
@@ -15,7 +16,7 @@ import { api } from "../lib/api";
 import { navigate } from "../lib/router";
 import { toast, toastError } from "../lib/toast";
 import { bracketView } from "../tournament/bracket.ts";
-import { currentRound, isDraft, listPt, nextRoundBlocker, pendingTables, stage, stages, startBlocker, status } from "../tournament/engine.ts";
+import { currentRound, cutOf, isDraft, needsFinal, nextRoundBlocker, pendingReason, pendingTables, stage, stages, startBlocker, status } from "../tournament/engine.ts";
 import { dateLabel, structureLabel } from "../tournament/export.ts";
 import { plannedRounds } from "../tournament/engine.ts";
 import type { StageId, Tournament } from "../tournament/types.ts";
@@ -127,6 +128,7 @@ export default function TournamentPage({ id }: { id: string }) {
         {shown === "rounds" && <RoundsStage t={t} dispatch={dispatch} onPlayer={setPlayer} />}
         {shown === "cut" && <CutStage t={t} dispatch={dispatch} onPlayer={setPlayer} onDrawn={() => setDeal(true)} />}
         {shown === "bracket" && <BracketStage t={t} dispatch={dispatch} deal={deal} onDealt={onDealt} />}
+        {shown === "final" && <FinalStage t={t} dispatch={dispatch} onPlayer={setPlayer} />}
         {shown === "champion" && <ChampionStage t={t} dispatch={dispatch} onShare={() => setSharing(true)} />}
       </div>
 
@@ -186,12 +188,15 @@ function primaryAction(
       return draft ? { label: "Começar torneio", icon: <Play className="size-4 fill-current" />, onClick: go.start, reason: startBlocker(t) } : null;
     case "rounds": {
       if (t.playoff || t.finishedAt) return null;
-      // na última rodada planejada, a próxima ação é o corte (ou encerrar), liberada quando todas as mesas tiverem placar
+      if (t.tiebreak) return { label: "Ir para a final", icon: <ArrowRight className="size-4" />, onClick: () => go.goto("final") };
+      // na última rodada planejada, a próxima ação é o corte, a final (mesão empatado no topo) ou encerrar,
+      // liberada quando todas as mesas tiverem resultado
       if (t.rounds.length >= plannedRounds(t)) {
         const cur = currentRound(t);
-        const pending = cur ? pendingTables(cur) : [];
-        const reason = pending.length ? (pending.length === 1 ? `Falta o placar da mesa ${pending[0]}.` : `Faltam os placares das mesas ${listPt(pending.map(String))}.`) : null;
-        if (t.structure.kind !== "single-elimination" && t.structure.cut !== null) return { label: `Fazer o corte (Top ${t.structure.cut})`, icon: <ArrowRight className="size-4" />, onClick: () => go.goto("cut"), reason };
+        const reason = cur && pendingTables(cur).length ? pendingReason(cur) : null;
+        const cut = cutOf(t.structure);
+        if (cut !== null) return { label: `Fazer o corte (Top ${cut})`, icon: <ArrowRight className="size-4" />, onClick: () => go.goto("cut"), reason };
+        if (needsFinal(t)) return { label: "Ir para a final", icon: <ArrowRight className="size-4" />, onClick: () => go.goto("final") };
         return { label: "Encerrar torneio", icon: <Crown size={18} />, onClick: go.finish, reason };
       }
       const reason = nextRoundBlocker(t);
@@ -206,6 +211,11 @@ function primaryAction(
       const left = view.rounds.flat().filter((s) => !s.bye && !s.winner).length;
       return { label: "Coroar campeão", icon: <Crown size={18} />, reason: `${left === 1 ? "Falta 1 partida" : `Faltam ${left} partidas`} do mata-mata.` };
     }
+    case "final":
+      // montar a final é o botão do próprio painel; depois, o que falta é o resultado
+      if (!t.tiebreak) return null;
+      if (!t.tiebreak.result) return { label: "Coroar campeão", icon: <Crown size={18} />, reason: "Falta o resultado da final." };
+      return { label: "Ver o campeão", icon: <Crown size={18} />, onClick: () => go.goto("champion") };
     case "champion":
       return null; // "Compartilhar resultado" fica na placa do campeão, sem repetir no topo
   }
@@ -215,6 +225,7 @@ function StartConfirm({ t, open, onClose, dispatch, onStarted }: { t: Tournament
   const text = useMemo(() => {
     if (t.structure.kind === "single-elimination") return t.settings.seeding === "random" ? "A chave é sorteada agora." : "A chave sai na ordem da lista de inscritos.";
     if (t.structure.kind === "round-robin") return "A primeira rodada sai agora; a tabela completa já fica definida.";
+    if (t.structure.kind === "pods") return "As mesas da rodada 1 são sorteadas agora. As próximas juntam quem tem pontos parecidos, com o mínimo de reencontros.";
     return "A rodada 1 é sorteada agora. As próximas saem pelos pontos, sem revanche.";
   }, [t.structure.kind, t.settings.seeding]);
   return (

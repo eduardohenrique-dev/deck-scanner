@@ -13,30 +13,34 @@ export const STAGE_LABEL: Record<StageId, string> = {
   rounds: "Rodadas",
   cut: "Corte",
   bracket: "Bracket",
+  final: "Final",
   champion: "Campeão",
 };
 
-export type StructureChoice = "swiss" | "swiss-cut" | "single-elimination" | "round-robin";
+export type StructureChoice = "swiss" | "swiss-cut" | "single-elimination" | "round-robin" | "pods";
 
 export const STRUCTURES: { id: StructureChoice; title: string; text: string }[] = [
   { id: "swiss", title: "Suíço", text: "Todos jogam todas as rodadas; vence quem somar mais pontos." },
   { id: "swiss-cut", title: "Suíço + corte", text: "Rodadas suíças e depois mata-mata com os melhores." },
   { id: "single-elimination", title: "Eliminação simples", text: "Perdeu, saiu. A chave sai na hora." },
   { id: "round-robin", title: "Todos contra todos", text: "Cada um enfrenta todos os outros uma vez." },
+  { id: "pods", title: "Mesão", text: "Mesas de 4 (Commander). Vitória 3, vivo no fim do tempo 1; empate no topo vai para a final." },
 ];
 
 export function choiceOf(s: Structure): StructureChoice {
   if (s.kind === "single-elimination") return "single-elimination";
   if (s.kind === "round-robin") return "round-robin";
+  if (s.kind === "pods") return "pods";
   return s.cut !== null ? "swiss-cut" : "swiss";
 }
 
 /** Frase curta do andamento, para listas e cabeçalhos. */
 export function progressLine(s: Partial<Summary>): string {
-  if (s.status === "finished") return s.champion ? `Campeão: ${s.champion}` : "Finalizado";
+  if (s.status === "finished") return s.champion ? `${s.champion.includes(" e ") ? "Campeões" : "Campeão"}: ${s.champion}` : "Finalizado";
   if (s.status === "draft") return s.players ? `Inscrições abertas · ${s.players} ${s.players === 1 ? "jogador" : "jogadores"}` : "Inscrições abertas";
   if (s.stage === "cut") return "Hora do corte";
   if (s.stage === "bracket") return "Mata-mata";
+  if (s.stage === "final") return "Final de desempate";
   if (s.round) return s.rounds ? `Rodada ${s.round} de ${s.rounds}` : `Rodada ${s.round}`;
   return "Em andamento";
 }

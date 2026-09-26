@@ -28,11 +28,14 @@ export default function RoundTimer({
   minutes,
   onAction,
   size = "md",
+  overNote = "Tempo esgotado",
 }: {
   round: Round;
   minutes: number | null;
   onAction?: (action: "start" | "pause" | "resume" | "reset") => void;
   size?: "md" | "xl";
+  /** o que dizer quando o tempo acaba (no mesão: os turnos extras) */
+  overNote?: string;
 }) {
   const running = !!round.timer.startedAt && !round.timer.pausedAt;
   const now = useNow(running);
@@ -79,7 +82,7 @@ export default function RoundTimer({
           {left === null ? `${minutes}:00` : clock(left)}
         </p>
         <p className={cx(big ? "mt-2 text-title-3" : "text-caption", over ? "text-ember-300" : "text-cream-faint")}>
-          {left === null ? `${minutes} min · parado` : over ? "Tempo esgotado" : round.timer.pausedAt ? "Pausado" : `de ${minutes} min`}
+          {left === null ? `${minutes} min · parado` : over ? overNote : round.timer.pausedAt ? "Pausado" : `de ${minutes} min`}
         </p>
       </div>
       {onAction && (

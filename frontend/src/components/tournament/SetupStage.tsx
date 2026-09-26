@@ -2,16 +2,18 @@ import { Check } from "lucide-react";
 import { useId, useMemo, type ReactNode } from "react";
 import { useResource } from "../../lib/hooks";
 import { api } from "../../lib/api";
-import { isDraft, plannedRounds } from "../../tournament/engine.ts";
+import { cutOf, isDraft, listPt, plannedRounds } from "../../tournament/engine.ts";
 import { suggestRounds } from "../../tournament/pairing.ts";
+import { podSizes, suggestPodRounds } from "../../tournament/pods.ts";
 import type { Settings, Structure, Tournament } from "../../tournament/types.ts";
 import { Board, cx, Field, Input, Segmented, Stepper, Switch, Textarea } from "../ui";
 import { choiceOf, STRUCTURES, type StructureChoice } from "./labels";
 import type { Dispatch } from "./useTournament";
 
 function structureFor(choice: StructureChoice, current: Structure): Structure {
-  const rounds = current.kind === "swiss" ? current.rounds : 0;
-  const cut = current.kind !== "single-elimination" && current.cut !== null ? current.cut : 8;
+  // o número de rodadas escolhido para o suíço vale para o mesão e vice-versa (0 = sugestão)
+  const rounds = current.kind === "swiss" || current.kind === "pods" ? current.rounds : 0;
+  const cut = cutOf(current) ?? 8;
   switch (choice) {
     case "swiss":
       return { kind: "swiss", rounds, cut: null };
@@ -21,7 +23,20 @@ function structureFor(choice: StructureChoice, current: Structure): Structure {
       return { kind: "round-robin", cut: null };
     case "single-elimination":
       return { kind: "single-elimination" };
+    case "pods":
+      return { kind: "pods", rounds };
   }
+}
+
+/** "2 mesas de 4" · "1 mesa de 4 e 2 de 3". */
+export function podsLine(n: number): string {
+  const sizes = podSizes(n);
+  if (!sizes.length) return "";
+  const count = (size: number) => sizes.filter((s) => s === size).length;
+  const parts = [5, 4, 3, 2]
+    .filter((size) => count(size))
+    .map((size, i) => (i === 0 ? `${count(size)} ${count(size) === 1 ? "mesa" : "mesas"} de ${size}` : `${count(size)} de ${size}`));
+  return listPt(parts);
 }
 
 function Card({ title, text, children }: { title: string; text?: string; children: ReactNode }) {
@@ -47,7 +62,15 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
   const listId = useId();
   const setSettings = (settings: Partial<Settings>) => dispatch({ type: "setSettings", settings });
   const setStructure = (structure: Structure) => dispatch({ type: "setStructure", structure });
-  const suggested = s.kind === "swiss" ? suggestRounds(Math.max(n, 2), s.cut) : 0;
+  const pods = s.kind === "pods";
+  const cut = cutOf(s);
+  const suggested = s.kind === "swiss" ? suggestRounds(Math.max(n, 2), s.cut) : pods ? suggestPodRounds(Math.max(n, 3)) : 0;
+  function choose(id: StructureChoice) {
+    setStructure(structureFor(id, s));
+    // a partida de mesão é longa: começa com 1 hora (dá para mudar logo abaixo)
+    if (id === "pods" && t.settings.roundMinutes === 50) setSettings({ roundMinutes: 60 });
+    if (id !== "pods" && s.kind === "pods" && t.settings.roundMinutes === 60) setSettings({ roundMinutes: 50 });
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
@@ -63,7 +86,7 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                   role="radio"
                   aria-checked={on}
                   disabled={!draft && !on}
-                  onClick={() => setStructure(structureFor(o.id, s))}
+                  onClick={() => choose(o.id)}
                   className={cx(
                     "well relative flex min-h-24 flex-col items-start gap-1 px-4 py-4 text-left transition-[box-shadow,transform] duration-500 ease-spring active:scale-[0.98] active:duration-100 disabled:opacity-40",
                     on && "bg-brass-300/8 shadow-[inset_0_0_0_1.5px_var(--color-brass-400),0_10px_24px_-14px_rgb(216_166_76/0.5)]",
@@ -111,11 +134,36 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
               )}
             </div>
           )}
+          {pods && (
+            <div className="grid gap-5 sm:grid-cols-2">
+              <div>
+                <p className="mb-1.5 text-footnote font-medium text-cream-dim">Rodadas</p>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Stepper value={s.rounds || suggested} min={Math.max(1, t.rounds.length)} max={20} label="Rodadas do mesão" onChange={(v) => setStructure({ ...s, rounds: v })} />
+                  {s.rounds !== 0 && s.rounds !== suggested && n >= 3 && draft && (
+                    <button type="button" className="text-footnote font-semibold text-brass-300 hover:underline" onClick={() => setStructure({ ...s, rounds: 0 })}>
+                      Usar a sugestão ({suggested})
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1.5 text-footnote text-cream-faint">
+                  {n >= 3 ? `${n} jogadores: ${podsLine(n)} por rodada, remontadas a cada rodada.` : "As mesas saem da lista de inscritos (mínimo 3)."}
+                </p>
+              </div>
+              <div>
+                <p className="mb-1.5 text-footnote font-medium text-cream-dim">Empate na liderança</p>
+                <p className="text-footnote text-cream-faint">
+                  Os empatados em 1º jogam uma final só entre eles, sem tempo limite. Quem vencer é o campeão; os finalistas também podem combinar dividir o prêmio.
+                </p>
+              </div>
+            </div>
+          )}
           {s.kind === "round-robin" && <p className="text-footnote text-cream-faint">{n >= 2 ? `${plannedRounds(t)} rodadas para ${n} jogadores${n % 2 ? ", cada um com uma folga" : ""}.` : "O número de rodadas sai da lista de inscritos."}</p>}
           {s.kind === "single-elimination" && <p className="text-footnote text-cream-faint">Com um número de jogadores que não fecha a chave, os primeiros da lista (ou do sorteio) folgam na primeira fase.</p>}
         </Card>
 
         <Card title="Partidas">
+          {!pods && (
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <p className="mb-1.5 text-footnote font-medium text-cream-dim">{s.kind === "single-elimination" ? "Cada partida" : "Rodadas"}</p>
@@ -129,7 +177,7 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                 ]}
               />
             </div>
-            {s.kind !== "single-elimination" && s.cut !== null && (
+            {cut !== null && (
               <div>
                 <p className="mb-1.5 text-footnote font-medium text-cream-dim">Mata-mata</p>
                 <Segmented
@@ -144,41 +192,48 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
               </div>
             )}
           </div>
+          )}
           {s.kind !== "single-elimination" && (
             <div>
-              <p className="mb-2 text-footnote font-medium text-cream-dim">Pontos por partida</p>
+              <p className="mb-2 text-footnote font-medium text-cream-dim">{pods ? "Pontos por mesa" : "Pontos por partida"}</p>
               <div className="flex flex-wrap gap-4">
                 {(
                   [
-                    ["win", "Vitória"],
-                    ["draw", "Empate"],
-                    ["loss", "Derrota"],
+                    ["win", pods ? "Venceu" : "Vitória"],
+                    ["draw", pods ? "Vivo no fim do tempo" : "Empate"],
+                    ["loss", pods ? "Eliminado" : "Derrota"],
                   ] as const
                 ).map(([k, label]) => (
                   <div key={k} className="flex items-center gap-2">
-                    <span className="w-16 text-subhead text-cream">{label}</span>
-                    <Stepper size="sm" value={t.settings.points[k]} min={0} max={10} label={`Pontos por ${label.toLowerCase()}`} busy={!draft} onChange={(v) => setSettings({ points: { ...t.settings.points, [k]: v } })} />
+                    <span className={cx("text-subhead text-cream", pods ? "min-w-16" : "w-16")}>{label}</span>
+                    <Stepper size="sm" value={t.settings.points[k]} min={0} max={10} label={`Pontos: ${label.toLowerCase()}`} busy={!draft} onChange={(v) => setSettings({ points: { ...t.settings.points, [k]: v } })} />
                   </div>
                 ))}
               </div>
-              <p className="mt-2 text-footnote text-cream-faint">Padrão da Wizards: 3, 1 e 0. A folga vale uma vitória.</p>
+              <p className="mt-2 text-footnote text-cream-faint">
+                {pods ? "Regra da casa: 3 para quem vence; sem vencedor no fim do tempo, 1 para cada jogador ainda vivo e 0 para quem já tinha saído." : "Padrão da Wizards: 3, 1 e 0. A folga vale uma vitória."}
+              </p>
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-subhead font-medium text-cream">Relógio da rodada</p>
-              <p className="text-footnote text-cream-faint">Aparece nas mesas e no telão; passa a contar o acréscimo quando o tempo acaba.</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-subhead font-medium text-cream">{pods ? "Tempo da partida" : "Relógio da rodada"}</p>
+              <p className="text-footnote text-cream-faint">
+                {pods
+                  ? "Quando acaba, o turno em andamento termina e cada jogador vivo que ainda não jogou faz mais 1 turno. A final não tem tempo."
+                  : "Aparece nas mesas e no telão; passa a contar o acréscimo quando o tempo acaba."}
+              </p>
             </div>
             <div className="flex items-center gap-3">
-              {t.settings.roundMinutes !== null && <Stepper size="sm" value={t.settings.roundMinutes} min={5} max={180} label="Minutos por rodada" onChange={(v) => setSettings({ roundMinutes: v })} />}
-              <Switch checked={t.settings.roundMinutes !== null} label="Usar relógio" onChange={(on) => setSettings({ roundMinutes: on ? 50 : null })} />
+              {t.settings.roundMinutes !== null && <Stepper size="sm" value={t.settings.roundMinutes} min={5} max={600} label="Minutos por rodada" onChange={(v) => setSettings({ roundMinutes: v })} />}
+              <Switch checked={t.settings.roundMinutes !== null} label="Usar relógio" onChange={(on) => setSettings({ roundMinutes: on ? (pods ? 60 : 50) : null })} />
             </div>
           </div>
         </Card>
       </div>
 
       <div className="space-y-6">
-        {(s.kind === "single-elimination" || s.cut !== null) && (
+        {(s.kind === "single-elimination" || cut !== null) && (
           <Card title="Montagem do bracket">
             <Segmented
               label="Montagem do bracket"

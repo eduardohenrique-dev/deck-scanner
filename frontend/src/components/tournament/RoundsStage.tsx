@@ -1,13 +1,15 @@
 import { ArrowLeftRight, Copy, Search, Shuffle, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "../../lib/toast";
-import { currentRound, plannedRounds, roundComplete } from "../../tournament/engine.ts";
+import { currentRound, cutOf, plannedRounds, roundComplete } from "../../tournament/engine.ts";
 import { pairingsText } from "../../tournament/export.ts";
 import { meetings, pairKey } from "../../tournament/pairing.ts";
+import { podKey, podMeetings } from "../../tournament/pods.ts";
 import { standings } from "../../tournament/standings.ts";
-import type { Tournament } from "../../tournament/types.ts";
+import type { Pod, Tournament } from "../../tournament/types.ts";
 import { Board, Button, Confirm, cx, Input, Menu, Segmented, Tabs, Tag } from "../ui";
 import MatchCard from "./MatchCard";
+import PodCard from "./PodCard";
 import RoundTimer from "./RoundTimer";
 import StandingsTable from "./StandingsTable";
 import type { Dispatch } from "./useTournament";
@@ -35,19 +37,25 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
   const table = useMemo(() => standings(t), [t]);
   const before = useMemo(() => new Map(standings({ ...t, rounds: t.rounds.filter((r) => r.number < (round?.number ?? 1)) }).map((s) => [s.playerId, s.points])), [t, round?.number]);
   const earlier = useMemo(() => meetings(t.rounds.filter((r) => r.number < (round?.number ?? 1))).pairs, [t.rounds, round?.number]);
+  const podsBefore = useMemo(() => podMeetings(t.rounds.filter((r) => r.number < (round?.number ?? 1))), [t.rounds, round?.number]);
   if (!round) return null;
 
   const isCurrent = round.number === t.rounds.length;
-  const locked = !!t.playoff;
-  const played = round.matches.filter((m) => m.b !== null && m.result).length;
-  const tables = round.matches.filter((m) => m.b !== null).length;
-  const anyResult = round.matches.some((m) => m.b !== null && m.result);
-  const matches = round.matches.filter((m) => {
-    if (filter === "pending" && (m.b === null || m.result)) return false;
-    if (!q.trim()) return true;
-    const k = norm(q.trim());
-    return [m.a, m.b].some((id) => id && norm(players.get(id)?.name ?? "").includes(k)) || String(m.table ?? "") === q.trim();
-  });
+  const locked = !!t.playoff || !!t.tiebreak;
+  const pods = round.pods ?? [];
+  const isPods = pods.length > 0;
+  const played = isPods ? pods.filter((p) => p.result).length : round.matches.filter((m) => m.b !== null && m.result).length;
+  const tables = isPods ? pods.length : round.matches.filter((m) => m.b !== null).length;
+  const anyResult = played > 0;
+  const k = norm(q.trim());
+  const found = (ids: (string | null)[], table: number | null) => !k || ids.some((id) => id && norm(players.get(id)?.name ?? "").includes(k)) || String(table ?? "") === q.trim();
+  const matches = round.matches.filter((m) => !(filter === "pending" && (m.b === null || m.result)) && found([m.a, m.b], m.table));
+  const shownPods = pods.filter((p) => !(filter === "pending" && p.result) && found(p.players, p.table));
+  const repeatsOf = (p: Pod) => {
+    let n = 0;
+    for (let i = 0; i < p.players.length; i++) for (let j = i + 1; j < p.players.length; j++) n += podsBefore.has(podKey(p.players[i], p.players[j])) ? 1 : 0;
+    return n;
+  };
 
   function pick(id: string) {
     if (!picked) return setPicked(id);
@@ -76,9 +84,17 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
         </h2>
         <p className="mt-1 text-subhead text-cream-dim">
           <span className="tabular">{played}</span> de <span className="tabular">{tables}</span> {tables === 1 ? "mesa lançada" : "mesas lançadas"}
+          {isPods && <span className="text-cream-faint"> · mesas de {[...new Set(pods.map((p) => p.players.length))].sort((a, b) => b - a).join(" e ")}</span>}
         </p>
       </div>
-      {isCurrent && t.settings.roundMinutes ? <RoundTimer round={round} minutes={t.settings.roundMinutes} onAction={locked ? undefined : (action) => dispatch({ type: "timer", round: round.number, action, at: new Date().toISOString() })} /> : null}
+      {isCurrent && t.settings.roundMinutes ? (
+        <RoundTimer
+          round={round}
+          minutes={t.settings.roundMinutes}
+          overNote={isPods ? "Tempo! Termina o turno e cada vivo joga mais 1" : undefined}
+          onAction={locked ? undefined : (action) => dispatch({ type: "timer", round: round.number, action, at: new Date().toISOString() })}
+        />
+      ) : null}
       <Menu
         label="Ações da rodada"
         items={[
@@ -116,13 +132,34 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
       {swapping && (
         <div className="glass-float flex items-center gap-3 px-4 py-3" role="status">
           <ArrowLeftRight className="size-5 shrink-0 text-brass-300" />
-          <p className="min-w-0 flex-1 text-subhead text-cream">{picked ? `Agora toque em quem vai para o lugar de ${players.get(picked)?.name}.` : "Toque em dois jogadores para trocá-los de mesa (vale também para a folga)."}</p>
+          <p className="min-w-0 flex-1 text-subhead text-cream">
+            {picked ? `Agora toque em quem vai para o lugar de ${players.get(picked)?.name}.` : isPods ? "Toque em dois jogadores de mesas diferentes para trocá-los de lugar." : "Toque em dois jogadores para trocá-los de mesa (vale também para a folga)."}
+          </p>
           <Button size="sm" variant="ghost" icon={<X className="size-4" />} onClick={() => (setSwapping(false), setPicked(null))}>
             Pronto
           </Button>
         </div>
       )}
-      {matches.length ? (
+      {isPods ? (
+        shownPods.length ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {shownPods.map((p) => (
+              <PodCard
+                key={p.id}
+                pod={p}
+                players={players}
+                points={before}
+                scoring={t.settings.points}
+                repeats={repeatsOf(p)}
+                onResult={locked ? undefined : (result) => dispatch({ type: "podResult", round: round.number, pod: p.id, result, at: new Date().toISOString() }, { undo: result ? `Mesa ${p.table} lançada` : `Resultado da mesa ${p.table} apagado` })}
+                swap={swapping && isCurrent ? { picked, onPick: pick } : undefined}
+              />
+            ))}
+          </div>
+        ) : (
+          <p className="glass px-4 py-8 text-center text-subhead text-cream-faint">{filter === "pending" && !q ? "Todas as mesas desta rodada já têm resultado." : "Nenhuma mesa com esse nome."}</p>
+        )
+      ) : matches.length ? (
         <div className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
           {matches.map((m) => (
             <MatchCard
@@ -140,7 +177,11 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
       ) : (
         <p className="glass px-4 py-8 text-center text-subhead text-cream-faint">{filter === "pending" && !q ? "Todas as mesas desta rodada já têm placar." : "Nenhuma mesa com esse nome."}</p>
       )}
-      {locked && <p className="text-footnote text-cream-faint">O corte já foi feito: os placares do suíço ficaram travados. Para corrigir, desfaça o corte na etapa Corte.</p>}
+      {locked && (
+        <p className="text-footnote text-cream-faint">
+          {t.tiebreak ? "A final já foi montada: os resultados das rodadas ficaram travados. Para corrigir, desfaça a final na etapa Final." : "O corte já foi feito: os placares do suíço ficaram travados. Para corrigir, desfaça o corte na etapa Corte."}
+        </p>
+      )}
     </div>
   );
 
@@ -175,10 +216,14 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
         <aside className={cx("space-y-3", mobileView !== "standings" && "max-lg:hidden")}>
           <div className="flex items-baseline justify-between gap-3">
             <h2 className="font-display text-title-3 font-semibold text-cream">Classificação</h2>
-            {t.structure.kind !== "single-elimination" && t.structure.cut !== null && <Tag tone="brass">Top {t.structure.cut}</Tag>}
+            {cutOf(t.structure) !== null && <Tag tone="brass">Top {cutOf(t.structure)}</Tag>}
           </div>
-          <StandingsTable rows={table} players={players} cut={t.structure.kind !== "single-elimination" ? t.structure.cut : null} onPlayer={onPlayer} compact />
-          <p className="px-1 text-footnote text-cream-faint">Desempates: pontos, OMW, GW e OGW, com piso de 33% (regra da Wizards). Toque num jogador para ver o histórico.</p>
+          <StandingsTable rows={table} players={players} cut={cutOf(t.structure)} onPlayer={onPlayer} compact variant={isPods ? "pods" : "duel"} />
+          <p className="px-1 text-footnote text-cream-faint">
+            {isPods
+              ? "Ordem: pontos, vitórias e força dos adversários. Empate em 1º depois da última rodada vai para a final. Toque num jogador para ver o histórico."
+              : "Desempates: pontos, OMW, GW e OGW, com piso de 33% (regra da Wizards). Toque num jogador para ver o histórico."}
+          </p>
         </aside>
       </div>
 
@@ -192,7 +237,11 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
         }}
         onClose={() => setConfirm(null)}
       >
-        <p>As mesas desta rodada são sorteadas outra vez, com as mesmas regras (pontos, sem revanche, folga para quem ainda não teve).</p>
+        <p>
+          {isPods
+            ? "As mesas desta rodada são montadas outra vez, com as mesmas regras (o mínimo de reencontros e pontos parecidos juntos)."
+            : "As mesas desta rodada são sorteadas outra vez, com as mesmas regras (pontos, sem revanche, folga para quem ainda não teve)."}
+        </p>
       </Confirm>
       <Confirm
         open={confirm === "delete"}

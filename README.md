@@ -107,11 +107,19 @@ ação demorar.
 
 ### Torneio
 
-Aba própria (`/torneios`), com o fluxo **Configurar → Inscrições → Rodadas → Corte → Bracket → Campeão** e a ação de
+Aba própria (`/torneios`), com o fluxo **Configurar → Inscrições → Rodadas → Corte → Bracket → Campeão** (no mesão,
+**Rodadas → Final → Campeão**, e a Final só aparece se houver empate na liderança) e a ação de
 cada etapa sempre à mão (desabilitada com o motivo: "faltam os placares das mesas 3, 6 e 8").
 
-- **Estruturas:** suíço, suíço + corte para **Top X livre**, eliminação simples e todos contra todos (método do círculo).
-  Melhor de 1 ou de 3 (o mata-mata pode ser diferente), pontuação configurável (padrão 3/1/0) e relógio de rodada.
+- **Estruturas:** suíço, suíço + corte para **Top X livre**, eliminação simples, todos contra todos (método do círculo)
+  e **mesão**. Melhor de 1 ou de 3 (o mata-mata pode ser diferente), pontuação configurável (padrão 3/1/0) e relógio.
+- **Mesão (Commander multiplayer, `tournament/pods.ts`):** mesas de 4, com mesas de 3 completando (10 = 4+3+3; 5
+  jogadores = uma mesa de 5). Vitória 3; sem vencedor quando o tempo e os turnos extras acabam, 1 ponto para cada
+  jogador vivo e 0 para quem já tinha saído. Tempo da partida definido pelo organizador (padrão 1 hora). 1ª rodada
+  sorteada; depois a rodada inteira sai de uma conta: primeiro o mínimo de adversários repetidos, depois pontos
+  parecidos juntos (até 12 jogadores testa todas as divisões; acima disso, busca por trocas). Empate em 1º depois da
+  última rodada vai para uma **final** só entre os empatados, sem tempo limite, que termina com um vencedor ou com os
+  finalistas **dividindo o prêmio**. Lançar uma mesa é um toque em "Venceu", ou "Empate no tempo" marcando os vivos.
 - **Emparelhamento suíço como o WER da Wizards:** 1ª rodada sorteada; depois, pontos iguais com sorteio dentro do grupo,
   e a última rodada pela classificação. A rodada inteira sai de uma conta de **emparelhamento ótimo** (algoritmo de
   blossom de Edmonds, porte do `mwmatching`), então revanche e folga repetida só aparecem quando não há saída.
@@ -227,7 +235,7 @@ cd backend
 .\.venv\Scripts\python -m tools.e2e photos                  # 10 fotos sobrepostas de uma mesa sintética
 .\.venv\Scripts\python -m tools.printlang_eval --n 200      # impressão e idioma pela imagem
 cd ..\frontend
-npm test                                                     # 40 testes do motor do torneio (Node puro, sem dependência)
+npm test                                                     # 52 testes do motor do torneio (Node puro, sem dependência)
 npm run typecheck                                            # app + testes
 cd ..
 node --experimental-strip-types tools-js/e2e-video.mjs      # mesmo vídeo pela visão do NAVEGADOR (API local rodando)
@@ -257,5 +265,4 @@ node tools-js/shot.mjs http://localhost:5190/escanear out.png --width 390   # te
 - **Condição pela foto** é estimativa grosseira (bordas e cantos), sempre marcada como "est.".
 - **OpenCV.js tem ~13 MB:** baixado uma vez, na primeira captura por câmera ou vídeo.
 - **Vídeo gravado** depende do codec que o navegador abre (MP4 H.264 funciona em todos).
-- **Torneio:** ainda sem eliminação dupla, mesas de 4 para Commander, disputa de 3º lugar e inscrição depois da
-  1ª rodada. O telão acompanha por consulta a cada poucos segundos (e na hora no mesmo aparelho), não por push.
+- **Torneio:** ainda sem eliminação dupla, disputa de 3º lugar e inscrição depois da 1ª rodada. O telão acompanha por consulta a cada poucos segundos (e na hora no mesmo aparelho), não por push.

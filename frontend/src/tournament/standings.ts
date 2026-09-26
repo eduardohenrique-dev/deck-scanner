@@ -5,14 +5,37 @@
  * - a rodada de bye não entra na média dos oponentes;
  * - quem saiu continua contando para quem jogou com ele.
  */
-import type { ID, Match, Player, Points, Round, Score, Standing, Tournament } from "./types.ts";
+import type { ID, Match, Player, Points, PodResult, Round, Score, Standing, Tournament } from "./types.ts";
 
 export const FLOOR = 1 / 3;
 const EPS = 1e-9;
 
 export type Outcome = "win" | "loss" | "draw" | "bye";
 
-export type Game = { round: number; table: number | null; opponent: ID | null; score: Score; outcome: Outcome };
+export type Game = {
+  round: number;
+  table: number | null;
+  opponent: ID | null;
+  score: Score;
+  outcome: Outcome;
+  /** mesão: quem estava na mesa e como ela terminou */
+  pod?: { players: ID[]; result: PodResult };
+};
+
+/**
+ * Como a mesa do mesão terminou para um jogador: vitória (3), empate por estar vivo quando o tempo e os
+ * turnos extras acabaram (1) ou derrota (0). Dividir o prêmio só existe na final e conta como título.
+ */
+export function podOutcome(r: PodResult, id: ID): "win" | "draw" | "loss" {
+  switch (r.kind) {
+    case "win":
+      return r.winner === id ? "win" : "loss";
+    case "draw":
+      return r.survivors.includes(id) ? "draw" : "loss";
+    case "split":
+      return r.players.includes(id) ? "win" : "loss";
+  }
+}
 
 export type PlayerStats = {
   playerId: ID;
@@ -82,9 +105,27 @@ export function collectStats(players: Player[], rounds: Round[], points: Points,
         if (b) add(b, m, round.number, "b", points);
       }
     }
+    for (const pod of round.pods ?? []) {
+      if (!pod.result) continue;
+      for (const id of pod.players) {
+        const s = map.get(id);
+        if (!s) continue;
+        const outcome = podOutcome(pod.result, id);
+        s.points += outcome === "win" ? points.win : outcome === "draw" ? points.draw : points.loss;
+        if (outcome === "win") s.wins++;
+        else if (outcome === "draw") s.draws++;
+        else s.losses++;
+        s.roundsPlayed++;
+        s.opponents.push(...pod.players.filter((x) => x !== id));
+        s.games.push({ round: round.number, table: pod.table, opponent: null, score: { a: 0, b: 0, draws: 0 }, outcome, pod: { players: pod.players, result: pod.result } });
+      }
+    }
   }
   return map;
 }
+
+/** Torneio de mesão: as rodadas têm mesas em vez de partidas 1 × 1. */
+export const isPodTournament = (t: Pick<Tournament, "rounds">) => t.rounds.some((r) => (r.pods?.length ?? 0) > 0);
 
 export function matchWinPct(s: PlayerStats, points: Points): number {
   if (!s.roundsPlayed || points.win <= 0) return FLOOR;
@@ -103,8 +144,41 @@ function cmp(a: number, b: number) {
   return Math.abs(a - b) < EPS ? 0 : a > b ? -1 : 1;
 }
 
+/**
+ * Mesão: pontos → vitórias → força dos adversários (média do aproveitamento de quem dividiu mesa com ele).
+ * Empate na liderança não se desempata por conta: vai para a final. Os percentuais ficam em `mwp`/`omw`
+ * (aproveitamento próprio e dos adversários), sem o piso de 1/3 da MTR, que é coisa do 1 × 1.
+ */
+function podStandings(t: Pick<Tournament, "players" | "rounds" | "settings">, upto: number): Standing[] {
+  const points = t.settings.points;
+  const stats = collectStats(t.players, t.rounds, points, upto);
+  const share = (s: PlayerStats) => (s.roundsPlayed && points.win > 0 ? s.points / (points.win * s.roundsPlayed) : 0);
+  const rows = t.players.map((p) => {
+    const s = stats.get(p.id)!;
+    const opp = s.opponents.filter((o) => stats.has(o));
+    return { player: p, s, mwp: share(s), omw: mean(opp.map((o) => share(stats.get(o)!))) };
+  });
+  rows.sort((x, y) => cmp(x.s.points, y.s.points) || cmp(x.s.wins, y.s.wins) || cmp(x.omw, y.omw) || x.player.lot - y.player.lot);
+  return rows.map((r, i) => ({
+    rank: i + 1,
+    playerId: r.player.id,
+    points: r.s.points,
+    wins: r.s.wins,
+    losses: r.s.losses,
+    draws: r.s.draws,
+    byes: 0,
+    matchesPlayed: r.s.roundsPlayed,
+    mwp: r.mwp,
+    omw: r.omw,
+    gwp: 0,
+    ogw: 0,
+    dropped: r.player.droppedAfter !== null,
+  }));
+}
+
 /** Classificação completa (dropados incluídos, marcados). `upto` limita a rodadas já jogadas. */
 export function standings(t: Pick<Tournament, "players" | "rounds" | "settings">, upto = Infinity): Standing[] {
+  if (isPodTournament(t)) return podStandings(t, upto);
   const points = t.settings.points;
   const stats = collectStats(t.players, t.rounds, points, upto);
   const mwp = new Map<ID, number>();

@@ -1,12 +1,15 @@
 import { useMemo } from "react";
-import { record } from "../../tournament/export.ts";
-import { history, standings } from "../../tournament/standings.ts";
+import { listPt } from "../../tournament/engine.ts";
+import { podRecord, record } from "../../tournament/export.ts";
+import { history, isPodTournament, standings } from "../../tournament/standings.ts";
 import type { Tournament } from "../../tournament/types.ts";
 import { IdentityPips } from "../mtg";
 import { cx, Drawer, Tag } from "../ui";
 import { scoreLabel } from "./MatchCard";
 
 const OUTCOME = { win: { label: "Vitória", tone: "ok" as const }, loss: { label: "Derrota", tone: "bad" as const }, draw: { label: "Empate", tone: "neutral" as const }, bye: { label: "Folga", tone: "ok" as const } };
+/** No mesão o "empate" é estar vivo quando o tempo e os turnos extras acabaram. */
+const POD_OUTCOME = { ...OUTCOME, draw: { label: "Vivo no tempo", tone: "neutral" as const } };
 
 /** Histórico de um jogador: rodada a rodada, com oponente, placar e os números dele na tabela. */
 export default function PlayerDrawer({ t, playerId, onClose }: { t: Tournament; playerId: string | null; onClose: () => void }) {
@@ -14,6 +17,8 @@ export default function PlayerDrawer({ t, playerId, onClose }: { t: Tournament; 
   const names = useMemo(() => new Map(t.players.map((p) => [p.id, p.name])), [t.players]);
   const row = useMemo(() => standings(t).find((s) => s.playerId === playerId), [t, playerId]);
   const games = useMemo(() => (playerId ? history(t, playerId) : []), [t, playerId]);
+  const pods = isPodTournament(t);
+  const pts = t.settings.points;
   return (
     <Drawer open={!!player} onClose={onClose} title={player?.name ?? ""}>
       {player && (
@@ -32,7 +37,7 @@ export default function PlayerDrawer({ t, playerId, onClose }: { t: Tournament; 
               {[
                 ["Posição", `${row.rank}º`],
                 ["Pontos", String(row.points)],
-                ["V–D–E", record(row.wins, row.losses, row.draws)],
+                pods ? ["V–E–D", podRecord(row.wins, row.draws, row.losses)] : ["V–D–E", record(row.wins, row.losses, row.draws)],
               ].map(([k, v]) => (
                 <div key={k} className="well px-4 py-3">
                   <dt className="text-caption text-cream-faint">{k}</dt>
@@ -46,15 +51,21 @@ export default function PlayerDrawer({ t, playerId, onClose }: { t: Tournament; 
             {games.length ? (
               <ol className="well divide-y divide-cream/6">
                 {games.map((g) => {
-                  const o = OUTCOME[g.outcome];
+                  const o = (g.pod ? POD_OUTCOME : OUTCOME)[g.outcome];
+                  const who = g.pod
+                    ? `com ${listPt(g.pod.players.filter((id) => id !== playerId).map((id) => names.get(id) ?? "?"))}`
+                    : g.opponent
+                      ? `contra ${names.get(g.opponent) ?? "?"}`
+                      : "Sem adversário";
+                  const gained = g.outcome === "win" ? pts.win : g.outcome === "draw" ? pts.draw : pts.loss;
                   return (
-                    <li key={`${g.round}-${g.opponent}`} className="flex items-center gap-3 px-4 py-3">
+                    <li key={`${g.round}-${g.opponent ?? g.table}`} className="flex items-center gap-3 px-4 py-3">
                       <span className="tabular w-8 shrink-0 text-footnote font-semibold text-cream-faint">R{g.round}</span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-subhead text-cream">{g.opponent ? `contra ${names.get(g.opponent) ?? "?"}` : "Sem adversário"}</span>
+                        <span className="block truncate text-subhead text-cream">{who}</span>
                         {g.table && <span className="block text-caption text-cream-faint">Mesa {g.table}</span>}
                       </span>
-                      <span className={cx("tabular text-subhead font-semibold", g.outcome === "win" || g.outcome === "bye" ? "text-cream" : "text-cream-dim")}>{scoreLabel(g.score)}</span>
+                      <span className={cx("tabular text-subhead font-semibold", g.outcome === "win" || g.outcome === "bye" ? "text-cream" : "text-cream-dim")}>{g.pod ? `+${gained}` : scoreLabel(g.score)}</span>
                       <Tag tone={o.tone}>{o.label}</Tag>
                     </li>
                   );

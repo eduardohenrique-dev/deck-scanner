@@ -7,7 +7,9 @@ export type ID = string;
 export type Structure =
   | { kind: "swiss"; rounds: number; cut: number | null } // cut = X livre (top X); null = só suíço
   | { kind: "round-robin"; cut: number | null }
-  | { kind: "single-elimination" }; // eliminação dupla fica para uma segunda fase
+  | { kind: "single-elimination" } // eliminação dupla fica para uma segunda fase
+  // mesão (Commander multiplayer): mesas de 4 (3 completam), empate na liderança vai para uma final
+  | { kind: "pods"; rounds: number };
 
 export type Points = { win: number; draw: number; loss: number };
 
@@ -50,9 +52,29 @@ export type Match = {
   at?: string | null;
 };
 
+/** Resultado de uma mesa do mesão. */
+export type PodResult =
+  | { kind: "win"; winner: ID }
+  // o tempo acabou (com os turnos extras) sem vencedor: quem ainda estava vivo pontua como empate
+  | { kind: "draw"; survivors: ID[] }
+  // só na final (sem tempo limite): os finalistas combinam dividir o prêmio
+  | { kind: "split"; players: ID[] };
+
+/** Mesa do mesão: de 3 a 5 jogadores. */
+export type Pod = {
+  id: ID;
+  table: number;
+  players: ID[];
+  result: PodResult | null;
+  /** jogadores trocados à mão pelo organizador */
+  manual?: boolean;
+  at?: string | null;
+};
+
 export type Timer = { startedAt: string | null; pausedAt: string | null; pausedMs: number };
 
-export type Round = { number: number; matches: Match[]; timer: Timer };
+/** No mesão a rodada tem mesas (`pods`) em vez de partidas 1 × 1 (`matches` fica vazio). */
+export type Round = { number: number; matches: Match[]; pods?: Pod[]; timer: Timer };
 
 /** Placar do mata-mata com quem jogou (se um vencedor anterior mudar, o placar velho deixa de valer). */
 export type BracketResult = { score: Score; a: ID; b: ID; at?: string | null };
@@ -82,6 +104,8 @@ export type Tournament = {
   players: Player[];
   rounds: Round[];
   playoff: Playoff | null;
+  /** mesão: final entre os empatados na liderança (sem tempo limite); ausente nos torneios antigos */
+  tiebreak?: Pod | null;
   startedAt: string | null;
   finishedAt: string | null;
   createdAt: string;
@@ -124,7 +148,7 @@ export type BracketSlot = {
 
 export type BracketView = { size: number; rounds: BracketSlot[][]; champion: ID | null };
 
-export type StageId = "setup" | "players" | "rounds" | "cut" | "bracket" | "champion";
+export type StageId = "setup" | "players" | "rounds" | "cut" | "bracket" | "final" | "champion";
 
 export type Status = "draft" | "running" | "finished";
 
@@ -134,6 +158,7 @@ export type Summary = {
   players: number;
   round: number;
   rounds: number;
+  /** nome do campeão (ou dos que dividiram o prêmio, "A e B") */
   champion: string | null;
   leader: string | null;
 };

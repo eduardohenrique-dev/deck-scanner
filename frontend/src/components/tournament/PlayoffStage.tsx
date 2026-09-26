@@ -1,7 +1,7 @@
 import { Shuffle, Undo2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { bracketSize, bracketView } from "../../tournament/bracket.ts";
-import { qualified } from "../../tournament/engine.ts";
+import { cutOf, qualified } from "../../tournament/engine.ts";
 import { standings } from "../../tournament/standings.ts";
 import type { Tournament } from "../../tournament/types.ts";
 import { Board, Button, Confirm, Segmented } from "../ui";
@@ -14,7 +14,7 @@ export function CutStage({ t, dispatch, onDrawn, onPlayer }: { t: Tournament; di
   const players = useMemo(() => new Map(t.players.map((p) => [p.id, p])), [t.players]);
   const table = useMemo(() => standings(t), [t]);
   const [seeding, setSeeding] = useState(t.settings.seeding);
-  const cut = t.structure.kind !== "single-elimination" ? (t.structure.cut ?? 0) : 0;
+  const cut = cutOf(t.structure) ?? 0;
   const ids = qualified(t);
   const size = bracketSize(ids.length);
   const byes = size - ids.length;

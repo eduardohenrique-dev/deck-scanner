@@ -5,9 +5,10 @@
  */
 import { bracketView, drawSeeds, pruneStale } from "./bracket.ts";
 import { activeIn, BYE_SCORE, pairRoundRobin, pairSwiss, roundRobinCount, suggestRounds } from "./pairing.ts";
+import { pairPods, suggestPodRounds } from "./pods.ts";
 import { derive, mulberry32 } from "./rng.ts";
 import { standings } from "./standings.ts";
-import type { DeckRef, ID, Match, Player, Playoff, Round, Score, Settings, StageId, Status, Structure, Summary, Tournament } from "./types.ts";
+import type { DeckRef, ID, Match, Player, Playoff, Pod, PodResult, Round, Score, Settings, StageId, Status, Structure, Summary, Tournament } from "./types.ts";
 
 export class TournamentError extends Error {}
 
@@ -41,7 +42,10 @@ export function createTournament(input: { id: ID; name: string; date: string; ga
 
 // ------------------------------------------------------------------ leitura
 export const isDraft = (t: Tournament) => t.startedAt === null;
-export const hasPlayoff = (s: Structure) => s.kind === "single-elimination" || s.cut !== null;
+export const isPods = (s: Structure) => s.kind === "pods";
+/** Corte do suíço ou do todos contra todos (null: sem corte, ou estrutura sem corte). */
+export const cutOf = (s: Structure): number | null => (s.kind === "swiss" || s.kind === "round-robin" ? s.cut : null);
+export const hasPlayoff = (s: Structure) => s.kind === "single-elimination" || cutOf(s) !== null;
 
 export function status(t: Tournament): Status {
   return t.startedAt === null ? "draft" : t.finishedAt ? "finished" : "running";
@@ -52,21 +56,35 @@ export function plannedRounds(t: Tournament): number {
   const s = t.structure;
   if (s.kind === "single-elimination") return 0;
   if (s.kind === "round-robin") return roundRobinCount(t.players.length);
+  if (s.kind === "pods") return s.rounds > 0 ? s.rounds : suggestPodRounds(t.players.length);
   return s.rounds > 0 ? s.rounds : suggestRounds(t.players.length, s.cut);
 }
 
-export const roundComplete = (r: Round) => r.matches.every((m) => m.result !== null);
+export const roundComplete = (r: Round) => r.matches.every((m) => m.result !== null) && (r.pods ?? []).every((p) => p.result !== null);
 export const currentRound = (t: Tournament): Round | null => t.rounds[t.rounds.length - 1] ?? null;
-export const pendingTables = (r: Round) => r.matches.filter((m) => m.b !== null && m.result === null).map((m) => m.table!);
+export const pendingTables = (r: Round) =>
+  [...r.matches.filter((m) => m.b !== null && m.result === null).map((m) => m.table!), ...(r.pods ?? []).filter((p) => !p.result).map((p) => p.table)].sort((a, b) => a - b);
 
 /** A fase classificatória terminou (todas as rodadas planejadas completas). */
 export function roundsDone(t: Tournament): boolean {
   return t.rounds.length >= plannedRounds(t) && t.rounds.every(roundComplete);
 }
 
+/** Mesão: quem está na frente em pontos, sem contar quem saiu (mais de um = empate na liderança). */
+export function leaders(t: Tournament): ID[] {
+  const table = standings(t).filter((s) => !s.dropped);
+  if (!table.length) return [];
+  const top = table[0].points;
+  return table.filter((s) => s.points === top).map((s) => s.playerId);
+}
+
+/** Mesão com as rodadas completas e empate na liderança: o campeão sai de uma final entre os empatados. */
+export const needsFinal = (t: Tournament) => isPods(t.structure) && roundsDone(t) && leaders(t).length > 1;
+
 export function stages(t: Tournament): StageId[] {
   const s = t.structure;
   if (s.kind === "single-elimination") return ["setup", "players", "bracket", "champion"];
+  if (s.kind === "pods") return ["setup", "players", "rounds", ...(t.tiebreak || needsFinal(t) ? (["final"] as const) : []), "champion"];
   return s.cut !== null ? ["setup", "players", "rounds", "cut", "bracket", "champion"] : ["setup", "players", "rounds", "champion"];
 }
 
@@ -74,27 +92,50 @@ export function stages(t: Tournament): StageId[] {
 export function stage(t: Tournament): StageId {
   if (isDraft(t)) return "setup";
   if (t.finishedAt) return "champion";
-  if (t.structure.kind === "single-elimination") return "bracket";
-  if (!roundsDone(t) || t.structure.cut === null) return "rounds";
+  const s = t.structure;
+  if (s.kind === "single-elimination") return "bracket";
+  if (s.kind === "pods") return roundsDone(t) && (t.tiebreak || needsFinal(t)) ? "final" : "rounds";
+  if (!roundsDone(t) || s.cut === null) return "rounds";
   return t.playoff ? "bracket" : "cut";
 }
 
-export function champion(t: Tournament): ID | null {
-  if (t.playoff) return bracketView(t.playoff).champion;
-  if (!hasPlayoff(t.structure) && t.finishedAt) return standings(t)[0]?.playerId ?? null;
-  return null;
+/** Campeões: um só, ou os finalistas que dividiram o prêmio no mesão. Vazio enquanto não houver. */
+export function champions(t: Tournament): ID[] {
+  if (isPods(t.structure)) {
+    const r = t.tiebreak?.result;
+    if (r) return r.kind === "win" ? [r.winner] : r.kind === "split" ? r.players : [];
+    if (t.finishedAt && !t.tiebreak) {
+      const top = leaders(t);
+      return top.length === 1 ? top : [];
+    }
+    return [];
+  }
+  if (t.playoff) {
+    const c = bracketView(t.playoff).champion;
+    return c ? [c] : [];
+  }
+  if (!hasPlayoff(t.structure) && t.finishedAt) {
+    const c = standings(t)[0]?.playerId;
+    return c ? [c] : [];
+  }
+  return [];
 }
+
+export const champion = (t: Tournament): ID | null => champions(t)[0] ?? null;
 
 export function summary(t: Tournament): Summary {
   const name = (id: ID | null) => (id ? (t.players.find((p) => p.id === id)?.name ?? null) : null);
   const table = t.rounds.length ? standings(t) : [];
+  const won = champions(t)
+    .map(name)
+    .filter((x): x is string => !!x);
   return {
     status: status(t),
     stage: stage(t),
     players: t.players.length,
     round: t.rounds.length,
     rounds: plannedRounds(t),
-    champion: name(champion(t)),
+    champion: won.length ? listPt(won) : null,
     leader: table.length ? name(table[0].playerId) : null,
   };
 }
@@ -107,8 +148,9 @@ export function listPt(items: string[]): string {
 /** Por que não dá para começar (null = pode). */
 export function startBlocker(t: Tournament): string | null {
   const n = t.players.length;
-  if (n < 2) return "Inscreva pelo menos 2 jogadores.";
   const s = t.structure;
+  if (s.kind === "pods") return n < 3 ? "O mesão precisa de pelo menos 3 jogadores." : null;
+  if (n < 2) return "Inscreva pelo menos 2 jogadores.";
   if (s.kind !== "single-elimination" && s.cut !== null) {
     if (s.cut < 2) return "O corte precisa de pelo menos 2 jogadores.";
     if (s.cut > n) return `O corte Top ${s.cut} precisa de pelo menos ${s.cut} jogadores (há ${n}).`;
@@ -121,14 +163,21 @@ export function nextRoundBlocker(t: Tournament): string | null {
   if (isDraft(t)) return "O torneio ainda não começou.";
   if (t.structure.kind === "single-elimination") return "Eliminação simples não tem rodadas suíças.";
   if (t.playoff) return "O corte já foi feito.";
+  if (t.tiebreak) return "A final já foi montada.";
   const r = currentRound(t);
-  if (r && !roundComplete(r)) {
-    const tables = pendingTables(r);
-    return tables.length === 1 ? `Falta o placar da mesa ${tables[0]}.` : `Faltam os placares das mesas ${listPt(tables.map(String))}.`;
-  }
+  if (r && !roundComplete(r)) return pendingReason(r);
   if (t.rounds.length >= plannedRounds(t)) return "Todas as rodadas planejadas já foram jogadas.";
-  if (t.players.filter((p) => activeIn(p, t.rounds.length + 1)).length < 2) return "Faltam jogadores ativos para emparelhar.";
+  const active = t.players.filter((p) => activeIn(p, t.rounds.length + 1)).length;
+  if (isPods(t.structure) && active < 3) return "Faltam jogadores ativos para montar as mesas (mínimo 3).";
+  if (active < 2) return "Faltam jogadores ativos para emparelhar.";
   return null;
+}
+
+/** "Falta o placar da mesa 3." / "Faltam os resultados das mesas 1 e 2." */
+export function pendingReason(r: Round): string {
+  const tables = pendingTables(r);
+  const what = r.pods?.length ? ["o resultado", "os resultados"] : ["o placar", "os placares"];
+  return tables.length === 1 ? `Falta ${what[0]} da mesa ${tables[0]}.` : `Faltam ${what[1]} das mesas ${listPt(tables.map(String))}.`;
 }
 
 // ------------------------------------------------------------------ comandos
@@ -156,6 +205,11 @@ export type Command =
   | { type: "uncut" }
   | { type: "restorePlayoff"; playoff: Playoff | null }
   | { type: "bracketResult"; key: string; score: Score | null; at: string }
+  | { type: "podResult"; round: number; pod: ID; result: PodResult | null; at: string }
+  | { type: "makeFinal"; at: string }
+  | { type: "unmakeFinal" }
+  | { type: "restoreFinal"; pod: Pod | null }
+  | { type: "finalResult"; result: PodResult | null; at: string }
   | { type: "finish"; at: string }
   | { type: "reopen" };
 
@@ -175,6 +229,35 @@ export function scoreProblem(score: Score, bestOf: 1 | 3, allowDraw: boolean): s
   return null;
 }
 
+/**
+ * Resultado coerente com a mesa. Nas rodadas há tempo: sem vencedor, quem estava vivo empata (pelo menos
+ * 2; com um só vivo, ele venceu). A final não tem tempo: termina com um vencedor ou com o prêmio dividido.
+ */
+export function podResultProblem(r: PodResult, players: ID[], final: boolean): string | null {
+  const inPod = (ids: ID[]) => ids.every((id) => players.includes(id));
+  const unique = (ids: ID[]) => new Set(ids).size === ids.length;
+  switch (r.kind) {
+    case "win":
+      return players.includes(r.winner) ? null : "Quem venceu precisa estar na mesa.";
+    case "draw":
+      if (final) return "A final não tem tempo limite: termina com um vencedor ou com o prêmio dividido.";
+      if (!inPod(r.survivors) || !unique(r.survivors)) return "Os sobreviventes precisam estar na mesa.";
+      return r.survivors.length < 2 ? "Com um só jogador vivo no fim do tempo, ele é o vencedor." : null;
+    case "split":
+      if (!final) return "Dividir o prêmio só vale na final.";
+      if (!inPod(r.players) || !unique(r.players)) return "Quem divide o prêmio precisa estar na final.";
+      return r.players.length < 2 ? "Para dividir o prêmio, marque pelo menos 2 finalistas." : null;
+  }
+}
+
+/** Guarda os ids na ordem da mesa (o mesmo resultado sempre grava igual). */
+function normalizeResult(r: PodResult, players: ID[]): PodResult {
+  const order = (ids: ID[]) => players.filter((id) => ids.includes(id));
+  if (r.kind === "draw") return { kind: "draw", survivors: order(r.survivors) };
+  if (r.kind === "split") return { kind: "split", players: order(r.players) };
+  return { kind: "win", winner: r.winner };
+}
+
 function mapRound(t: Tournament, roundNo: number, fn: (r: Round) => Round): Tournament {
   const idx = t.rounds.findIndex((r) => r.number === roundNo);
   if (idx < 0) fail("Rodada não encontrada.");
@@ -184,6 +267,8 @@ function mapRound(t: Tournament, roundNo: number, fn: (r: Round) => Round): Tour
 }
 
 function newRound(t: Tournament, roundNo: number, nonce = 0): Round {
+  const timer = { startedAt: null, pausedAt: null, pausedMs: 0 };
+  if (isPods(t.structure)) return { number: roundNo, matches: [], pods: pairPods(t, roundNo, { rng: mulberry32(derive(t.seed, "pods", roundNo, nonce)) }), timer };
   const planned = plannedRounds(t);
   const matches =
     t.structure.kind === "round-robin"
@@ -195,7 +280,7 @@ function newRound(t: Tournament, roundNo: number, nonce = 0): Round {
 /** Classificados para o mata-mata: todos (eliminação direta) ou o top X da classificação, sem quem saiu. */
 export function qualified(t: Tournament): ID[] {
   if (t.structure.kind === "single-elimination") return t.players.filter((p) => p.droppedAfter === null).map((p) => p.id);
-  const cut = t.structure.cut ?? 0;
+  const cut = cutOf(t.structure) ?? 0;
   return standings(t)
     .filter((s) => !s.dropped)
     .slice(0, cut)
@@ -211,13 +296,21 @@ function makePlayoff(t: Tournament, seeding: "standings" | "random", at: string,
   return { cut: ids.length, seeding, seeds, results: {}, drawnAt: at };
 }
 
-const hasPlayed = (r: Round) => r.matches.some((m) => m.result && m.b !== null);
+const hasPlayed = (r: Round) => r.matches.some((m) => m.result && m.b !== null) || (r.pods ?? []).some((p) => p.result);
 
 /** A mesa que o jogador abandona se sair agora: a dele na rodada atual, ainda sem placar (folga não conta). */
 export function leavesMatch(r: Round, player: ID): Match | null {
   const m = r.matches.find((x) => x.a === player || x.b === player);
   return m && m.b !== null && !m.result ? m : null;
 }
+
+/** Mesão: a mesa que o jogador deixa se sair agora (a da rodada atual, ainda sem resultado). */
+export function leavesPod(r: Round, player: ID): Pod | null {
+  const p = (r.pods ?? []).find((x) => x.players.includes(player));
+  return p && !p.result ? p : null;
+}
+
+const FINAL_LOCK = "Depois de montar a final, as rodadas ficam travadas. Desfaça a final para corrigir.";
 
 /** Aplica um comando. Lança TournamentError com a explicação quando ele não cabe no estado atual. */
 export function apply(t: Tournament, cmd: Command): Tournament {
@@ -235,13 +328,17 @@ export function apply(t: Tournament, cmd: Command): Tournament {
 
     case "setStructure": {
       const s = cmd.structure;
-      if (s.kind !== "single-elimination" && s.cut !== null && (!Number.isInteger(s.cut) || s.cut < 2)) fail("O corte precisa ser de pelo menos 2 jogadores.");
-      if (s.kind === "swiss" && (!Number.isInteger(s.rounds) || s.rounds < 0 || s.rounds > 20)) fail("Número de rodadas inválido.");
+      const cut = cutOf(s);
+      if (cut !== null && (!Number.isInteger(cut) || cut < 2)) fail("O corte precisa ser de pelo menos 2 jogadores.");
+      if ((s.kind === "swiss" || s.kind === "pods") && (!Number.isInteger(s.rounds) || s.rounds < 0 || s.rounds > 20)) fail("Número de rodadas inválido.");
       if (!isDraft(t)) {
-        // em andamento, só o número de rodadas e o corte do suíço mudam (e o corte, só antes de ser feito)
-        if (s.kind !== "swiss" || t.structure.kind !== "swiss") fail("A estrutura não muda depois que o torneio começa.");
-        if (s.cut !== t.structure.cut && t.playoff) fail("O corte já foi feito.");
-        if (s.rounds < t.rounds.length) fail(`Já foram geradas ${t.rounds.length} rodadas.`);
+        // em andamento, só o número de rodadas (e o corte do suíço, antes de ser feito) mudam
+        const was = t.structure;
+        if (s.kind === "swiss" && was.kind === "swiss") {
+          if (s.cut !== was.cut && t.playoff) fail("O corte já foi feito.");
+        } else if (!(s.kind === "pods" && was.kind === "pods")) fail("A estrutura não muda depois que o torneio começa.");
+        if (s.kind === "pods" && t.tiebreak) fail("A final já foi montada.");
+        if ((s.kind === "swiss" || s.kind === "pods") && s.rounds < t.rounds.length) fail(`Já foram geradas ${t.rounds.length} rodadas.`);
       }
       return { ...t, structure: s };
     }
@@ -302,6 +399,7 @@ export function apply(t: Tournament, cmd: Command): Tournament {
       if (blocker) fail(blocker);
       let s = t.structure;
       if (s.kind === "swiss" && s.rounds <= 0) s = { ...s, rounds: suggestRounds(t.players.length, s.cut) };
+      if (s.kind === "pods" && s.rounds <= 0) s = { ...s, rounds: suggestPodRounds(t.players.length) };
       const started: Tournament = { ...t, structure: s, startedAt: cmd.at };
       if (s.kind === "single-elimination") return { ...started, playoff: makePlayoff(started, t.settings.seeding, cmd.at) };
       return { ...started, rounds: [newRound(started, 1)] };
@@ -310,7 +408,7 @@ export function apply(t: Tournament, cmd: Command): Tournament {
     case "unstart": {
       if (isDraft(t)) return t;
       if (t.rounds.some(hasPlayed) || (t.playoff && Object.keys(t.playoff.results).length)) fail("Já há placares lançados.");
-      return { ...t, startedAt: null, rounds: [], playoff: null, finishedAt: null };
+      return { ...t, startedAt: null, rounds: [], playoff: null, tiebreak: null, finishedAt: null };
     }
 
     case "pairNext": {
@@ -324,6 +422,7 @@ export function apply(t: Tournament, cmd: Command): Tournament {
       if (!r || r.number !== cmd.round) fail("Só a rodada atual pode ser emparelhada de novo.");
       if (hasPlayed(r!)) fail("Esta rodada já tem placar lançado.");
       if (t.playoff) fail("O corte já foi feito.");
+      if (t.tiebreak) fail(FINAL_LOCK);
       const base = { ...t, rounds: t.rounds.slice(0, -1) };
       return { ...t, rounds: [...base.rounds, newRound(base, cmd.round, cmd.nonce)] };
     }
@@ -332,6 +431,7 @@ export function apply(t: Tournament, cmd: Command): Tournament {
       const r = currentRound(t);
       if (!r || r.number !== cmd.round) fail("Só a última rodada pode ser desfeita.");
       if (hasPlayed(r!)) fail("Esta rodada já tem placar lançado.");
+      if (t.tiebreak) fail(FINAL_LOCK);
       if (t.rounds.length === 1) fail("A primeira rodada só sai junto com o início do torneio.");
       return { ...t, rounds: t.rounds.slice(0, -1) };
     }
@@ -362,7 +462,21 @@ export function apply(t: Tournament, cmd: Command): Tournament {
       const r = currentRound(t);
       if (!r || r.number !== cmd.round) fail("Só dá para trocar jogadores na rodada atual.");
       if (t.playoff) fail("O corte já foi feito.");
+      if (t.tiebreak) fail(FINAL_LOCK);
       if (cmd.x === cmd.y) return t;
+      if (r!.pods?.length) {
+        const pods = r!.pods;
+        const px = pods.findIndex((p) => p.players.includes(cmd.x));
+        const py = pods.findIndex((p) => p.players.includes(cmd.y));
+        if (px < 0 || py < 0) fail("Jogador fora desta rodada.");
+        if (px === py) return t; // mesma mesa: no mesão não há lado
+        if (pods[px].result || pods[py].result) fail("Tire o resultado da mesa antes de trocar os jogadores.");
+        const put = (p: Pod, from: ID, to: ID): Pod => ({ ...p, players: p.players.map((id) => (id === from ? to : id)), manual: true });
+        const next = [...pods];
+        next[px] = put(pods[px], cmd.x, cmd.y);
+        next[py] = put(pods[py], cmd.y, cmd.x);
+        return mapRound(t, cmd.round, (x) => ({ ...x, pods: next }));
+      }
       const where = (id: ID) => r!.matches.findIndex((m) => m.a === id || m.b === id);
       const ix = where(cmd.x);
       const iy = where(cmd.y);
@@ -388,7 +502,18 @@ export function apply(t: Tournament, cmd: Command): Tournament {
       if (isDraft(t)) fail("Antes do início, é só remover da lista.");
       if (p!.droppedAfter !== null) return t;
       if (t.playoff) fail("Depois do corte, quem saiu fica só fora do mata-mata.");
+      if (t.tiebreak) fail(FINAL_LOCK);
       const r = currentRound(t);
+      const pod = r ? leavesPod(r, cmd.player) : null;
+      if (r && pod) {
+        // ainda não jogou a mesa atual: sai dela também e a mesa segue com os outros
+        const pods = r.pods!.map((x) => (x === pod ? { ...x, players: x.players.filter((id) => id !== cmd.player) } : x));
+        return {
+          ...t,
+          rounds: t.rounds.map((x) => (x === r ? { ...x, pods } : x)),
+          players: t.players.map((x) => (x.id === cmd.player ? { ...x, droppedAfter: r.number - 1 } : x)),
+        };
+      }
       const m = r ? leavesMatch(r, cmd.player) : null;
       let rounds = t.rounds;
       let after = t.rounds.length;
@@ -409,6 +534,7 @@ export function apply(t: Tournament, cmd: Command): Tournament {
       if (p!.droppedAfter === null) return t;
       if (t.rounds.length > p!.droppedAfter) fail("Já saiu emparelhamento sem ele; a volta só vale antes da próxima rodada.");
       if (t.playoff) fail("O corte já foi feito.");
+      if (t.tiebreak) fail(FINAL_LOCK);
       return { ...t, players: t.players.map((x) => (x.id === cmd.player ? { ...x, droppedAfter: null } : x)) };
     }
 
@@ -428,7 +554,7 @@ export function apply(t: Tournament, cmd: Command): Tournament {
       });
 
     case "cut": {
-      if (t.structure.kind === "single-elimination" || t.structure.cut === null) fail("Este torneio não tem corte.");
+      if (cutOf(t.structure) === null) fail("Este torneio não tem corte.");
       if (!roundsDone(t)) fail("O corte só sai depois da última rodada completa.");
       if (t.playoff && Object.keys(t.playoff.results).length) fail("O mata-mata já tem placar; desfaça os placares antes de sortear de novo.");
       return { ...t, playoff: makePlayoff(t, cmd.seeding, cmd.at, cmd.nonce ?? 0) };
@@ -463,9 +589,60 @@ export function apply(t: Tournament, cmd: Command): Tournament {
       return { ...t, playoff, finishedAt: decided ? (t.finishedAt ?? cmd.at) : null };
     }
 
+    case "podResult": {
+      const round = t.rounds.find((r) => r.number === cmd.round);
+      if (!round) fail("Rodada não encontrada.");
+      const pod = round!.pods?.find((p) => p.id === cmd.pod);
+      if (!pod) fail("Mesa não encontrada.");
+      if (t.tiebreak) fail(FINAL_LOCK);
+      let result: PodResult | null = null;
+      if (cmd.result) {
+        const problem = podResultProblem(cmd.result, pod!.players, false);
+        if (problem) fail(problem);
+        result = normalizeResult(cmd.result, pod!.players);
+      }
+      return mapRound(t, cmd.round, (r) => ({
+        ...r,
+        pods: r.pods!.map((p) => (p.id === cmd.pod ? { ...p, result, at: result ? cmd.at : null } : p)),
+      }));
+    }
+
+    case "makeFinal": {
+      if (!isPods(t.structure)) fail("Só o mesão tem final de desempate.");
+      if (t.tiebreak) return t;
+      if (!roundsDone(t)) fail("A final só sai depois da última rodada completa.");
+      const ids = leaders(t);
+      if (ids.length < 2) fail("Não há empate na liderança: o campeão já está definido.");
+      return { ...t, tiebreak: { id: "final", table: 1, players: ids, result: null }, finishedAt: null };
+    }
+
+    case "unmakeFinal": {
+      if (!t.tiebreak) return t;
+      if (t.tiebreak.result) fail("A final já tem resultado; tire o resultado antes.");
+      return { ...t, tiebreak: null, finishedAt: null };
+    }
+
+    case "restoreFinal":
+      return { ...t, tiebreak: cmd.pod, finishedAt: cmd.pod?.result ? t.finishedAt : null };
+
+    case "finalResult": {
+      const pod = t.tiebreak;
+      if (!pod) fail("A final ainda não foi montada.");
+      let result: PodResult | null = null;
+      if (cmd.result) {
+        const problem = podResultProblem(cmd.result, pod!.players, true);
+        if (problem) fail(problem);
+        result = normalizeResult(cmd.result, pod!.players);
+      }
+      return { ...t, tiebreak: { ...pod!, result, at: result ? cmd.at : null }, finishedAt: result ? (t.finishedAt ?? cmd.at) : null };
+    }
+
     case "finish": {
       if (isDraft(t)) fail("O torneio ainda não começou.");
-      if (hasPlayoff(t.structure)) {
+      if (isPods(t.structure)) {
+        if (!roundsDone(t)) fail("Faltam rodadas ou resultados.");
+        if (needsFinal(t) && !t.tiebreak?.result) fail("Empate na liderança: a final decide o campeão.");
+      } else if (hasPlayoff(t.structure)) {
         if (!t.playoff || !bracketView(t.playoff).champion) fail("Falta decidir a final.");
       } else if (!roundsDone(t)) fail("Faltam rodadas ou placares.");
       return { ...t, finishedAt: t.finishedAt ?? cmd.at };
@@ -486,6 +663,16 @@ export function inverse(t: Tournament, cmd: Command): Command | null {
       const m = t.rounds.find((r) => r.number === cmd.round)?.matches.find((x) => x.id === cmd.match);
       return m ? { type: "result", round: cmd.round, match: cmd.match, score: m.result, at: m.at ?? cmd.at } : null;
     }
+    case "podResult": {
+      const p = t.rounds.find((r) => r.number === cmd.round)?.pods?.find((x) => x.id === cmd.pod);
+      return p ? { type: "podResult", round: cmd.round, pod: cmd.pod, result: p.result, at: p.at ?? cmd.at } : null;
+    }
+    case "makeFinal":
+      return t.tiebreak ? null : { type: "unmakeFinal" };
+    case "unmakeFinal":
+      return t.tiebreak ? { type: "restoreFinal", pod: t.tiebreak } : null;
+    case "finalResult":
+      return t.tiebreak ? { type: "finalResult", result: t.tiebreak.result, at: t.tiebreak.at ?? cmd.at } : null;
     case "bracketResult":
       // o placar novo pode ter derrubado placares seguintes: volta a chave inteira
       return t.playoff ? { type: "restorePlayoff", playoff: t.playoff } : null;
@@ -497,8 +684,8 @@ export function inverse(t: Tournament, cmd: Command): Command | null {
     }
     case "drop": {
       const r = currentRound(t);
-      // se ele saiu de uma mesa já emparelhada, ela virou folga do oponente: sem volta simples
-      return r && leavesMatch(r, cmd.player) ? null : { type: "undrop", player: cmd.player };
+      // se ele saiu de uma mesa já montada, ela mudou (virou folga do oponente, ou ficou sem ele): sem volta simples
+      return r && (leavesMatch(r, cmd.player) || leavesPod(r, cmd.player)) ? null : { type: "undrop", player: cmd.player };
     }
     case "swap":
       return { type: "swap", round: cmd.round, x: cmd.x, y: cmd.y };
