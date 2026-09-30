@@ -1,4 +1,25 @@
-# Deck Scanner
+<p align="center">
+  <img src="docs/assets/banner.png" alt="Uma caixa de deck com uma carta saindo, num céu de noite com uma lua crescente" width="100%">
+</p>
+
+<p align="center">
+  <b>Deck Scanner.</b><br>
+  Aponte a câmera para as cartas de Magic e receba a decklist pronta, e saiba onde cada carta da coleção está.
+</p>
+
+<p align="center">
+  <a href="https://deck-scanner.vercel.app"><b>Ver no ar</b></a> ·
+  <a href="#como-rodar-localmente">Como rodar</a> ·
+  <a href="#arquitetura">Arquitetura</a> ·
+  <a href="#cascata-de-identificação-por-recorte-nunca-a-foto-inteira">Cascata de identificação</a> ·
+  <a href="https://eduardohenrique-nu.vercel.app">Portfólio</a>
+</p>
+
+<p align="center"><img src="docs/assets/divisor.png" alt="" width="100%"></p>
+
+<p align="center">
+  <img src="docs/assets/tela-entrada.png" alt="Tela de entrada do Deck Scanner: fundo índigo com estrelas, título em serifa e o formulário de login, com opção de entrar com Google" width="70%">
+</p>
 
 Aponte a câmera para as cartas e receba a decklist pronta para LigaMagic, Moxfield, Archidekt ou MTG Arena — e saiba
 onde cada carta física da coleção está. Arquitetura multi-jogo; Magic: The Gathering implementado.
@@ -269,3 +290,8 @@ node tools-js/shot.mjs http://localhost:5190/escanear out.png --width 390   # te
 - **OpenCV.js tem ~13 MB:** baixado uma vez, na primeira captura por câmera ou vídeo.
 - **Vídeo gravado** depende do codec que o navegador abre (MP4 H.264 funciona em todos).
 - **Torneio:** ainda sem eliminação dupla, disputa de 3º lugar e inscrição depois da 1ª rodada. O telão acompanha por consulta a cada poucos segundos (e na hora no mesmo aparelho), não por push.
+
+---
+
+<sub>Deck Scanner não é endossado pela Wizards of the Coast. Magic: The Gathering e os nomes e imagens das cartas pertencem aos seus titulares. Os dados de cartas e preços vêm da Scryfall.</sub><br>
+<sub>Feito em Governador Valadares (MG). Código publicado para consulta; todos os direitos reservados.</sub>
