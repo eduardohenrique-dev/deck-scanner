@@ -89,13 +89,13 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                   onClick={() => choose(o.id)}
                   className={cx(
                     "well relative flex min-h-24 flex-col items-start gap-1 px-4 py-4 text-left transition-[box-shadow,transform] duration-500 ease-spring active:scale-[0.98] active:duration-100 disabled:opacity-40",
-                    on && "bg-arcane-300/8 shadow-[inset_0_0_0_1.5px_var(--color-arcane-400),0_10px_24px_-14px_rgb(140_110_245/0.5)]",
+                    on && "bg-area-soft/8 shadow-[inset_0_0_0_1.5px_var(--area)]",
                   )}
                 >
-                  <span className={cx("text-headline font-semibold", on ? "text-arcane-100" : "text-mist")}>{o.title}</span>
+                  <span className={cx("text-headline font-semibold", on ? "text-mist" : "text-mist")}>{o.title}</span>
                   <span className="pr-6 text-footnote text-mist-dim">{o.text}</span>
                   {on && (
-                    <span aria-hidden="true" className="animate-pop absolute top-3 right-3 grid size-6 place-items-center rounded-full bg-arcane-400 text-ink-900">
+                    <span aria-hidden="true" className="animate-pop absolute top-3 right-3 grid size-6 place-items-center rounded-md bg-area text-ink-900">
                       <Check className="size-4 [--icon-stroke:2.4]" />
                     </span>
                   )}
@@ -111,7 +111,7 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                 <div className="flex flex-wrap items-center gap-3">
                   <Stepper value={s.rounds || suggested} min={Math.max(1, t.rounds.length)} max={20} label="Rodadas do suíço" onChange={(v) => setStructure({ ...s, rounds: v })} />
                   {s.rounds !== 0 && s.rounds !== suggested && n >= 2 && draft && (
-                    <button type="button" className="text-footnote font-semibold text-arcane-300 hover:underline" onClick={() => setStructure({ ...s, rounds: 0 })}>
+                    <button type="button" className="text-footnote font-semibold text-area-soft hover:underline" onClick={() => setStructure({ ...s, rounds: 0 })}>
                       Usar a sugestão ({suggested})
                     </button>
                   )}
@@ -141,7 +141,7 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                 <div className="flex flex-wrap items-center gap-3">
                   <Stepper value={s.rounds || suggested} min={Math.max(1, t.rounds.length)} max={20} label="Rodadas do mesão" onChange={(v) => setStructure({ ...s, rounds: v })} />
                   {s.rounds !== 0 && s.rounds !== suggested && n >= 3 && draft && (
-                    <button type="button" className="text-footnote font-semibold text-arcane-300 hover:underline" onClick={() => setStructure({ ...s, rounds: 0 })}>
+                    <button type="button" className="text-footnote font-semibold text-area-soft hover:underline" onClick={() => setStructure({ ...s, rounds: 0 })}>
                       Usar a sugestão ({suggested})
                     </button>
                   )}

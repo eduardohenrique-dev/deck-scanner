@@ -20,7 +20,7 @@ export default function ValueBox({
     <section className="space-y-3">
       <SectionTitle>
         <span className="inline-flex items-center gap-2">
-          <Coins size={20} className="text-arcane-300" /> Na balança
+          <Coins size={20} className="text-area-soft" /> Na balança
         </span>
       </SectionTitle>
       <div className="glass space-y-4 p-4 sm:p-5">
@@ -49,7 +49,7 @@ export default function ValueBox({
         )}
         <p className="text-caption leading-snug text-mist-faint">
           Estimativa: preço da Scryfall em dólar × PTAX {rate ? rate.toFixed(2).replace(".", ",") : "—"}. Para preço de loja,{" "}
-          <a href="https://www.ligamagic.com.br/?view=cards/lista" target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-arcane-300 hover:underline">
+          <a href="https://www.ligamagic.com.br/?view=cards/lista" target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-area-soft hover:underline">
             LigaMagic <ExternalLink className="size-3" />
           </a>
           .

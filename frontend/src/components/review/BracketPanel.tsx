@@ -30,7 +30,7 @@ export default function BracketPanel({ load, refreshKey }: { load: () => Promise
     <section className="space-y-3">
       <SectionTitle>
         <span className="inline-flex items-center gap-2">
-          <D20 size={20} className="text-arcane-300" /> Nível da mesa
+          <D20 size={20} className="text-area-soft" /> Nível da mesa
         </span>
       </SectionTitle>
       <div className="glass p-4 sm:p-5">
@@ -57,7 +57,7 @@ export default function BracketPanel({ load, refreshKey }: { load: () => Promise
                   className={cx(
                     "tabular rounded-xs py-1.5 text-center text-footnote font-semibold",
                     b.id === data.bracket
-                      ? "bg-[linear-gradient(180deg,var(--color-arcane-200),var(--color-arcane-400))] text-ink-900 shadow-[inset_0_1px_0_rgb(246_243_255/0.7)]"
+                      ? "bg-area text-ink-900"
                       : b.fails.length
                         ? "text-mist-faint line-through decoration-wine-400/70"
                         : "text-mist-dim",
@@ -99,7 +99,7 @@ export default function BracketPanel({ load, refreshKey }: { load: () => Promise
             )}
             {data.reasons.length > 0 && (
               <details className="text-footnote text-mist-faint">
-                <summary className="cursor-pointer text-arcane-300">Por que não é mais baixo</summary>
+                <summary className="cursor-pointer text-area-soft">Por que não é mais baixo</summary>
                 <ul className="mt-1 list-disc space-y-0.5 pl-5">
                   {data.reasons.map((r) => (
                     <li key={r}>{r}</li>
@@ -113,7 +113,7 @@ export default function BracketPanel({ load, refreshKey }: { load: () => Promise
               </p>
             ))}
             {data.combos.checked && (
-              <a href={data.combos.attribution_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-caption text-mist-faint hover:text-arcane-300">
+              <a href={data.combos.attribution_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-caption text-mist-faint hover:text-area-soft">
                 {data.combos.attribution} <ExternalLink className="size-3" />
               </a>
             )}

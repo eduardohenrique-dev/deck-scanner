@@ -19,16 +19,21 @@ const TournamentDisplay = lazy(() => import("./pages/TournamentDisplay"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const NAV = [
-  { to: "/", label: "Taverna", icon: Tankard, match: (p: string) => p === "/" },
-  { to: "/escanear", label: "Escanear", icon: Lens, match: (p: string) => p.startsWith("/escanear") || p.startsWith("/s/") },
-  { to: "/decks", label: "Decks", icon: Tome, match: (p: string) => p.startsWith("/decks") },
-  { to: "/colecao", label: "Coleção", icon: Chest, match: (p: string) => p.startsWith("/colecao") },
-  { to: "/torneios", label: "Torneio", icon: Goblet, match: (p: string) => p.startsWith("/torneios") },
+  { to: "/", label: "Taverna", icon: Tankard, area: "home", match: (p: string) => p === "/" },
+  { to: "/escanear", label: "Escanear", icon: Lens, area: "scan", match: (p: string) => p.startsWith("/escanear") || p.startsWith("/s/") },
+  { to: "/decks", label: "Decks", icon: Tome, area: "decks", match: (p: string) => p.startsWith("/decks") },
+  { to: "/colecao", label: "Coleção", icon: Chest, area: "collection", match: (p: string) => p.startsWith("/colecao") },
+  { to: "/torneios", label: "Torneio", icon: Goblet, area: "tournament", match: (p: string) => p.startsWith("/torneios") },
 ];
 
 export default function App() {
   const auth = useAuth();
   const { path } = useLocation();
+  // a cor da área vale para a página e para o que abre por cima dela (janelas, câmera, telão)
+  const area = NAV.find((n) => n.match(path))?.area ?? "home";
+  useEffect(() => {
+    document.body.dataset.area = area;
+  }, [area]);
 
   useEffect(() => {
     const onExpired = () => void signOut();
@@ -50,7 +55,7 @@ export default function App() {
     return (
       <FullScreen>
         <div className="glass w-full max-w-md space-y-4 p-6 text-center">
-          <div className="mx-auto grid size-14 place-items-center rounded-full bg-arcane-300/10 text-arcane-300">
+          <div className="mx-auto grid size-14 place-items-center text-arcane-300">
             <Candle size={30} />
           </div>
           <div className="space-y-2">
@@ -87,13 +92,13 @@ export default function App() {
       <a href="#conteudo" className="btn btn-primary sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50">
         Pular para o conteúdo
       </a>
-      <header className="bar-glass sticky top-0 z-40 shadow-[inset_0_-1px_0_rgb(214_204_255/0.08),0_8px_24px_-16px_rgb(0_0_0/0.8)]">
-        <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
+      <header className="bar-glass sticky top-0 z-40 border-b border-line-strong">
+        <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:h-16 sm:px-6">
           <Link to="/" className="flex items-center gap-2.5 rounded-sm" aria-label="Deck Scanner, início">
-            <BrandMark size={32} />
-            <span className="font-brand text-[1.625rem] leading-none font-semibold tracking-[0.01em] text-mist">Deck Scanner</span>
+            <BrandMark size={28} />
+            <span className="font-brand text-headline leading-none tracking-[0.12em] text-mist uppercase sm:text-title-3">Deck Scanner</span>
           </Link>
-          <nav className="ml-2 hidden items-center gap-1 md:flex" aria-label="Principal">
+          <nav className="ml-2 hidden items-stretch gap-1 self-stretch md:flex" aria-label="Principal">
             {NAV.map((item) => {
               const active = item.match(path);
               return (
@@ -101,14 +106,13 @@ export default function App() {
                   key={item.to}
                   to={item.to}
                   aria-current={active ? "page" : undefined}
+                  data-area={item.area}
                   className={cx(
-                    "flex h-10 items-center gap-2 rounded-full px-3.5 text-subhead font-medium transition-colors duration-200",
-                    active
-                      ? "bg-arcane-300/12 text-arcane-200 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.22),inset_0_1px_0_rgb(230_225_255/0.12)]"
-                      : "text-mist-dim hover:bg-mist/5 hover:text-mist",
+                    "flex items-center gap-2 border-b-2 px-3 font-caps text-footnote tracking-[0.09em] uppercase transition-colors duration-200",
+                    active ? "border-area text-mist" : "border-transparent text-mist-faint hover:text-mist",
                   )}
                 >
-                  <item.icon size={19} />
+                  <item.icon size={19} className={active ? "text-area-soft" : undefined} />
                   {item.label}
                 </Link>
               );
@@ -146,7 +150,7 @@ export default function App() {
       </main>
 
       <nav
-        className="bar-glass fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)] shadow-[inset_0_1px_0_rgb(214_204_255/0.1),0_-8px_24px_-16px_rgb(0_0_0/0.8)] md:hidden"
+        className="bar-glass fixed inset-x-0 bottom-0 z-40 border-t border-line-strong pb-[env(safe-area-inset-bottom)] md:hidden"
         aria-label="Principal"
       >
         <div className="grid" style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}>
@@ -157,9 +161,13 @@ export default function App() {
                 key={item.to}
                 to={item.to}
                 aria-current={active ? "page" : undefined}
-                className={cx("flex h-16 flex-col items-center justify-center gap-1 text-caption font-medium transition-colors duration-200", active ? "text-arcane-200" : "text-mist-faint")}
+                data-area={item.area}
+                className={cx(
+                  "-mt-px flex h-15 flex-col items-center justify-center gap-1 border-t-2 text-caption font-medium transition-colors duration-200",
+                  active ? "border-area text-mist" : "border-transparent text-mist-faint",
+                )}
               >
-                <item.icon size={24} />
+                <item.icon size={22} className={active ? "text-area-soft" : undefined} />
                 {item.label}
               </Link>
             );

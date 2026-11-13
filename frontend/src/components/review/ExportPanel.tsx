@@ -59,7 +59,7 @@ export default function ExportPanel({ kind, id, exporters, name }: { kind: "sess
     <section className="space-y-3">
       <SectionTitle>
         <span className="inline-flex items-center gap-2">
-          <Scroll size={20} className="text-arcane-300" /> Levar a lista
+          <Scroll size={20} className="text-area-soft" /> Levar a lista
         </span>
       </SectionTitle>
       <div className="glass space-y-3 p-4 sm:p-5">
@@ -82,7 +82,7 @@ export default function ExportPanel({ kind, id, exporters, name }: { kind: "sess
           <p className="text-footnote text-mist-faint">
             {HELP[format].hint}{" "}
             {HELP[format].url && (
-              <a href={HELP[format].url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-arcane-300 hover:underline">
+              <a href={HELP[format].url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-area-soft hover:underline">
                 Abrir <ExternalLink className="size-3.5" />
               </a>
             )}

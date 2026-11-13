@@ -24,7 +24,7 @@ export default function FinalStage({ t, dispatch, onPlayer }: { t: Tournament; d
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div className="space-y-6">
         <Board className="flex flex-wrap items-center gap-x-6 gap-y-4 p-5 sm:p-6">
-          <span className="grid size-14 shrink-0 place-items-center rounded-full bg-arcane-300/12 text-arcane-300 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.25)]">
+          <span className="grid size-14 shrink-0 place-items-center rounded-md bg-gold-300/12 text-gold-300 shadow-[inset_0_0_0_1px_rgb(232_193_90/0.25)]">
             <Crown size={28} />
           </span>
           <div className="min-w-0 flex-1">

@@ -65,14 +65,14 @@ export default function PlayersStage({ t, dispatch, onPlayer }: { t: Tournament;
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-headline font-semibold text-mist">
                     {onPlayer && !draft ? (
-                      <button type="button" className="max-w-full truncate text-left hover:text-arcane-100" onClick={() => onPlayer(p.id)}>
+                      <button type="button" className="max-w-full truncate text-left hover:text-mist" onClick={() => onPlayer(p.id)}>
                         {p.name}
                       </button>
                     ) : (
                       <InlineEdit label="Nome do jogador" value={p.name} placeholder="Sem nome" onSave={async (v) => void dispatch({ type: "updatePlayer", id: p.id, name: v })} />
                     )}
                   </p>
-                  <button type="button" onClick={() => setDeckFor(p)} className="mt-0.5 flex max-w-full items-center gap-2 rounded-xs text-footnote text-mist-faint hover:text-arcane-200">
+                  <button type="button" onClick={() => setDeckFor(p)} className="mt-0.5 flex max-w-full items-center gap-2 rounded-xs text-footnote text-mist-faint hover:text-area-soft">
                     {p.deck ? (
                       <>
                         {p.deck.identity?.length ? <IdentityPips colors={p.deck.identity} size={13} /> : <Layers className="size-3.5 shrink-0" />}
@@ -206,7 +206,7 @@ function DeckPicker({ player, onClose, onPick }: { player: Player; onClose: () =
               <ul className="well max-h-72 divide-y divide-mist/6 overflow-y-auto">
                 {list.map((d) => (
                   <li key={d.id}>
-                    <button type="button" onClick={() => onPick(fromDeck(d))} className={cx("flex min-h-14 w-full items-center gap-3 px-4 text-left hover:bg-mist/5", player.deck?.id === d.id && "bg-arcane-300/10")}>
+                    <button type="button" onClick={() => onPick(fromDeck(d))} className={cx("flex min-h-14 w-full items-center gap-3 px-4 text-left hover:bg-mist/5", player.deck?.id === d.id && "bg-area-soft/10")}>
                       <IdentityPips colors={d.identity} size={15} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate font-serif text-headline font-semibold text-mist">{d.name}</span>

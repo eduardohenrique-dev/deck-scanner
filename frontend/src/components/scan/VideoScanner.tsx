@@ -51,7 +51,7 @@ export default function VideoScanner({ sessionId, onState, onBusy }: { sessionId
         <div className="space-y-2">
           <div className="flex flex-wrap items-baseline justify-between gap-2 text-subhead">
             <span className="truncate text-mist-dim">
-              <Film className="mr-1.5 inline size-4 text-arcane-400" />
+              <Film className="mr-1.5 inline size-4 text-area" />
               {file?.name}
             </span>
             <span className="tabular text-mist-faint">
@@ -82,10 +82,10 @@ export default function VideoScanner({ sessionId, onState, onBusy }: { sessionId
           onDrop={onDrop}
           className={cx(
             "flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed px-6 py-10 text-center transition-[background-color,border-color] duration-200",
-            drag ? "border-arcane-400 bg-arcane-400/8" : "border-mist/12 hover:border-arcane-400/50",
+            drag ? "border-area bg-area/8" : "border-mist/12 hover:border-area/50",
           )}
         >
-          <span className="mb-2 grid size-16 place-items-center rounded-full bg-arcane-300/10 text-arcane-300 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.2)]">
+          <span className="mb-2 grid size-16 place-items-center rounded-md bg-area-soft/10 text-area-soft shadow-[inset_0_0_0_1px_rgb(233_230_220/0.2)]">
             <Upload className="size-7" />
           </span>
           <span className="font-display text-title-2 font-semibold text-mist">{done ? "Ler outro vídeo" : "Envie o vídeo do deck"}</span>

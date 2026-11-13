@@ -88,7 +88,7 @@ export default function StandingsTable({
                   className={cx("border-t border-mist/6 transition-colors", onPlayer && "cursor-pointer hover:bg-mist/5", r.dropped && "text-mist-faint")}
                   onClick={onPlayer ? () => onPlayer(r.playerId) : undefined}
                 >
-                  <td className={cx("tabular py-3 pl-4 font-bold", top ? "text-arcane-200" : r.dropped ? "text-mist-faint" : "text-mist")}>{rank}</td>
+                  <td className={cx("tabular py-3 pl-4 font-bold", top ? "text-area-soft" : r.dropped ? "text-mist-faint" : "text-mist")}>{rank}</td>
                   <td className="min-w-0 py-2.5 pr-2">
                     {onPlayer ? (
                       <button type="button" className="flex w-full min-w-0 items-center gap-2 text-left outline-offset-4" onClick={(e) => (e.stopPropagation(), onPlayer(r.playerId))}>
@@ -123,8 +123,8 @@ export default function StandingsTable({
                 {cutAfter.has(r.playerId) && r !== shown[shown.length - 1] && (
                   <tr aria-hidden="true">
                     <td colSpan={8} className="p-0">
-                      <div className="relative h-[2px] bg-[linear-gradient(90deg,transparent,var(--color-arcane-400)_12%,var(--color-arcane-400)_88%,transparent)]">
-                        <span className="absolute top-1/2 right-4 -translate-y-1/2 rounded-full bg-arcane-300 px-2 text-caption leading-[18px] font-semibold tracking-[0.08em] text-ink-900 uppercase">
+                      <div className="relative h-[2px] bg-[linear-gradient(90deg,transparent,var(--area)_12%,var(--area)_88%,transparent)]">
+                        <span className="absolute top-1/2 right-4 -translate-y-1/2 rounded-md bg-area-soft px-2 text-caption leading-[18px] font-semibold tracking-[0.08em] text-ink-900 uppercase">
                           Corte · Top {cut}
                         </span>
                       </div>

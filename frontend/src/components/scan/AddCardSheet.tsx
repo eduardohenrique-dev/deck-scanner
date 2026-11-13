@@ -63,7 +63,7 @@ export default function AddCardSheet({ state, onState, onClose }: { state: Sessi
                 <p className="text-footnote text-mist-faint">
                   {card.set_name} · #{card.collector_number} · {card.lang.toUpperCase()}
                 </p>
-                <button type="button" onClick={() => setCard(null)} className="min-h-11 text-footnote font-semibold text-arcane-300 hover:underline">
+                <button type="button" onClick={() => setCard(null)} className="min-h-11 text-footnote font-semibold text-area-soft hover:underline">
                   Trocar carta
                 </button>
               </div>

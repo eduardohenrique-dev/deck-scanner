@@ -66,7 +66,7 @@ export default function HistoryPanel({ state, onSnapshot }: { state: DeckState; 
                 <button
                   onClick={() => compare(s.id)}
                   aria-current={selected === s.id && diff?.id === s.id ? "true" : undefined}
-                  className={cx("block w-full px-4 py-3 text-left transition-colors", diff?.id === s.id ? "bg-arcane-400/10 shadow-[inset_3px_0_0_var(--color-arcane-300)]" : "hover:bg-mist/5")}
+                  className={cx("block w-full px-4 py-3 text-left transition-colors", diff?.id === s.id ? "bg-area/10 shadow-[inset_3px_0_0_var(--area-soft)]" : "hover:bg-mist/5")}
                 >
                   <span className="block font-serif text-body text-mist">{dateLabel(s.created_at, true)}</span>
                   <span className="block text-footnote text-mist-faint">

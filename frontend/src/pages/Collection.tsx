@@ -62,7 +62,7 @@ export default function Collection() {
       <button
         onClick={() => setLocationId("")}
         aria-current={!locationId ? "page" : undefined}
-        className={cx("flex min-h-11 w-full items-center justify-between rounded-sm px-3 text-left text-headline font-semibold transition-colors", !locationId ? "bg-arcane-300/12 text-arcane-200 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.2)]" : "text-mist hover:bg-mist/5")}
+        className={cx("flex min-h-11 w-full items-center justify-between rounded-sm px-3 text-left text-headline font-semibold transition-colors", !locationId ? "bg-area-soft/12 text-area-soft shadow-[inset_0_0_0_1px_rgb(233_230_220/0.2)]" : "text-mist hover:bg-mist/5")}
       >
         Tudo
         <span className="tabular text-footnote text-mist-faint">{all.reduce((n, l) => n + l.card_count, 0)}</span>
@@ -78,7 +78,7 @@ export default function Collection() {
                     <button
                       onClick={() => setLocationId(l.id)}
                       aria-current={locationId === l.id ? "page" : undefined}
-                      className={cx("flex min-h-10 w-full items-center gap-2 rounded-sm px-3 text-left text-subhead transition-colors", locationId === l.id ? "bg-arcane-300/12 text-arcane-200 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.2)]" : "text-mist-dim hover:bg-mist/5 hover:text-mist")}
+                      className={cx("flex min-h-10 w-full items-center gap-2 rounded-sm px-3 text-left text-subhead transition-colors", locationId === l.id ? "bg-area-soft/12 text-area-soft shadow-[inset_0_0_0_1px_rgb(233_230_220/0.2)]" : "text-mist-dim hover:bg-mist/5 hover:text-mist")}
                     >
                       {l.type === "deck" ? <Tome size={15} className="shrink-0 text-mist-faint" /> : <Chest size={15} className="shrink-0 text-mist-faint" />}
                       <span className="min-w-0 flex-1 truncate">{locName(l)}</span>
@@ -141,7 +141,7 @@ export default function Collection() {
               <div className="min-w-0">
                 <p className="eyebrow">{LOCATION_LABEL[current.type]}</p>
                 {current.type === "deck" ? (
-                  <Link to={`/decks/${current.deck_id}`} className="font-serif text-title-3 font-semibold text-mist hover:text-arcane-200">
+                  <Link to={`/decks/${current.deck_id}`} className="font-serif text-title-3 font-semibold text-mist hover:text-area-soft">
                     {current.name}
                   </Link>
                 ) : (
@@ -354,7 +354,7 @@ function WhereIs({ group, locations, onClose, onChanged }: { group: CollectionGr
             const place = items[0];
             return (
               <section key={placeId}>
-                <p className="mb-2 flex items-center gap-2 text-footnote font-semibold tracking-[0.06em] text-arcane-300 uppercase">
+                <p className="mb-2 flex items-center gap-2 text-footnote font-semibold tracking-[0.06em] text-area-soft uppercase">
                   {place.location_type === "deck" ? <Tome size={15} /> : <Chest size={15} />}
                   {place.location_type === "loose" ? "Solto" : `${LOCATION_LABEL[place.location_type ?? ""] ?? ""} ${place.location_name ?? ""}`}
                 </p>
@@ -362,7 +362,7 @@ function WhereIs({ group, locations, onClose, onChanged }: { group: CollectionGr
                   {items.map((c) => (
                     <li key={c.id}>
                       <label className="flex min-h-11 cursor-pointer items-center gap-3 px-4 py-2">
-                        <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} className="size-5 accent-[var(--color-arcane-400)]" />
+                        <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggle(c.id)} className="size-5 accent-[var(--area)]" />
                         <SetSymbol card={c.card} size={16} />
                         <span className="font-mono text-caption text-mist-faint uppercase">
                           {c.card?.set_code} {c.card?.collector_number}
@@ -499,7 +499,7 @@ function AddCard({ locations, defaultLocation, onClose, onAdded }: { locations: 
                 <p className="text-footnote text-mist-faint">
                   {card.set_name} · #{card.collector_number} · {card.lang.toUpperCase()}
                 </p>
-                <button onClick={() => setCard(null)} className="text-footnote text-arcane-300 hover:underline">
+                <button onClick={() => setCard(null)} className="text-footnote text-area-soft hover:underline">
                   Trocar carta
                 </button>
               </div>

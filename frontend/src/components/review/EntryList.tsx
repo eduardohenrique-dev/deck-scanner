@@ -100,7 +100,7 @@ export default function EntryList({ entries, detections = [], format, game, onSt
         />
         {reviewCount > 0 && (
           <button type="button" onClick={() => setOnlyReview((v) => !v)} aria-pressed={onlyReview} className="chip chip-pill">
-            <span className="size-2 rounded-full bg-ember-400" aria-hidden="true" />
+            <span className="size-2 rounded-md bg-ember-400" aria-hidden="true" />
             Revisar <span className="tabular">{reviewCount}</span>
           </button>
         )}
@@ -111,7 +111,7 @@ export default function EntryList({ entries, detections = [], format, game, onSt
       ) : (
         sections.map((s) => (
           <section key={s.key} className="glass overflow-hidden">
-            <h3 className="panel-head justify-between text-arcane-300">
+            <h3 className="panel-head justify-between text-area-soft">
               <span>{s.label}</span>
               <span className="tabular tracking-normal text-mist-faint">{s.count}</span>
             </h3>

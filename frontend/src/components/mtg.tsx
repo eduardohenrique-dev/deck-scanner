@@ -138,7 +138,7 @@ export function ArtThumb({ card, className, size = 44 }: { card: CardSummary | n
   const url = artCrop(card);
   return (
     <span
-      className={cx("inline-block shrink-0 overflow-hidden rounded-xs bg-night-750 ring-1 ring-arcane-700/60", className)}
+      className={cx("inline-block shrink-0 overflow-hidden rounded-xs bg-night-750 ring-1 ring-line-strong", className)}
       style={{ width: size, height: Math.round(size * 0.73) }}
     >
       {url && <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />}
@@ -149,7 +149,7 @@ export function ArtThumb({ card, className, size = 44 }: { card: CardSummary | n
 export function Money({ brl, className, muted }: { brl: number | null | undefined; className?: string; muted?: boolean }) {
   if (brl === null || brl === undefined) return <span className={cx("text-mist-faint", className)}>—</span>;
   return (
-    <span className={cx("tabular whitespace-nowrap", muted ? "text-mist-faint" : "text-arcane-200", className)}>
+    <span className={cx("tabular whitespace-nowrap", muted ? "text-mist-faint" : "text-gold-300", className)}>
       {brl.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
     </span>
   );

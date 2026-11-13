@@ -69,7 +69,7 @@ export function Toaster() {
             className="glass-float toast pointer-events-auto flex w-full max-w-md items-center gap-3 py-2.5 pr-2 pl-3"
             role={t.tone === "bad" ? "alert" : "status"}
           >
-            <span className={cx("grid size-7 shrink-0 place-items-center rounded-full", className)}>
+            <span className={cx("grid size-7 shrink-0 place-items-center rounded-md", className)}>
               <Icon className="size-4 [--icon-stroke:2.2]" />
             </span>
             <p className="min-w-0 flex-1 text-subhead text-mist">{t.text}</p>

@@ -91,7 +91,7 @@ export default function NoticeBoard({
               const s = SEVERITY[issue.severity];
               return (
                 <li key={`${issue.code}-${i}`} className={cx("parchment relative border-l-4 py-2 pr-2.5 pl-3 text-subhead", s.stripe, i % 2 ? "rotate-[0.25deg]" : "-rotate-[0.2deg]")}>
-                  <span className={cx("absolute -top-1 left-1/2 size-2.5 -translate-x-1/2 rounded-full shadow-[0_1px_1px_rgb(0_0_0/0.5)]", s.pin)} aria-hidden="true" />
+                  <span className={cx("absolute -top-1 left-1/2 size-2.5 -translate-x-1/2 rounded-md shadow-[0_1px_1px_rgb(0_0_0/0.5)]", s.pin)} aria-hidden="true" />
                   <p className="text-ink-900">{issue.message}</p>
                   {issue.entry_ids.length > 0 && onJump && (
                     <button type="button" onClick={() => onJump(issue.entry_ids[0])} className="mt-1 text-footnote font-semibold text-arcane-700 underline-offset-2 hover:underline">
@@ -120,7 +120,7 @@ export default function NoticeBoard({
             </ul>
             {lands.reasoning?.length ? (
               <details className="text-footnote text-mist-faint">
-                <summary className="cursor-pointer text-arcane-300">Por que essa divisão</summary>
+                <summary className="cursor-pointer text-area-soft">Por que essa divisão</summary>
                 <ul className="mt-1 list-disc space-y-0.5 pl-5">
                   {lands.reasoning.map((r) => (
                     <li key={r}>{r}</li>

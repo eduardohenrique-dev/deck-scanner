@@ -40,7 +40,7 @@ function Pairings({ t }: { t: Tournament }) {
     <div className="columns-1 gap-6 md:columns-2 2xl:columns-3">
       {rows.map((x) => (
         <div key={`${x.name}-${x.table}`} className={cx("mb-3 flex break-inside-avoid items-center gap-5 rounded-lg px-5 py-4", x.done ? "bg-mist/4 opacity-60" : "glass")}>
-          <span className="tabular grid size-16 shrink-0 place-items-center rounded-md bg-[linear-gradient(180deg,var(--color-arcane-200),var(--color-arcane-400))] text-title-1 font-bold text-ink-900 shadow-[inset_0_1px_0_rgb(246_243_255/0.7)]">
+          <span className="tabular grid size-16 shrink-0 place-items-center rounded-md bg-area text-title-1 font-bold text-ink-900">
             {x.table ?? "—"}
           </span>
           <span className="min-w-0">
@@ -60,7 +60,7 @@ function FinalScreen({ t }: { t: Tournament }) {
   const name = (id: string) => names.get(id) ?? "?";
   return (
     <div className="mx-auto max-w-4xl space-y-6 text-center">
-      <Crown size={72} className="mx-auto text-arcane-300 drop-shadow-[0_4px_18px_rgb(185_164_255/0.6)]" />
+      <Crown size={72} className="mx-auto text-area-soft" />
       <p className="text-title-2 text-mist-dim">{pod.result ? podResultText(pod.result, name) : "Empate na liderança · sem tempo limite"}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         {pod.players.map((id) => (

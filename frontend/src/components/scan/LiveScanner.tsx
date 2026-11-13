@@ -1,4 +1,4 @@
-import { Camera, Flashlight, FlashlightOff, Play, Plus, Square, SwitchCamera, Volume2, VolumeX, X } from "lucide-react";
+import { Camera, Flashlight, FlashlightOff, Keyboard, Play, Plus, Square, SwitchCamera, Volume2, VolumeX, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { brl } from "../../lib/format";
@@ -13,17 +13,18 @@ import { ALERT_KEY } from "./ScanOptions";
 import { prepareVision, useScanner, visionLoaded, type Miss } from "./useScanner";
 
 type CameraState = "off" | "opening" | "on" | "denied" | "unsupported" | "failed";
+type CameraCaps = MediaTrackCapabilities & { torch?: boolean; zoom?: { min: number; max: number }; focusMode?: string[] };
 
 /** Celular em pé: a câmera aberta ocupa a tela inteira. */
 const PHONE = "(max-width: 639px)";
 
 const DOT: Record<string, string> = {
-  neutral: "bg-mist-faint",
-  arcane: "bg-arcane-300 animate-pulse",
-  ok: "bg-moss-400",
-  warn: "bg-ember-400",
-  bad: "bg-wine-400",
-  info: "bg-astral-400",
+  neutral: "text-mist-faint",
+  arcane: "text-astral-300 animate-pulse",
+  ok: "text-moss-400",
+  warn: "text-ember-400",
+  bad: "text-wine-400",
+  info: "text-astral-400",
 };
 
 /** Câmera ao vivo: passe uma carta por vez; cada carta parada vira uma leitura enviada ao servidor. */
@@ -51,6 +52,10 @@ export default function LiveScanner({
   const shell = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 1280, h: 720 });
   const [torch, setTorch] = useState<boolean | null>(null);
+  // zoom da própria câmera (quando o aparelho deixa): com a carta mais longe a lente consegue focar
+  const [zoom, setZoom] = useState<{ max: number; value: number } | null>(null);
+  const [wantZoom, setWantZoom] = usePersistentState("deckscanner:zoom", true);
+  const focusModes = useRef<string[]>([]);
   const [sound, setSound] = usePersistentState("deckscanner:sound", true);
   const [cameraId, setCameraId] = usePersistentState<string | null>("deckscanner:camera", null);
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
@@ -81,6 +86,7 @@ export default function LiveScanner({
     setCamera("off");
     setFullscreen(false);
     setTorch(null);
+    setZoom(null);
   }, []);
 
   useEffect(() => () => stream.current?.getTracks().forEach((t) => t.stop()), []);
@@ -142,8 +148,20 @@ export default function LiveScanner({
       await el.play();
       setSize({ w: el.videoWidth || 1280, h: el.videoHeight || 720 });
       const track = media.getVideoTracks()[0];
-      const caps = (track.getCapabilities?.() ?? {}) as MediaTrackCapabilities & { torch?: boolean };
+      const caps = (track.getCapabilities?.() ?? {}) as CameraCaps;
       setTorch(caps.torch ? false : null);
+      // foco contínuo onde o navegador deixa escolher (Android); no iPhone ele já é automático
+      focusModes.current = caps.focusMode ?? [];
+      if (focusModes.current.includes("continuous")) void track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }).catch(() => undefined);
+      const phone = first ? window.matchMedia(PHONE).matches : fullscreen;
+      const maxZoom = Math.min(caps.zoom?.max ?? 1, 3);
+      if (phone && maxZoom >= 1.5) {
+        const value = wantZoom ? Math.min(2, maxZoom) : 1;
+        await track.applyConstraints({ advanced: [{ zoom: value } as MediaTrackConstraintSet] }).then(
+          () => setZoom({ max: maxZoom, value }),
+          () => setZoom(null),
+        );
+      } else setZoom(null);
       setActiveId(track.getSettings?.().deviceId ?? null);
       if (first) setFullscreen(window.matchMedia(PHONE).matches);
       setCamera("on");
@@ -178,9 +196,36 @@ export default function LiveScanner({
     }
   }
 
-  const tip = guidance(scanner.report, running);
+  async function toggleZoom() {
+    const track = stream.current?.getVideoTracks()[0];
+    if (!track || !zoom) return;
+    const value = zoom.value > 1 ? 1 : Math.min(2, zoom.max);
+    try {
+      await track.applyConstraints({ advanced: [{ zoom: value } as MediaTrackConstraintSet] });
+      setZoom({ ...zoom, value });
+      setWantZoom(value > 1);
+    } catch {
+      setZoom(null);
+    }
+  }
+
+  /** Toque no visor: pede um foco novo (Android); o contínuo volta em seguida. */
+  function refocus() {
+    const track = stream.current?.getVideoTracks()[0];
+    const modes = focusModes.current;
+    if (!track || !modes.includes("single-shot")) return;
+    void track
+      .applyConstraints({ advanced: [{ focusMode: "single-shot" } as MediaTrackConstraintSet] })
+      .then(() => {
+        if (!modes.includes("continuous")) return;
+        window.setTimeout(() => void track.applyConstraints({ advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet] }).catch(() => undefined), 1200);
+      })
+      .catch(() => undefined);
+  }
+
+  const tip = guidance(scanner.report, running, fullscreen);
   const counted = scanner.counted;
-  // no celular a câmera aberta ocupa a tela inteira: visor em cima, controles e leituras embaixo
+  // no celular a câmera aberta ocupa a tela inteira: o vídeo é o fundo e os controles flutuam por cima
   const immersive = fullscreen && camera === "on";
 
   // em tela cheia é uma camada como as janelas: a página por trás fica inerte e sem rolar, e uma janela
@@ -192,6 +237,24 @@ export default function LiveScanner({
     return () => popLayer(el);
   }, [immersive]);
 
+  // o teclado do celular cobre o rodapé: a camada acompanha a área visível de verdade
+  useEffect(() => {
+    const el = shell.current;
+    const vv = window.visualViewport;
+    if (!immersive || !el || !vv) return;
+    const fit = () => {
+      el.style.height = `${vv.height}px`;
+      el.style.top = `${vv.offsetTop}px`;
+    };
+    fit();
+    vv.addEventListener("resize", fit);
+    vv.addEventListener("scroll", fit);
+    return () => {
+      vv.removeEventListener("resize", fit);
+      vv.removeEventListener("scroll", fit);
+    };
+  }, [immersive]);
+
   // entrar e sair da tela cheia recria o <video>: o novo recebe o mesmo stream
   useLayoutEffect(() => {
     const el = video.current;
@@ -201,161 +264,208 @@ export default function LiveScanner({
     void el.play().catch(() => undefined);
   }, [immersive, camera]);
 
-  const view = (
-    <div ref={shell} className={immersive ? "fixed inset-0 z-50 flex flex-col bg-night-950" : "space-y-4"}>
-      <div
-        className={cx(
-          "viewfinder",
-          immersive ? "min-h-0 flex-1 rounded-none border-0 shadow-none" : "mx-auto aspect-[3/4] max-h-[68dvh] w-full sm:aspect-[4/3]",
-          camera !== "on" && "grid place-items-center",
-        )}
-      >
-        <video
-          ref={video}
-          muted
-          playsInline
-          onLoadedMetadata={(e) => setSize({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
-          className={cx("absolute inset-0 h-full w-full object-cover", camera !== "on" && "invisible")}
-        />
+  const startLabel = scanner.phase === "loading" ? (firstLoad ? "Preparando a lente…" : "Abrindo…") : scanner.phase === "finishing" ? "Fechando as leituras…" : "Começar a leitura";
+  const mainButton = running ? (
+    <Button variant="primary" size="lg" icon={<Square className="size-4 fill-current" />} onClick={scanner.stop} className={immersive ? "min-w-0 flex-1" : undefined}>
+      Terminar leitura
+    </Button>
+  ) : (
+    <Button
+      variant="primary"
+      size="lg"
+      icon={<Play className="size-4 fill-current" />}
+      busy={scanner.phase === "loading" || scanner.phase === "finishing"}
+      onClick={() => video.current && void scanner.startLive(video.current)}
+      className={immersive ? "min-w-0 flex-1" : undefined}
+    >
+      {startLabel}
+    </Button>
+  );
+  const status =
+    scanner.phase === "loading" && firstLoad
+      ? "Na primeira vez o leitor de imagem é baixado (cerca de 13 MB)."
+      : scanner.pending > 0
+        ? `Enviando ${scanner.pending} ${scanner.pending === 1 ? "leitura" : "leituras"}…`
+        : null;
+
+  const treasure = scanner.treasure && camera === "on" && (
+    <div className="animate-pop relative z-20 flex items-center gap-3 rounded-md bg-night-800 p-3 shadow-[inset_0_0_0_1px_var(--color-gold-400)]" role="status">
+      <img src={scanner.treasure.preview} alt="" className="card-img aspect-[488/680] w-11 shrink-0 object-cover ring-1 ring-gold-400/60" />
+      <p className="min-w-0 flex-1 text-subhead text-mist">
+        <span className="font-serif font-semibold">{scanner.treasure.name}</span>
+        <span className="block text-subhead text-gold-300">Carta valiosa · {brl(scanner.treasure.brl)}</span>
+      </p>
+      <IconButton label="Fechar aviso" onClick={scanner.dismissTreasure} className="shrink-0">
+        <X className="size-4" />
+      </IconButton>
+    </div>
+  );
+  const miss = scanner.miss && camera === "on" && (
+    <MissPanel key={scanner.miss.detectionId} miss={scanner.miss} dropUp={immersive} onPick={scanner.resolveMiss} onDismiss={scanner.dismissMiss} />
+  );
+  const error = scanner.error && (
+    <p className="rounded-md bg-night-800 px-4 py-3 text-subhead text-wine-300 shadow-[inset_0_0_0_1px_rgb(240_96_127/0.5)]" role="alert">
+      {scanner.error}
+    </p>
+  );
+  const videoEl = (
+    <video
+      ref={video}
+      muted
+      autoPlay
+      playsInline
+      onClick={refocus}
+      onLoadedMetadata={(e) => setSize({ w: e.currentTarget.videoWidth, h: e.currentTarget.videoHeight })}
+      className={cx("absolute inset-0 h-full w-full object-cover", camera !== "on" && "invisible")}
+    />
+  );
+  const tools = (
+    <div className="cam-chip flex gap-0.5 p-0.5 text-mist">
+      {zoom && (
+        <button
+          type="button"
+          onClick={toggleZoom}
+          aria-label={zoom.value > 1 ? "Tirar o zoom" : "Aproximar com zoom"}
+          title="Com zoom a carta fica longe da lente, onde a câmera consegue focar"
+          className="tabular grid h-11 min-w-11 place-items-center px-2 text-footnote font-semibold"
+        >
+          {zoom.value > 1 ? `${String(Math.round(zoom.value * 10) / 10).replace(".", ",")}×` : "1×"}
+        </button>
+      )}
+      {immersive && cameras.length > 1 && (
+        <IconButton label="Trocar de câmera" onClick={nextCamera} disabled={busy} title={busy ? "Termine a leitura para trocar de câmera" : undefined}>
+          <SwitchCamera className="size-[18px]" />
+        </IconButton>
+      )}
+      {torch !== null && (
+        <IconButton label={torch ? "Desligar lanterna" : "Ligar lanterna"} onClick={toggleTorch}>
+          {torch ? <FlashlightOff className="size-[18px]" /> : <Flashlight className="size-[18px]" />}
+        </IconButton>
+      )}
+      <IconButton label={sound ? "Silenciar o aviso de leitura" : "Tocar aviso a cada leitura"} onClick={() => setSound(!sound)}>
+        {sound ? <Volume2 className="size-[18px]" /> : <VolumeX className="size-[18px]" />}
+      </IconButton>
+    </div>
+  );
+  const counter = (counted !== null || running) && (
+    <span className="cam-chip flex h-11 items-center gap-1.5 px-3 text-footnote text-mist-dim">
+      <strong className="tabular text-title-3 font-semibold text-mist">{counted ?? 0}</strong> {counted === 1 ? "carta" : "cartas"}
+    </span>
+  );
+  const tipLine = (
+    <div className="cam-chip flex min-h-11 items-center gap-3 px-3 py-2" role="status" aria-live="polite">
+      <span className={cx("gem", DOT[tip.tone])} />
+      <span className="text-subhead text-mist">{tip.text}</span>
+      {running && scanner.fps > 0 && <span className="tabular ml-auto shrink-0 text-caption text-mist-faint">{scanner.fps} q/s</span>}
+    </div>
+  );
+
+  // ------------------------------------------------------------ celular: câmera em tela cheia
+  if (immersive)
+    // direto no <body>: nenhum painel da página consegue prender o position: fixed dela
+    return createPortal(
+      <div ref={shell} className="cam" data-area="scan">
+        {videoEl}
+        {/* a moldura fica numa faixa fixa entre o topo e os controles: avisos que aparecem não a deslocam */}
+        <div className="pointer-events-none absolute inset-x-0 top-[calc(env(safe-area-inset-top)+4.5rem)] bottom-[15.5rem]">
+          <ScanOverlay flash={flash?.tone ?? null} variant="phone" />
+        </div>
+        {flash && <div key={flash.id} className="edge-flash" data-tone={flash.tone} aria-hidden="true" />}
+        <div className="cam-shade-top pointer-events-none absolute inset-x-0 top-0 h-28" aria-hidden="true" />
+        <div className="absolute top-[max(env(safe-area-inset-top),12px)] right-3 left-3 z-10 flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            {!busy && (
+              <IconButton label="Fechar câmera" onClick={closeCamera} className="cam-chip text-mist">
+                <X className="size-5" />
+              </IconButton>
+            )}
+            {counter}
+          </div>
+          {tools}
+        </div>
+        <div className="cam-shade-bottom absolute inset-x-0 bottom-0 z-10 space-y-3 px-3 pt-12 pb-[max(env(safe-area-inset-bottom),12px)]">
+          {treasure}
+          {error}
+          {miss || tipLine}
+          {!scanner.miss && <ReadsStrip reads={scanner.reads} compact />}
+          {status && <p className="text-center text-footnote text-mist-dim">{status}</p>}
+          <div className="flex items-center gap-2">
+            {onAddCard && (
+              <Button variant="secondary" size="lg" onClick={onAddCard} aria-label="Digitar carta" title="Adicionar uma carta pelo nome" icon={<Keyboard className="size-5" />} className="w-[3.25rem] shrink-0 !px-0" />
+            )}
+            {mainButton}
+          </div>
+        </div>
+      </div>,
+      document.body,
+    );
+
+  // ------------------------------------------------------------ computador (e câmera ainda fechada)
+  return (
+    <div ref={shell} className="space-y-4">
+      <div className={cx("viewfinder mx-auto aspect-[3/4] max-h-[68dvh] w-full sm:aspect-[4/3]", camera !== "on" && "grid place-items-center")}>
+        {videoEl}
         {camera === "on" ? (
           <>
-            <ScanOverlay flash={flash?.tone ?? null} />
+            <ScanOverlay flash={flash?.tone ?? null} variant="desk" />
             {flash && <div key={flash.id} className="edge-flash" data-tone={flash.tone} aria-hidden="true" />}
-            <div className="absolute top-[max(env(safe-area-inset-top),12px)] right-3 left-3 z-10 flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2">
-                {immersive && !busy && (
-                  <IconButton label="Fechar câmera" onClick={closeCamera} className="rounded-full bg-night-950/70 text-mist shadow-[inset_0_0_0_1px_rgb(214_204_255/0.14)] backdrop-blur-md">
-                    <X className="size-5" />
-                  </IconButton>
-                )}
-                {(counted !== null || running) && (
-                  <span className="flex h-11 items-center gap-1.5 rounded-full bg-night-950/70 px-4 text-subhead text-mist-dim shadow-[inset_0_0_0_1px_rgb(214_204_255/0.14)] backdrop-blur-md">
-                    <strong className="tabular text-title-3 font-semibold text-mist">{counted ?? 0}</strong> {counted === 1 ? "carta" : "cartas"}
-                  </span>
-                )}
-              </div>
-              <div className="flex gap-1 rounded-full bg-night-950/70 p-0.5 text-mist shadow-[inset_0_0_0_1px_rgb(214_204_255/0.14)] backdrop-blur-md">
-                {immersive && cameras.length > 1 && (
-                  <IconButton label="Trocar de câmera" onClick={nextCamera} disabled={busy} title={busy ? "Termine a leitura para trocar de câmera" : undefined} className="rounded-full">
-                    <SwitchCamera className="size-[18px]" />
-                  </IconButton>
-                )}
-                {torch !== null && (
-                  <IconButton label={torch ? "Desligar lanterna" : "Ligar lanterna"} onClick={toggleTorch} className="rounded-full">
-                    {torch ? <FlashlightOff className="size-[18px]" /> : <Flashlight className="size-[18px]" />}
-                  </IconButton>
-                )}
-                <IconButton label={sound ? "Silenciar o aviso de leitura" : "Tocar aviso a cada leitura"} onClick={() => setSound(!sound)} className="rounded-full">
-                  {sound ? <Volume2 className="size-[18px]" /> : <VolumeX className="size-[18px]" />}
-                </IconButton>
-              </div>
+            <div className="absolute top-3 right-3 left-3 z-10 flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2">{counter}</div>
+              {tools}
             </div>
-            <div className="absolute inset-x-3 bottom-3 z-10 flex items-center gap-3 rounded-lg bg-night-950/75 px-4 py-3 shadow-[inset_0_0_0_1px_rgb(214_204_255/0.12)] backdrop-blur-md" role="status" aria-live="polite">
-              <span className={cx("size-2.5 shrink-0 rounded-full", DOT[tip.tone])} />
-              <span className="text-subhead text-mist">{tip.text}</span>
-              {running && scanner.fps > 0 && <span className="tabular ml-auto shrink-0 text-caption text-mist-faint">{scanner.fps} q/s</span>}
-            </div>
+            <div className="absolute inset-x-3 bottom-3 z-10">{tipLine}</div>
           </>
         ) : (
           <CameraMessage state={camera} onOpen={() => void openCamera()} />
         )}
       </div>
 
-      <div className={cx(immersive ? "bar-glass space-y-3 px-4 pt-4 pb-[max(env(safe-area-inset-bottom),16px)] shadow-[inset_0_1px_0_rgb(214_204_255/0.12)]" : "space-y-4")}>
-        {camera === "on" && (
-          <div className="flex flex-wrap items-center gap-3">
-            {running ? (
-              <Button variant="primary" size="lg" icon={<Square className="size-4 fill-current" />} onClick={scanner.stop} className={immersive ? "flex-1" : undefined}>
-                Terminar leitura
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                size="lg"
-                icon={<Play className="size-4 fill-current" />}
-                busy={scanner.phase === "loading" || scanner.phase === "finishing"}
-                onClick={() => video.current && void scanner.startLive(video.current)}
-                className={immersive ? "flex-1" : undefined}
+      {camera === "on" && (
+        <div className="flex flex-wrap items-center gap-3">
+          {mainButton}
+          {onAddCard && (
+            <Button variant="secondary" size="lg" icon={<Plus className="size-4" />} onClick={onAddCard} title="Adicionar uma carta pelo nome">
+              Digitar carta
+            </Button>
+          )}
+          {!busy && (
+            <Button variant="ghost" onClick={closeCamera}>
+              Fechar câmera
+            </Button>
+          )}
+          {cameras.length > 1 && (
+            <label className="flex min-w-0 items-center gap-2 text-footnote text-mist-faint sm:ml-auto">
+              <Camera className="size-4 shrink-0 text-area-soft" aria-hidden="true" />
+              <span className="sr-only">Câmera</span>
+              <Select
+                value={activeId ?? ""}
+                onChange={(e) => switchCamera(e.target.value)}
+                disabled={busy}
+                title={busy ? "Termine a leitura para trocar de câmera" : "Escolher câmera"}
+                className="h-10 w-auto max-w-[16rem] truncate"
               >
-                {scanner.phase === "loading" ? (firstLoad ? "Preparando a lente…" : "Abrindo…") : scanner.phase === "finishing" ? "Fechando as leituras…" : "Começar a leitura"}
-              </Button>
-            )}
-            {onAddCard && (
-              <Button variant="secondary" size="lg" icon={<Plus className="size-4" />} onClick={onAddCard} title="Adicionar uma carta pelo nome" className={immersive ? "w-full" : undefined}>
-                Digitar carta
-              </Button>
-            )}
-            {!busy && !immersive && (
-              <Button variant="ghost" onClick={closeCamera}>
-                Fechar câmera
-              </Button>
-            )}
-            {!immersive && cameras.length > 1 && (
-              <label className="flex min-w-0 items-center gap-2 text-footnote text-mist-faint sm:ml-auto">
-                <Camera className="size-4 shrink-0 text-arcane-400" aria-hidden="true" />
-                <span className="sr-only">Câmera</span>
-                <Select
-                  value={activeId ?? ""}
-                  onChange={(e) => switchCamera(e.target.value)}
-                  disabled={busy}
-                  title={busy ? "Termine a leitura para trocar de câmera" : "Escolher câmera"}
-                  className="h-10 w-auto max-w-[16rem] truncate"
-                >
-                  {cameras.map((c, i) => (
-                    <option key={c.deviceId} value={c.deviceId}>
-                      {cameraName(c, i)}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-            )}
-            {!immersive && size.w > 0 && (
-              <span className="tabular text-footnote text-mist-faint" title="resolução que a câmera está entregando">
-                {size.w}×{size.h}
-              </span>
-            )}
-            <p className={cx("text-footnote text-mist-faint", immersive && "basis-full text-center")}>
-              {scanner.phase === "loading" && firstLoad
-                ? "Na primeira vez o leitor de imagem é baixado (cerca de 13 MB)."
-                : scanner.pending > 0
-                  ? `Enviando ${scanner.pending} ${scanner.pending === 1 ? "leitura" : "leituras"}…`
-                  : running
-                    ? "Segure cada carta parada até piscar verde; tire do quadro antes da próxima."
-                    : null}
-            </p>
-          </div>
-        )}
-
-        {scanner.treasure && camera === "on" && (
-          <div className="animate-pop relative z-20 flex items-center gap-3 rounded-lg bg-arcane-500/14 p-3 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.45),0_12px_32px_-12px_rgb(140_110_245/0.5)]" role="status">
-            <img src={scanner.treasure.preview} alt="" className="card-img aspect-[488/680] w-11 shrink-0 object-cover ring-1 ring-arcane-400/60" />
-            <p className="min-w-0 flex-1 text-subhead text-mist">
-              <span className="font-serif font-semibold">{scanner.treasure.name}</span>
-              <span className="block text-subhead text-arcane-200">Carta valiosa · {brl(scanner.treasure.brl)}</span>
-            </p>
-            <IconButton label="Fechar aviso" onClick={scanner.dismissTreasure} className="shrink-0">
-              <X className="size-4" />
-            </IconButton>
-          </div>
-        )}
-
-        {scanner.miss && camera === "on" && (
-          <MissPanel key={scanner.miss.detectionId} miss={scanner.miss} dropUp={immersive} onPick={scanner.resolveMiss} onDismiss={scanner.dismissMiss} />
-        )}
-
-        {scanner.error && (
-          <p className="rounded-md bg-wine-600/14 px-4 py-3 text-subhead text-wine-300 shadow-[inset_0_0_0_1px_rgb(240_96_127/0.35)]" role="alert">
-            {scanner.error}
-          </p>
-        )}
-
-        <ReadsStrip reads={scanner.reads} />
-      </div>
+                {cameras.map((c, i) => (
+                  <option key={c.deviceId} value={c.deviceId}>
+                    {cameraName(c, i)}
+                  </option>
+                ))}
+              </Select>
+            </label>
+          )}
+          {size.w > 0 && (
+            <span className="tabular text-footnote text-mist-faint" title="resolução que a câmera está entregando">
+              {size.w}×{size.h}
+            </span>
+          )}
+          <p className="basis-full text-footnote text-mist-faint">{status ?? (running ? "Segure cada carta parada até piscar verde; tire do quadro antes da próxima." : null)}</p>
+        </div>
+      )}
+      {treasure}
+      {miss}
+      {error}
+      <ReadsStrip reads={scanner.reads} />
     </div>
   );
-  // a tela cheia vai direto no <body>: nenhum painel da página (vidro com desfoque, animação com
-  // transform) consegue prender o position: fixed dela
-  return immersive ? createPortal(view, document.body) : view;
 }
 
 /** A câmera não reconheceu a carta: mostrar de novo (automático) ou dizer o nome. */
@@ -364,8 +474,8 @@ function MissPanel({ miss, dropUp, onPick, onDismiss }: { miss: Miss; dropUp: bo
   const [err, setErr] = useState<string | null>(null);
   return (
     // z-20: a animação cria um contexto de empilhamento; sem isso a lista de nomes fica atrás das dicas do visor
-    <div className="animate-rise relative z-20 flex gap-3 rounded-lg bg-arcane-500/10 p-3 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.32)]" role="alert">
-      <img src={miss.preview} alt="" className="card-img aspect-[488/680] w-12 shrink-0 self-start object-cover ring-1 ring-arcane-400/40 sm:w-14" />
+    <div className="animate-rise relative z-20 flex gap-3 rounded-md bg-night-800 p-3 shadow-[inset_0_0_0_1px_var(--color-ember-400)]" role="alert">
+      <img src={miss.preview} alt="" className="card-img aspect-[488/680] w-12 shrink-0 self-start object-cover ring-1 ring-mist/20 sm:w-14" />
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
@@ -445,7 +555,7 @@ function CameraMessage({ state, onOpen }: { state: CameraState; onOpen: () => vo
 function Message({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
   return (
     <div className="relative z-10 flex max-w-sm flex-col items-center px-6 text-center">
-      {icon && <div className="mb-4 grid size-16 place-items-center rounded-full bg-arcane-300/10 text-arcane-300 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.2)]">{icon}</div>}
+      {icon && <div className="mb-4 text-area-soft">{icon}</div>}
       <p className="font-display text-title-2 font-semibold text-mist">{title}</p>
       <div className="mt-2 flex flex-col items-center text-subhead text-mist-dim">{children}</div>
     </div>

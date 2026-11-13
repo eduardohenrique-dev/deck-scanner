@@ -42,7 +42,7 @@ export default function ScanOptions({ state, onState }: { state: SessionState; o
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <SetField code={codes[0] ?? null} busy={busy} onPick={pickSet} />
         <label className="flex items-center gap-2 text-subhead text-mist-dim">
-          <Sparkles className="size-4 text-arcane-400" aria-hidden="true" />
+          <Sparkles className="size-4 text-area" aria-hidden="true" />
           Avisar acima de
           <span className="text-mist-faint">R$</span>
           <Input
@@ -65,7 +65,7 @@ export default function ScanOptions({ state, onState }: { state: SessionState; o
         <ul className="grid gap-1 text-footnote text-mist-faint sm:grid-cols-2">
           {TIPS.map((t) => (
             <li key={t} className="flex gap-2">
-              <span className="text-arcane-500">•</span>
+              <span className="text-area">•</span>
               {t}
             </li>
           ))}
@@ -113,11 +113,11 @@ function SetField({ code, busy, onPick }: { code: string | null; busy: boolean; 
     <div className="relative flex items-center gap-2 text-subhead text-mist-dim">
       <span>Coleção destas cartas:</span>
       {code ? (
-        <span className="flex h-9 items-center gap-2 rounded-full bg-arcane-300/12 pr-1 pl-3 text-mist shadow-[inset_0_0_0_1px_rgb(185_164_255/0.3)]">
+        <span className="flex h-9 items-center gap-2 rounded-md bg-area-soft/12 pr-1 pl-3 text-mist shadow-[inset_0_0_0_1px_rgb(233_230_220/0.3)]">
           {chosen?.icon_svg_uri && <img src={chosen.icon_svg_uri} alt="" className="size-4 opacity-80 invert-[.85]" />}
           <strong className="font-semibold">{code.toUpperCase()}</strong>
           {chosen && <span className="hidden max-w-40 truncate text-mist-faint sm:inline">{chosen.name}</span>}
-          <button type="button" onClick={() => onPick(null)} disabled={busy} aria-label="Aceitar qualquer coleção" className="grid size-7 place-items-center rounded-full text-mist-faint hover:bg-mist/10 hover:text-mist">
+          <button type="button" onClick={() => onPick(null)} disabled={busy} aria-label="Aceitar qualquer coleção" className="grid size-7 place-items-center rounded-md text-mist-faint hover:bg-mist/10 hover:text-mist">
             <X className="size-4" />
           </button>
         </span>

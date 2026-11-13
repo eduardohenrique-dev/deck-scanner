@@ -88,7 +88,7 @@ export default function DeckPage({ id }: { id: string }) {
     {
       value: "physical" as const,
       label: "Cartas físicas",
-      badge: allocation.totals.conflict + allocation.totals.move > 0 ? <span className="size-2 rounded-full bg-ember-400" aria-label="há cartas para organizar" /> : null,
+      badge: allocation.totals.conflict + allocation.totals.move > 0 ? <span className="size-2 rounded-md bg-ember-400" aria-label="há cartas para organizar" /> : null,
     },
     { value: "shopping" as const, label: "Compras", badge: allocation.totals.buy ? <Count>{allocation.totals.buy}</Count> : null },
     { value: "history" as const, label: "Histórico" },
@@ -130,7 +130,7 @@ export default function DeckPage({ id }: { id: string }) {
     <div className="space-y-6">
       <header className="glass relative overflow-hidden">
         {art && <img src={art} alt="" className="absolute inset-0 h-full w-full object-cover object-[center_30%] opacity-40" />}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(9_6_30/0.96)_18%,rgb(9_6_30/0.8)_55%,rgb(9_6_30/0.45))]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgb(8_9_11/0.96)_18%,rgb(8_9_11/0.8)_55%,rgb(8_9_11/0.45))]" />
         <div className="relative flex flex-wrap items-end justify-between gap-4 px-5 pt-12 pb-5 sm:px-8 sm:pt-20 sm:pb-6">
           <div className="min-w-0 flex-1 space-y-2 max-sm:basis-full">
             <p className="eyebrow">Deck · atualizado {relativeDay(deck.updated_at ?? deck.created_at)}</p>

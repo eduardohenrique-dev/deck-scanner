@@ -27,7 +27,7 @@ export default function CheckPanel({ state, scanning }: { state: SessionState; s
   if (!check.available)
     return (
       <section className="glass p-4 text-subhead text-mist-dim sm:p-5">
-        <Scales size={20} className="mr-2 inline text-arcane-400" /> Não dá para conferir: {check.reason}.
+        <Scales size={20} className="mr-2 inline text-area" /> Não dá para conferir: {check.reason}.
       </section>
     );
   const c: Available = check;
@@ -50,7 +50,7 @@ export default function CheckPanel({ state, scanning }: { state: SessionState; s
     <section className="space-y-3">
       <SectionTitle aside={<Link to={`/decks/${c.deck.id}`} className={cx(LINK, "inline-flex items-center gap-1")}>Abrir deck <ExternalLink className="size-3.5" /></Link>}>
         <span className="inline-flex items-center gap-2">
-          <Scales size={20} className="text-arcane-300" /> Conferência · {c.deck.name}
+          <Scales size={20} className="text-area-soft" /> Conferência · {c.deck.name}
         </span>
       </SectionTitle>
       <div className="glass space-y-5 p-4 sm:p-5">
@@ -143,7 +143,7 @@ function Group({ title, hint, children }: { title: string; hint: string; childre
   return (
     <div>
       <p className="mb-2 flex flex-wrap items-baseline gap-x-2">
-        <span className="text-footnote font-semibold tracking-[0.06em] text-arcane-300 uppercase">{title}</span>
+        <span className="text-footnote font-semibold tracking-[0.06em] text-area-soft uppercase">{title}</span>
         <span className="text-footnote text-mist-faint">{hint}</span>
       </p>
       <ul className="well divide-y divide-mist/6">{children}</ul>

@@ -95,18 +95,18 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
     <section className="space-y-3">
       <SectionTitle aside={<Tag tone="warn">{total}</Tag>}>
         <span className="inline-flex items-center gap-2">
-          <SearchCheck className="size-5 text-arcane-300" /> Confira primeiro
+          <SearchCheck className="size-5 text-area-soft" /> Confira primeiro
         </span>
       </SectionTitle>
       <ul className="space-y-4">
         {valuable.map((d) => {
           const cap = capById.get(d.capture_id);
           return (
-            <Case key={`valor:${d.id}`} image={d.crop_url} title={<><Sparkles className="size-4 text-arcane-300" /> Carta valiosa: confira a edição</>}>
+            <Case key={`valor:${d.id}`} image={d.crop_url} title={<><Sparkles className="size-4 text-area-soft" /> Carta valiosa: confira a edição</>}>
               <p className="text-subhead text-mist">
                 {cardName(d.card)} <span className="text-mist-faint">· {d.card?.set_code?.toUpperCase()}</span>
               </p>
-              <p className="text-subhead text-arcane-200">{brl(cardBrl(d, fx) ?? 0)}</p>
+              <p className="text-subhead text-area-soft">{brl(cardBrl(d, fx) ?? 0)}</p>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant="secondary" onClick={() => dismiss(`valor:${d.id}`)}>
                   Está certa
@@ -128,7 +128,7 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
               <p className="text-footnote text-mist-faint">
                 {positionLabel(d, cap?.idx, cap?.type !== "image")}
                 {cap?.image_url && (
-                  <button type="button" onClick={() => onShowCapture(cap, d.id)} className="ml-2 inline-flex items-center gap-1 font-medium text-arcane-300 hover:underline">
+                  <button type="button" onClick={() => onShowCapture(cap, d.id)} className="ml-2 inline-flex items-center gap-1 font-medium text-area-soft hover:underline">
                     <Eye className="size-3.5" /> Ver na foto
                   </button>
                 )}
@@ -186,7 +186,7 @@ export default function AttentionList({ state, apply, onShowCapture }: { state: 
                     <figcaption className="mt-1 text-footnote leading-tight text-mist-faint">
                       {cardName(d.card)}
                       {cap?.image_url && (
-                        <button type="button" onClick={() => onShowCapture(cap, d.id)} className="block font-medium text-arcane-300 hover:underline">
+                        <button type="button" onClick={() => onShowCapture(cap, d.id)} className="block font-medium text-area-soft hover:underline">
                           foto {cap.idx}
                         </button>
                       )}

@@ -216,7 +216,7 @@ export default function ScanSession({ id }: { id: string }) {
             )}
             <span>Criado {relativeDay(session.created_at)}</span>
             {session.target_deck_id && (
-              <Link to={`/decks/${session.target_deck_id}`} className="text-arcane-300 hover:underline">
+              <Link to={`/decks/${session.target_deck_id}`} className="text-area-soft hover:underline">
                 Deck {state.check?.available ? state.check.deck.name : (session.target_deck_name ?? "")}
               </Link>
             )}
@@ -248,7 +248,7 @@ export default function ScanSession({ id }: { id: string }) {
               {
                 value: "summary",
                 label: "Resumo",
-                badge: validation.issues.some((i) => i.severity === "error") ? <span className="size-2 rounded-full bg-wine-400" aria-label="há problemas" /> : null,
+                badge: validation.issues.some((i) => i.severity === "error") ? <span className="size-2 rounded-md bg-wine-400" aria-label="há problemas" /> : null,
               },
             ]}
           />
@@ -257,7 +257,7 @@ export default function ScanSession({ id }: { id: string }) {
           {tab === "capture" && entries.length > 0 && (
             <button type="button" onClick={() => setTab("list")} className="glass flex min-h-14 w-full items-center justify-between px-4 py-3 text-left transition-transform duration-500 ease-spring active:scale-[0.98] active:duration-100">
               <span className="text-headline font-semibold text-mist">{count === 1 ? "1 carta na lista" : `${count} cartas na lista`}</span>
-              <span className="inline-flex items-center gap-1 text-subhead font-semibold text-arcane-300">
+              <span className="inline-flex items-center gap-1 text-subhead font-semibold text-area-soft">
                 Revisar <ArrowRight className="size-4" />
               </span>
             </button>

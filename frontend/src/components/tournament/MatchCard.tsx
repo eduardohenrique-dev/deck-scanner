@@ -57,7 +57,7 @@ function Side({ player, points, won, lost, picked, onPick }: { player: Player | 
         type="button"
         onClick={onPick}
         aria-pressed={picked}
-        className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", picked ? "bg-arcane-300/15 shadow-[inset_0_0_0_1.5px_var(--color-arcane-300)]" : "hover:bg-mist/5")}
+        className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", picked ? "bg-area-soft/15 shadow-[inset_0_0_0_1.5px_var(--area-soft)]" : "hover:bg-mist/5")}
       >
         {content}
       </button>
@@ -100,7 +100,7 @@ export default function MatchCard({
           </Tag>
         </header>
         <div className="flex flex-1 flex-col items-center justify-center gap-2 py-4 text-center">
-          <Tankard size={28} className="text-arcane-300" />
+          <Tankard size={28} className="text-area-soft" />
           {swap ? (
             <Side player={a} won={false} lost={false} picked={swap.picked === match.a} onPick={() => swap.onPick(match.a)} />
           ) : (

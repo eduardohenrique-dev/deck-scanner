@@ -5,7 +5,7 @@ import { podOutcome } from "../../tournament/standings.ts";
 import type { Player, Points, Pod, PodResult } from "../../tournament/types.ts";
 import { Crown } from "../icons";
 import { IdentityPips } from "../mtg";
-import { Button, cx, Plate, Tag } from "../ui";
+import { Button, cx, Tag } from "../ui";
 
 type Mode = "entry" | "survivors";
 
@@ -67,28 +67,26 @@ export default function PodCard({
   };
 
   return (
-    <article className={cx("glass flex flex-col overflow-hidden", result && !editing && "shadow-[inset_0_0_0_1px_rgb(95_207_138/0.18),var(--shadow-raised)]")} aria-label={title ?? `Mesa ${pod.table}`}>
-      <header className="flex items-center gap-3 px-4 pt-4 pb-2">
-        <Plate>{final ? <Crown size={16} /> : pod.table}</Plate>
-        <h3 className="text-headline font-semibold text-mist">{title ?? `Mesa ${pod.table}`}</h3>
-        <span className="ml-auto flex items-center gap-2">
+    <article className="glass flex flex-col overflow-hidden" data-area={result && !editing ? "ok" : undefined} aria-label={title ?? `Mesa ${pod.table}`}>
+      <header className="band">
+        <h3 className="flex items-center gap-2">
+          {final && <Crown size={16} />}
+          {title ?? `Mesa ${pod.table}`}
+        </h3>
+        <span className="tabular text-caption normal-case">{result && !editing ? "lançada" : `${pod.players.length} jogadores`}</span>
+      </header>
+      {(repeats > 0 || pod.manual) && (
+        <div className="flex flex-wrap items-center gap-2 px-4 pt-3">
           {repeats > 0 && (
             <Tag tone="warn" title="Pares desta mesa que já jogaram juntos: com poucos jogadores é inevitável repetir">
               <Repeat2 className="size-3.5" /> {repeats === 1 ? "1 reencontro" : `${repeats} reencontros`}
             </Tag>
           )}
           {pod.manual && <Tag>Trocada</Tag>}
-          {result && !editing ? (
-            <Tag tone="ok">
-              <Check className="size-3.5 [--icon-stroke:2.4]" /> Lançada
-            </Tag>
-          ) : (
-            !repeats && !pod.manual && <span className="text-footnote text-mist-faint">{pod.players.length} jogadores</span>
-          )}
-        </span>
-      </header>
+        </div>
+      )}
 
-      <ul className="px-1 pb-1">
+      <ul className="divide-y divide-line px-1 py-1">
         {pod.players.map((id) => {
           const p = players.get(id);
           const outcome = result && !editing ? podOutcome(result, id) : null;
@@ -98,14 +96,14 @@ export default function PodCard({
               <span className="min-w-0 flex-1">
                 <span className={cx("flex items-center gap-1.5 truncate text-headline font-semibold", outcome === "loss" ? "text-mist-dim" : "text-mist")}>
                   <span className="truncate">{p?.name ?? "?"}</span>
-                  {outcome === "win" && <Crown size={16} className="shrink-0 text-arcane-300" aria-label="venceu" />}
+                  {outcome === "win" && <Crown size={16} className="shrink-0 text-gold-400" aria-label="venceu" />}
                 </span>
                 <span className="mt-0.5 flex min-w-0 items-center gap-2 text-footnote text-mist-faint">
                   {p?.deck?.identity?.length ? <IdentityPips colors={p.deck.identity} size={13} /> : null}
                   <span className="truncate">{[p?.deck?.name, points?.get(id) !== undefined ? `${points.get(id)} pts` : null].filter(Boolean).join(" · ")}</span>
                 </span>
               </span>
-              {outcome && <span className={cx("tabular shrink-0 text-headline font-bold", outcome === "loss" ? "text-mist-faint" : outcome === "win" ? "text-arcane-200" : "text-mist")}>{gained(id)}</span>}
+              {outcome && <span className={cx("tabular shrink-0 text-headline font-bold", outcome === "loss" ? "text-mist-faint" : outcome === "win" ? "text-gold-300" : "text-mist")}>{gained(id)}</span>}
             </>
           );
           if (swap)
@@ -115,7 +113,7 @@ export default function PodCard({
                   type="button"
                   onClick={() => swap.onPick(id)}
                   aria-pressed={swap.picked === id}
-                  className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", swap.picked === id ? "bg-arcane-300/15 shadow-[inset_0_0_0_1.5px_var(--color-arcane-300)]" : "hover:bg-mist/5")}
+                  className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", swap.picked === id ? "bg-night-700 shadow-[inset_0_0_0_1.5px_var(--area)]" : "hover:bg-night-750")}
                 >
                   {body}
                 </button>
@@ -131,7 +129,7 @@ export default function PodCard({
                   onClick={() => setMarked((m) => (on ? m.filter((x) => x !== id) : pod.players.filter((x) => x === id || m.includes(x))))}
                   className={cx("flex min-h-14 w-full items-center gap-3 rounded-md px-3 text-left transition-colors", on ? "bg-mist/6" : "opacity-60 hover:bg-mist/5")}
                 >
-                  <span className={cx("grid size-6 shrink-0 place-items-center rounded-full border-2", on ? "border-arcane-300 bg-arcane-400 text-ink-900" : "border-mist-faint")}>{on && <Check className="size-4 [--icon-stroke:3]" />}</span>
+                  <span className={cx("grid size-6 shrink-0 place-items-center rounded-xs border-2", on ? "border-area bg-area text-area-ink" : "border-mist-faint")}>{on && <Check className="size-4 [--icon-stroke:3]" />}</span>
                   {body}
                 </button>
               </li>

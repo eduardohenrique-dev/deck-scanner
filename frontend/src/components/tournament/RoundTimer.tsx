@@ -68,7 +68,7 @@ export default function RoundTimer({
           cy={box / 2}
           r={R}
           fill="none"
-          stroke={over ? "var(--color-ember-400)" : "var(--color-astral-300)"}
+          stroke={over ? "var(--color-ember-400)" : "var(--area)"}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circ}

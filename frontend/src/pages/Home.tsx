@@ -31,10 +31,10 @@ export default function Home() {
 
   const actions = (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      <ActionTile primary icon={<Lens size={24} />} title="Escanear um deck" text="Câmera, fotos ou vídeo: a lista sai pronta." onClick={() => navigate("/escanear")} />
-      <ActionTile icon={<Scales size={24} />} title="Conferir um deck" text="Bater o baralho com a lista salva." onClick={() => navigate("/escanear?finalidade=conferir")} />
-      <ActionTile icon={<Chest size={24} />} title="Guardar cartas" text="Registrar na pasta, na caixa ou solto." onClick={() => navigate("/escanear?finalidade=colecao")} />
-      <ActionTile icon={<Goblet size={24} />} title="Organizar um torneio" text="Suíço, corte e mata-mata, com desempates." onClick={() => navigate("/torneios")} />
+      <ActionTile primary area="scan" icon={<Lens size={24} />} title="Escanear um deck" text="Câmera, fotos ou vídeo: a lista sai pronta." onClick={() => navigate("/escanear")} />
+      <ActionTile area="decks" icon={<Scales size={24} />} title="Conferir um deck" text="Bater o baralho com a lista salva." onClick={() => navigate("/escanear?finalidade=conferir")} />
+      <ActionTile area="collection" icon={<Chest size={24} />} title="Guardar cartas" text="Registrar na pasta, na caixa ou solto." onClick={() => navigate("/escanear?finalidade=colecao")} />
+      <ActionTile area="tournament" icon={<Goblet size={24} />} title="Organizar um torneio" text="Suíço, corte e mata-mata, com desempates." onClick={() => navigate("/torneios")} />
     </div>
   );
 
@@ -46,7 +46,7 @@ export default function Home() {
           <h1 className="font-display text-display font-semibold text-mist sm:text-hero">
             Espalhe as cartas.
             <br />
-            <span className="text-arcane-300">A taverna anota.</span>
+            <span className="text-area-soft">A taverna anota.</span>
           </h1>
           <p className="max-w-xl text-body text-mist-dim">
             Folheie o baralho diante da câmera ou fotografe a mesa. A lista sai pronta para LigaMagic, Moxfield e Arena, e cada carta física fica registrada no deck, na pasta ou na caixa onde está.
@@ -86,18 +86,18 @@ export default function Home() {
       </header>
 
       {live && (
-        <Link to={`/torneios/${live.id}`} className="group glass flex items-center gap-4 px-5 py-4 transition-transform duration-500 ease-spring hover:-translate-y-0.5 active:scale-[0.99] active:duration-100">
-          <span className="grid size-11 shrink-0 place-items-center rounded-md bg-astral-600/30 text-astral-200 shadow-[inset_0_0_0_1px_rgb(86_185_224/0.35)]">
+        <Link to={`/torneios/${live.id}`} data-area="tournament" className="group glass flex items-center gap-4 border-l-[3px] border-l-area px-5 py-4 transition-colors hover:bg-night-750">
+          <span className="grid size-10 shrink-0 place-items-center text-area-soft">
             <Goblet size={24} />
           </span>
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
-              <span className="truncate text-headline font-semibold text-mist group-hover:text-arcane-100">{live.name}</span>
+              <span className="truncate text-headline font-semibold text-mist group-hover:text-mist">{live.name}</span>
               <Tag tone="live">Em andamento</Tag>
             </span>
             <span className="block truncate text-footnote text-mist-faint">{progressLine({ ...live.summary, status: live.status })}</span>
           </span>
-          <ChevronRight className="size-5 shrink-0 text-mist-faint group-hover:text-arcane-300" />
+          <ChevronRight className="size-5 shrink-0 text-mist-faint group-hover:text-area-soft" />
         </Link>
       )}
 
@@ -134,7 +134,7 @@ export default function Home() {
                 : decks.data?.slice(0, 6).map((d) => <DeckTome key={d.id} deck={d} />)}
               {!decks.loading && !decks.data?.length && (
                 <Link to="/escanear" className="glass col-span-full flex items-center gap-4 px-5 py-5 text-mist-dim transition-colors hover:text-mist">
-                  <Tome size={28} className="shrink-0 text-arcane-300" />
+                  <Tome size={28} className="shrink-0 text-area-soft" />
                   <span className="min-w-0 flex-1 text-subhead">Os decks que você salvar a partir de um scan ficam aqui, com versões e cartas físicas.</span>
                   <ChevronRight className="size-5 shrink-0 text-mist-faint" />
                 </Link>
@@ -176,19 +176,20 @@ export default function Home() {
   );
 }
 
-function ActionTile({ icon, title, text, onClick, primary }: { icon: ReactNode; title: string; text: string; onClick: () => void; primary?: boolean }) {
+function ActionTile({ icon, title, text, onClick, primary, area }: { icon: ReactNode; title: string; text: string; onClick: () => void; primary?: boolean; area: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      data-area={primary ? undefined : area}
       className={cx(
-        "group relative flex items-center gap-4 overflow-hidden px-4 py-4 text-left transition-transform duration-500 ease-spring active:scale-[0.98] active:duration-100 sm:flex-col sm:items-start sm:gap-3 sm:px-5 sm:py-5",
-        primary ? "btn-primary rounded-lg" : "glass hover:-translate-y-0.5",
+        "group relative flex items-center gap-4 px-4 py-4 text-left transition-colors duration-200 active:scale-[0.99] sm:flex-col sm:items-start sm:gap-3 sm:px-5 sm:py-5",
+        primary ? "rounded-lg bg-area hover:bg-area-soft" : "glass border-t-[3px] border-t-area hover:bg-night-750",
       )}
     >
-      <span className={cx("grid size-11 shrink-0 place-items-center rounded-md", primary ? "bg-ink-900/12 text-ink-900" : "bg-arcane-300/10 text-arcane-300 shadow-[inset_0_0_0_1px_rgb(185_164_255/0.18)]")}>{icon}</span>
+      <span className={cx("grid size-10 shrink-0 place-items-center", primary ? "text-ink-900" : "text-area-soft")}>{icon}</span>
       <span className="min-w-0 flex-1">
-        <span className={cx("block text-headline font-semibold", primary ? "text-ink-900" : "text-mist group-hover:text-arcane-100")}>{title}</span>
+        <span className={cx("block font-caps text-subhead tracking-[0.08em] uppercase", primary ? "text-ink-900" : "text-mist")}>{title}</span>
         <span className={cx("mt-0.5 block text-footnote", primary ? "text-ink-700" : "text-mist-faint")}>{text}</span>
       </span>
       <ChevronRight className={cx("size-5 shrink-0 sm:hidden", primary ? "text-ink-700" : "text-mist-faint")} />
@@ -199,7 +200,7 @@ function ActionTile({ icon, title, text, onClick, primary }: { icon: ReactNode; 
 function Stat({ label, value }: { label: string; value: ReactNode | null }) {
   return (
     <div className="well px-4 py-3">
-      <dt className="text-caption font-medium text-mist-faint">{label}</dt>
+      <dt className="eyebrow !text-mist-faint">{label}</dt>
       <dd className="tabular mt-0.5 truncate text-title-3 font-semibold text-mist">{value ?? <Skeleton className="mt-1 h-6 w-14" />}</dd>
     </div>
   );

@@ -192,7 +192,7 @@ export default function SaveDialog({ state, open, onClose, onSaved }: { state: S
 
         {target !== "collection" && (
           <label className="flex items-start gap-3 text-subhead text-mist-dim">
-            <input type="checkbox" checked={register} onChange={(e) => setRegister(e.target.checked)} className="mt-0.5 size-5 accent-[var(--color-arcane-400)]" />
+            <input type="checkbox" checked={register} onChange={(e) => setRegister(e.target.checked)} className="mt-0.5 size-5 accent-[var(--area)]" />
             <span>
               Registrar as cartas físicas neste deck
               <span className="block text-footnote text-mist-faint">Assim o app sabe onde cada cópia está e avisa quando a mesma carta for usada em outro deck.</span>
@@ -210,7 +210,7 @@ export default function SaveDialog({ state, open, onClose, onSaved }: { state: S
         ) : (
           <div className="space-y-4">
             <p className="flex items-center gap-2 text-subhead text-mist">
-              {target === "collection" ? <Chest size={18} className="text-arcane-400" /> : <Tome size={18} className="text-arcane-400" />}
+              {target === "collection" ? <Chest size={18} className="text-area" /> : <Tome size={18} className="text-area" />}
               {preview.physical_cards} {preview.physical_cards === 1 ? "carta física lida" : "cartas físicas lidas"}
             </p>
 

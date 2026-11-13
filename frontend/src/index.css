@@ -1,28 +1,32 @@
 @import "tailwindcss";
-@import "@fontsource-variable/cinzel";
+@import "@fontsource/marcellus/latin-400.css";
+@import "@fontsource/marcellus/latin-ext-400.css";
 @import "@fontsource-variable/instrument-sans/standard.css";
 @import "@fontsource-variable/instrument-sans/standard-italic.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
 
 /*
-  Arcano (a logo: o olho que lê a carta): noite índigo ao fundo, vidro violeta por cima, luz lavanda só no que
-  é ação e seleção. Regras da casa:
-  - todo valor visual sai daqui (cores, tipos, raios, sombras, desfoque, molas);
-  - quatro níveis de profundidade: noite (fundo), painel (.glass), flutuante (.glass-float) e folha (.glass-sheet);
-  - poço (.well) é o que se preenche; pergaminho (.parchment, agora velino lavanda) só para o que é "papel";
-  - Cinzel, as capitulares da logo, só em títulos e na marca; nomes e interface na sans, que lê melhor;
+  Carta: o app tem o traço do objeto que ele lê. Regras da casa (o resumo está em DESIGN.md):
+  - todo valor visual sai daqui (cores, tipos, raios, sombras, molas);
+  - chão quase preto neutro e texto marfim; a cor entra com função, nunca como fundo de tudo;
+  - uma cor de mana por área: azul (escanear), violeta (decks e a ação da tela), ouro (coleção e valor),
+    fogo (torneio); verde, âmbar e carmim são só estado;
+  - superfícies opacas separadas por tom e por fio de 1 px; painel leva moldura de fio duplo, como a carta;
+  - cantos quase retos: etiqueta 2–3 px, controle e painel 4 px, folha 6 px; círculo só em ponto e interruptor;
+  - Marcellus em caixa alta nos rótulos, botões e marca, em caixa normal nos títulos; números em mono;
   - espaçamento na grade de 4/8 px, sem meios-passos.
 */
 @theme {
   /* ------------------------------------------------------------ tipos */
-  --font-brand: "Cinzel Variable", Georgia, serif; /* só a marca */
-  --font-display: "Cinzel Variable", Georgia, "Times New Roman", serif; /* títulos */
-  /* nomes próprios (cartas, decks, jogadores): sans em peso firme, porque a Cinzel vira versalete no minúsculo */
+  --font-brand: "Marcellus", Georgia, serif;
+  --font-display: "Marcellus", Georgia, "Times New Roman", serif;
+  /* nomes próprios (cartas, decks, jogadores): sans em peso firme */
   --font-serif: "Instrument Sans Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-sans: "Instrument Sans Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-caps: "Instrument Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+  --font-caps: "Marcellus", Georgia, serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
 
-  /* escala com nome (como os estilos de texto da Apple): 10 tamanhos, nada fora dela */
+  /* escala com nome: 10 tamanhos, nada fora dela */
   --text-caption: 0.75rem;
   --text-caption--line-height: 1rem;
   --text-caption--letter-spacing: 0.01em;
@@ -35,16 +39,15 @@
   --text-headline: 1.0625rem;
   --text-headline--line-height: 1.375rem;
   --text-headline--letter-spacing: -0.01em;
-  /* títulos respiram um pouco: as capitulares da Cinzel pedem espaço positivo */
   --text-title-3: 1.25rem;
   --text-title-3--line-height: 1.5625rem;
-  --text-title-3--letter-spacing: 0.01em;
+  --text-title-3--letter-spacing: 0.015em;
   --text-title-2: 1.5rem;
   --text-title-2--line-height: 1.875rem;
-  --text-title-2--letter-spacing: 0.01em;
+  --text-title-2--letter-spacing: 0.015em;
   --text-title-1: 1.75rem;
   --text-title-1--line-height: 2.25rem;
-  --text-title-1--letter-spacing: 0.012em;
+  --text-title-1--letter-spacing: 0.015em;
   --text-display: 2.25rem;
   --text-display--line-height: 2.75rem;
   --text-display--letter-spacing: 0.015em;
@@ -52,52 +55,66 @@
   --text-hero--line-height: 3.5rem;
   --text-hero--letter-spacing: 0.02em;
 
-  /* ------------------------------------------------------------ cores (tiradas da logo) */
-  /* noite índigo: fundos e bordas (#07031d é o fundo da logo) */
-  --color-night-950: #05031a;
-  --color-night-900: #08051f;
-  --color-night-850: #0c0828;
-  --color-night-800: #110c31;
-  --color-night-750: #17113b;
-  --color-night-700: #1f1848;
-  --color-night-600: #2d2461;
-  --color-night-500: #3e347d;
+  /* ------------------------------------------------------------ cores */
+  /* noite: o chão e as superfícies, neutras (sem tom de violeta) */
+  --color-night-950: #08090b;
+  --color-night-900: #0c0d10;
+  --color-night-850: #101116;
+  --color-night-800: #14151a;
+  --color-night-750: #191a20;
+  --color-night-700: #1f2027;
+  --color-night-600: #2b2d35;
+  --color-night-500: #3b3d47;
 
-  /* névoa lavanda: texto. No vidro mais claro: 11,8:1, 7,3:1 e 4,9:1 (AA mesmo no apagado) */
-  --color-mist: #ece8ff;
-  --color-mist-dim: #bdb4e6;
-  --color-mist-faint: #9a92cc;
+  /* marfim: texto. Sobre o painel (#14151a): 14,6:1, 9:1 e 5,4:1 */
+  --color-mist: #e9e6dc;
+  --color-mist-dim: #b9b5a8;
+  --color-mist-faint: #8f8c82;
 
-  /* arcano (o violeta da íris e do feixe): o acento de ação, seleção e vitória */
-  --color-arcane-100: #efe9ff;
-  --color-arcane-200: #d9ccff;
-  --color-arcane-300: #b9a4ff;
-  --color-arcane-400: #9a7ff7;
-  --color-arcane-500: #7c5cf0;
-  --color-arcane-600: #5e3fd1;
-  --color-arcane-700: #3f2a92;
-  --color-arcane-800: #251a57;
+  /* violeta (mana preta/arcana): a ação da tela, a seleção e os decks */
+  --color-arcane-100: #efeaff;
+  --color-arcane-200: #d8ccff;
+  --color-arcane-300: #b9a5ff;
+  --color-arcane-400: #9b7bff;
+  --color-arcane-500: #7f5cf0;
+  --color-arcane-600: #6142cf;
+  --color-arcane-700: #3f2c8c;
+  --color-arcane-800: #251b52;
 
-  /* astral (azul de mana, frio ao lado do violeta): secundário discreto para "ao vivo", "em andamento" e informação */
-  --color-astral-200: #c3ecff;
-  --color-astral-300: #8fd8f5;
-  --color-astral-400: #56b9e0;
-  --color-astral-600: #1f6f95;
-  --color-astral-800: #0f3550;
+  /* azul (mana azul): escanear, "ao vivo", informação */
+  --color-astral-200: #c5e1ff;
+  --color-astral-300: #8cc4ff;
+  --color-astral-400: #4aa3ff;
+  --color-astral-600: #1f6fc4;
+  --color-astral-800: #10335c;
 
-  /* velino lavanda e tinta índigo: o que é "papel" (login, avisos) */
-  --color-parchment-50: #f6f3ff;
-  --color-parchment-100: #ebe5fb;
-  --color-parchment-200: #d9d0f3;
-  --color-parchment-300: #c0b4e6;
-  --color-ink-900: #160f33;
-  --color-ink-700: #342a5e;
-  --color-ink-500: #5a5088;
+  /* ouro (mana branca): coleção, preço, carta valiosa, campeão */
+  --color-gold-200: #f6e3a6;
+  --color-gold-300: #f0d27c;
+  --color-gold-400: #e8c15a;
+  --color-gold-600: #9c7a1f;
+  --color-gold-800: #46370f;
 
-  /* estados: musgo (ok), brasa (aviso), lacre (erro); o ouro fica para a carta valiosa */
-  --color-moss-300: #9fe0b0;
-  --color-moss-400: #5fcf8a;
-  --color-moss-600: #2c7a4f;
+  /* fogo (mana vermelha): torneio */
+  --color-fire-200: #fbc3b6;
+  --color-fire-300: #f79a85;
+  --color-fire-400: #e5533d;
+  --color-fire-600: #a8301e;
+  --color-fire-800: #4a160e;
+
+  /* papel marfim e tinta: o que é "papel" (login, avisos) */
+  --color-parchment-50: #f7f5ee;
+  --color-parchment-100: #ece9de;
+  --color-parchment-200: #dcd8ca;
+  --color-parchment-300: #c4bfae;
+  --color-ink-900: #121318;
+  --color-ink-700: #33353d;
+  --color-ink-500: #5b5d66;
+
+  /* estados: verde (certo), âmbar (atenção), carmim (erro) */
+  --color-moss-300: #8fe0b6;
+  --color-moss-400: #4cc38a;
+  --color-moss-600: #23774f;
   --color-ember-300: #ffc27a;
   --color-ember-400: #f59e42;
   --color-ember-600: #a3591b;
@@ -106,30 +123,28 @@
   --color-wine-600: #9c2d4a;
 
   /* ------------------------------------------------------------ forma */
-  /* raios com intenção: selo < campo < cartão < folha */
-  --radius-xs: 0.375rem;
-  --radius-sm: 0.625rem;
-  --radius-md: 0.875rem;
-  --radius-lg: 1.25rem;
-  --radius-xl: 1.75rem;
+  /* etiqueta < controle = painel < folha: tudo quase reto */
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-2xl: 6px;
+  --radius-3xl: 6px;
   --radius-card: 4.6% / 3.3%;
 
-  --shadow-raised: 0 1px 1px rgb(0 0 0 / 0.22), 0 10px 28px -14px rgb(0 0 0 / 0.6);
-  --shadow-float: 0 2px 4px rgb(0 0 0 / 0.25), 0 18px 44px -16px rgb(0 0 0 / 0.72);
-  --shadow-overlay: 0 4px 10px rgb(0 0 0 / 0.3), 0 34px 80px -22px rgb(0 0 0 / 0.82);
-
-  --blur-glass: 18px;
-  --blur-float: 24px;
-  --blur-sheet: 30px;
+  /* elevação só no que flutua de verdade (menus, janelas, avisos) */
+  --shadow-raised: 0 1px 0 rgb(0 0 0 / 0.3);
+  --shadow-float: 0 12px 32px -12px rgb(0 0 0 / 0.8);
+  --shadow-overlay: 0 24px 64px -20px rgb(0 0 0 / 0.9);
 
   /* ------------------------------------------------------------ movimento */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  /* mola amortecida (ζ 0,72: passa 4% e assenta) e mola com quique (ζ 0,52: passa 15%) */
   --ease-spring: linear(0, 0.059 4.2%, 0.195 8.3%, 0.361 12.5%, 0.527 16.7%, 0.674 20.8%, 0.795 25%, 0.888 29.2%, 0.954 33.3%, 0.997 37.5%, 1.023 41.7%, 1.035 45.8%, 1.038 50%, 1.036 54.2%, 1.031 58.3%, 1.025 62.5%, 1.018 66.7%, 1.013 70.8%, 1.008 75%, 1.004 79.2%, 1.002 83.3%, 1 87.5%, 0.999 91.7%, 0.999 95.8%, 1);
   --ease-bounce: linear(0, 0.112 4.2%, 0.359 8.3%, 0.634 12.5%, 0.869 16.7%, 1.032 20.8%, 1.121 25%, 1.148 29.2%, 1.133 33.3%, 1.097 37.5%, 1.056 41.7%, 1.021 45.8%, 0.996 50%, 0.983 54.2%, 0.978 58.3%, 0.98 62.5%, 0.985 66.7%, 0.991 70.8%, 0.997 75%, 1 79.2%, 1.002 83.3%, 1.003 87.5%, 1.003 91.7%, 1.002 95.8%, 1);
 
-  --animate-rise: rise 480ms var(--ease-spring) both;
-  --animate-pop: pop 560ms var(--ease-bounce) both;
+  --animate-rise: rise 420ms var(--ease-out) both;
+  --animate-pop: pop 420ms var(--ease-out) both;
   --animate-fade: fade 200ms var(--ease-out) both;
   --animate-candle: candle 3.2s ease-in-out infinite;
   --animate-stamp: stamp 420ms cubic-bezier(0.2, 0.8, 0.25, 1.15) both;
@@ -148,7 +163,7 @@
   @keyframes pop {
     from {
       opacity: 0;
-      transform: scale(0.9);
+      transform: scale(0.96);
     }
     to {
       opacity: 1;
@@ -195,36 +210,67 @@
   @keyframes live {
     0%,
     100% {
-      box-shadow: 0 0 0 0 rgb(143 216 245 / 0.45);
+      opacity: 1;
     }
-    60% {
-      box-shadow: 0 0 0 5px rgb(143 216 245 / 0);
+    50% {
+      opacity: 0.35;
     }
   }
+}
+
+/* a cor da área em que a pessoa está (o shell marca data-area no <main>); fora dele vale o violeta */
+@theme inline {
+  --color-area: var(--area);
+  --color-area-soft: var(--area-soft);
+  --color-area-ink: var(--area-ink);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
 }
 
 :root {
   color-scheme: dark;
   --dur-press: 120ms;
-  --dur-fast: 200ms;
-  --dur-base: 320ms;
-  --dur-spring: 560ms;
+  --dur-fast: 180ms;
+  --dur-base: 280ms;
+  --dur-spring: 420ms;
 
-  /* vidro: filete de luz no topo + borda interna, e o brilho que desce do alto */
-  --edge: inset 0 1px 0 rgb(226 220 255 / 0.15), inset 0 0 0 1px rgb(214 204 255 / 0.075);
-  --gloss: linear-gradient(180deg, rgb(228 222 255 / 0.085) 0%, rgb(228 222 255 / 0.02) 40%, rgb(228 222 255 / 0) 62%);
-  --specular: radial-gradient(90% 50% at 50% -18%, rgb(228 222 255 / 0.1), transparent 70%);
-  --glass-tint: rgb(27 21 66 / 0.56);
-  --glass-float-tint: rgb(20 15 52 / 0.8);
-  --glass-sheet-tint: rgb(16 11 44 / 0.9);
-  --ring: 0 0 0 4px rgb(185 164 255 / 0.2);
+  --line: #26272e;
+  --line-strong: #34363e;
+  --line-faint: #1b1c21;
+  --ring: 0 0 0 3px rgb(155 123 255 / 0.28);
 
-  /* céu de estrelas bem discreto (com duas faíscas de quatro pontas, como as da logo) */
-  --tex-stars: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='%23d9ceff'><circle cx='100.3' cy='383.7' r='0.97' opacity='0.64'/><circle cx='20.7' cy='359.4' r='0.76' opacity='0.21'/><circle cx='28.9' cy='413.3' r='1.28' opacity='0.45'/><circle cx='189.8' cy='230.1' r='0.96' opacity='0.57'/><circle cx='327.5' cy='175.6' r='0.85' opacity='0.61'/><circle cx='152.2' cy='202.2' r='0.53' opacity='0.55'/><circle cx='350.4' cy='150.4' r='0.60' opacity='0.67'/><circle cx='51.3' cy='191.0' r='0.84' opacity='0.23'/><circle cx='47.9' cy='261.1' r='1.11' opacity='0.22'/><circle cx='254.3' cy='389.1' r='0.68' opacity='0.48'/><circle cx='148.2' cy='131.4' r='0.89' opacity='0.54'/><circle cx='130.1' cy='66.4' r='1.19' opacity='0.49'/><circle cx='159.3' cy='418.5' r='0.86' opacity='0.27'/><circle cx='106.6' cy='386.7' r='0.95' opacity='0.43'/><circle cx='73.5' cy='182.3' r='0.60' opacity='0.18'/><circle cx='290.5' cy='319.2' r='0.57' opacity='0.45'/><circle cx='311.6' cy='370.8' r='0.77' opacity='0.38'/><circle cx='268.1' cy='348.0' r='0.88' opacity='0.42'/><circle cx='330.0' cy='402.0' r='0.73' opacity='0.62'/><circle cx='87.0' cy='116.5' r='1.26' opacity='0.54'/><circle cx='87.7' cy='21.9' r='0.70' opacity='0.59'/><circle cx='319.2' cy='88.5' r='0.88' opacity='0.56'/><circle cx='175.3' cy='138.5' r='0.75' opacity='0.28'/><circle cx='365.7' cy='85.9' r='1.03' opacity='0.53'/><circle cx='185.0' cy='112.8' r='0.90' opacity='0.35'/><circle cx='42.2' cy='162.1' r='0.85' opacity='0.56'/><circle cx='361.8' cy='325.0' r='0.65' opacity='0.52'/><circle cx='245.7' cy='32.0' r='1.08' opacity='0.59'/><circle cx='236.4' cy='357.9' r='0.50' opacity='0.55'/><circle cx='183.0' cy='417.9' r='1.22' opacity='0.28'/><circle cx='118.4' cy='356.0' r='1.14' opacity='0.67'/><circle cx='399.9' cy='12.3' r='1.20' opacity='0.30'/><circle cx='411.8' cy='101.2' r='1.24' opacity='0.60'/><circle cx='272.1' cy='236.2' r='0.77' opacity='0.27'/><path d='M318 92.8L318.704 95.296L321.2 96L318.704 96.704L318 99.2L317.296 96.704L314.8 96L317.296 95.296Z' opacity='0.35'/><path d='M88 299.4L88.572 301.428L90.6 302L88.572 302.572L88 304.6L87.428 302.572L85.4 302L87.428 301.428Z' opacity='0.28'/></g></svg>");
-  /* grão frio: some com as faixas dos degradês */
-  --tex-noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.2  0 0 0 0 0.16  0 0 0 0 0.42  0 0 0 0.1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-  /* fibra do velino lavanda */
-  --tex-paper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.035' numOctaves='4' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.32  0 0 0 0 0.26  0 0 0 0 0.6  0 0 0 0.12 0'/></filter><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>");
+  --area: var(--color-arcane-400);
+  --area-soft: var(--color-arcane-300);
+  --area-ink: #140b33;
+
+  /* fibra do papel marfim */
+  --tex-paper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.035' numOctaves='4' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.4  0 0 0 0 0.3  0 0 0 0.1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>");
+}
+
+[data-area="scan"] {
+  --area: var(--color-astral-400);
+  --area-soft: var(--color-astral-300);
+  --area-ink: #06213f;
+}
+[data-area="decks"] {
+  --area: var(--color-arcane-400);
+  --area-soft: var(--color-arcane-300);
+  --area-ink: #140b33;
+}
+[data-area="collection"] {
+  --area: var(--color-gold-400);
+  --area-soft: var(--color-gold-300);
+  --area-ink: #2e2305;
+}
+[data-area="tournament"] {
+  --area: var(--color-fire-400);
+  --area-soft: var(--color-fire-300);
+  --area-ink: #2a0b06;
+}
+[data-area="ok"] {
+  --area: var(--color-moss-400);
+  --area-soft: var(--color-moss-300);
+  --area-ink: #06281a;
 }
 
 /* ====================================================================== base */
@@ -243,23 +289,12 @@
     font-family: var(--font-sans);
     font-size: 1rem;
     line-height: 1.5;
+    /* a Marcellus só tem um peso: nada de negrito falso */
+    font-synthesis-weight: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     -webkit-tap-highlight-color: transparent;
-  }
-  /* a noite: o halo violeta do olho no alto, um sopro frio de mana embaixo e estrelas (é o que o vidro refrata) */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image:
-      radial-gradient(1000px 620px at 50% -14%, rgb(123 92 240 / 0.22), transparent 64%),
-      radial-gradient(760px 520px at 0% 108%, rgb(86 185 224 / 0.07), transparent 62%),
-      radial-gradient(700px 480px at 104% 70%, rgb(94 63 209 / 0.08), transparent 60%),
-      var(--tex-stars), var(--tex-noise);
   }
   h1,
   h2,
@@ -295,85 +330,80 @@
 
 /* ====================================================================== materiais e componentes */
 @layer components {
+  /* números: mono, alinhados em coluna */
   .tabular,
   .num {
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums lining-nums;
+    font-size: 0.92em;
+    letter-spacing: -0.03em;
   }
 
-  /* 1 · painel: vidro âmbar */
+  /* 1 · painel: superfície opaca com moldura de fio duplo (a borda da carta) */
   .glass,
   .board {
     position: relative;
     border-radius: var(--radius-lg);
-    background: var(--specular), var(--gloss), var(--glass-tint);
-    box-shadow: var(--edge), var(--shadow-raised);
-    -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.45);
-    backdrop-filter: blur(var(--blur-glass)) saturate(1.45);
+    background: var(--color-night-800);
+    border: 1px solid var(--line-strong);
+    outline: 1px solid var(--line-faint);
+    outline-offset: 2px;
   }
-  /* 2 · flutuante: barra do app, menus, avisos */
+  /* 2 · flutuante: menus, avisos */
   .glass-float {
     position: relative;
     border-radius: var(--radius-md);
-    background: var(--specular), var(--gloss), var(--glass-float-tint);
-    box-shadow: var(--edge), var(--shadow-float);
-    -webkit-backdrop-filter: blur(var(--blur-float)) saturate(1.5);
-    backdrop-filter: blur(var(--blur-float)) saturate(1.5);
+    background: var(--color-night-750);
+    border: 1px solid var(--line-strong);
+    box-shadow: var(--shadow-float);
   }
   /* 3 · folha: janelas e folhas que sobem no celular */
   .glass-sheet {
     position: relative;
     border-radius: var(--radius-xl);
-    background: var(--specular), var(--gloss), var(--glass-sheet-tint);
-    box-shadow: var(--edge), var(--shadow-overlay);
-    -webkit-backdrop-filter: blur(var(--blur-sheet)) saturate(1.5);
-    backdrop-filter: blur(var(--blur-sheet)) saturate(1.5);
+    background: var(--color-night-800);
+    border: 1px solid var(--line-strong);
+    box-shadow: var(--shadow-overlay);
   }
-  /* barras do app (topo e rodapé no celular): flutuante, sem cantos */
+  /* barras do app (topo e rodapé no celular): opacas, para nunca prender um position: fixed */
   .bar-glass {
-    background: var(--gloss), rgb(9 6 30 / 0.74);
-    -webkit-backdrop-filter: blur(var(--blur-float)) saturate(1.5);
-    backdrop-filter: blur(var(--blur-float)) saturate(1.5);
+    background: var(--color-night-900);
   }
   /* poço: afundado, para campos, placares e contadores */
   .well,
   .board-sunken {
     border-radius: var(--radius-sm);
-    background: rgb(4 2 18 / 0.5);
-    box-shadow:
-      inset 0 1px 2px rgb(0 0 0 / 0.55),
-      inset 0 0 0 1px rgb(0 0 0 / 0.3),
-      0 1px 0 rgb(224 218 255 / 0.05);
+    background: var(--color-night-950);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
   .parchment {
     border-radius: var(--radius-md);
     background-color: var(--color-parchment-100);
-    background-image: radial-gradient(120% 90% at 50% 40%, transparent 55%, rgb(80 60 160 / 0.2)), var(--tex-paper), var(--tex-noise);
+    background-image: var(--tex-paper);
     color: var(--color-ink-900);
-    box-shadow:
-      inset 0 1px 0 rgb(255 255 255 / 0.35),
-      0 1px 0 rgb(0 0 0 / 0.4),
-      var(--shadow-raised);
+    border: 1px solid var(--color-parchment-300);
   }
   /* separadores */
   .hairline {
     height: 1px;
-    background: rgb(214 204 255 / 0.09);
+    background: var(--line);
   }
   .arcane-rule {
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--color-arcane-600) 12%, var(--color-arcane-300) 50%, var(--color-arcane-600) 88%, transparent);
+    background: var(--area);
   }
 
-  /* rótulo de seção em caixa alta: pequeno, espaçado e discreto ("overline" já é utilitário do Tailwind) */
+  /* rótulo de seção: Marcellus em caixa alta, pequeno e espaçado */
+  /* o item do menu pinta só a si mesmo com a cor da sua área */
   .eyebrow,
   .kicker {
-    font-family: var(--font-sans);
+    font-family: var(--font-caps);
     font-size: var(--text-caption);
     line-height: var(--text-caption--line-height);
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    font-weight: 400;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--color-mist-faint);
+    color: var(--area-soft);
   }
 
   /* cabeçalho de um painel de lista (a cor do texto diz o tom) */
@@ -383,13 +413,37 @@
     gap: 0.5rem;
     min-height: 2.75rem;
     padding: 0.625rem 1rem;
-    border-bottom: 1px solid rgb(214 204 255 / 0.06);
-    background: rgb(6 4 24 / 0.2);
+    border-bottom: 1px solid var(--line);
+    font-family: var(--font-caps);
     font-size: var(--text-footnote);
     line-height: var(--text-footnote--line-height);
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-weight: 400;
+    letter-spacing: 0.09em;
     text-transform: uppercase;
+  }
+  /* faixa cheia na cor da área: cabeçalho de mesa, de partida, de bloco em destaque */
+  .band {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    min-height: 2.25rem;
+    padding: 0.375rem 0.75rem;
+    background: var(--area);
+    color: var(--area-ink);
+    font-family: var(--font-caps);
+    font-size: var(--text-footnote);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+  /* losango: o marcador da casa no lugar da bolinha */
+  .gem {
+    display: inline-block;
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    transform: rotate(45deg);
+    background: currentColor;
   }
 
   /* ------------------------------------------------------------ botões */
@@ -400,26 +454,26 @@
     justify-content: center;
     gap: 0.5rem;
     height: 2.75rem;
-    padding-inline: 1.125rem;
-    border-radius: 0.75rem;
-    font-family: var(--font-sans);
-    font-size: var(--text-subhead);
-    font-weight: 600;
+    padding-inline: 1rem;
+    border-radius: var(--radius-md);
+    font-family: var(--font-caps);
+    font-size: var(--text-footnote);
+    font-weight: 400;
     line-height: 1;
-    letter-spacing: -0.005em;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     white-space: nowrap;
     user-select: none;
     transition:
-      transform var(--dur-spring) var(--ease-spring),
+      transform var(--dur-fast) var(--ease-out),
       filter var(--dur-fast) var(--ease-out),
       background-color var(--dur-fast) var(--ease-out),
-      color var(--dur-fast) var(--ease-out),
-      box-shadow var(--dur-fast) var(--ease-out);
+      border-color var(--dur-fast) var(--ease-out),
+      color var(--dur-fast) var(--ease-out);
   }
   .btn:active:not(:disabled) {
-    transform: scale(0.965);
+    transform: scale(0.975);
     transition-duration: var(--dur-press);
-    transition-timing-function: var(--ease-out);
   }
   .btn:disabled {
     opacity: 0.45;
@@ -430,10 +484,9 @@
   }
   .btn-sm {
     height: 2.25rem;
-    padding-inline: 0.875rem;
+    padding-inline: 0.75rem;
     gap: 0.375rem;
-    border-radius: 0.625rem;
-    font-size: 0.875rem;
+    font-size: var(--text-caption);
   }
   /* alvo de toque de 44 px mesmo quando o desenho é menor */
   .btn-sm::after {
@@ -443,10 +496,9 @@
   }
   .btn-lg {
     height: 3.25rem;
-    padding-inline: 1.5rem;
+    padding-inline: 1.375rem;
     gap: 0.625rem;
-    border-radius: 0.875rem;
-    font-size: var(--text-body);
+    font-size: var(--text-subhead);
   }
   .btn-icon {
     width: 2.75rem;
@@ -458,26 +510,15 @@
   .btn-sm.btn-icon::after {
     inset: -4px;
   }
-  /* latão polido: gradiente curto de metal com o brilho vítreo no alto */
-  /* a luz da íris: violeta aceso com um brilho vítreo curto no alto e o halo da logo em volta */
+  /* a ação da tela: violeta cheio, sem brilho */
   .btn-primary {
-    color: var(--color-ink-900);
-    background:
-      linear-gradient(180deg, rgb(245 242 255 / 0.26) 0%, rgb(245 242 255 / 0.06) 44%, rgb(245 242 255 / 0) 52%),
-      linear-gradient(180deg, #c3b1ff, var(--color-arcane-400) 58%, var(--color-arcane-500));
-    box-shadow:
-      inset 0 1px 0 rgb(246 243 255 / 0.6),
-      inset 0 -1px 0 rgb(38 24 110 / 0.35),
-      inset 0 0 0 1px rgb(58 38 150 / 0.4),
-      0 1px 2px rgb(0 0 0 / 0.45),
-      0 10px 26px -10px rgb(140 110 245 / 0.7);
+    color: #140b33;
+    background: var(--color-arcane-400);
   }
   .btn-secondary {
     color: var(--color-mist);
-    background: var(--gloss), rgb(220 212 255 / 0.07);
-    box-shadow:
-      var(--edge),
-      0 1px 2px rgb(0 0 0 / 0.3);
+    background: var(--color-night-700);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
   .btn-tertiary {
     color: var(--color-arcane-300);
@@ -487,26 +528,34 @@
   }
   .btn-danger {
     color: var(--color-wine-300);
-    background: rgb(156 45 74 / 0.2);
-    box-shadow: inset 0 0 0 1px rgb(240 96 127 / 0.35);
+    background: rgb(156 45 74 / 0.16);
+    box-shadow: inset 0 0 0 1px rgb(240 96 127 / 0.4);
+  }
+  /* marfim cheio: a ação que fecha uma etapa (fechar rodada, salvar) quando já há um violeta na tela */
+  .btn-ivory {
+    color: var(--color-ink-900);
+    background: var(--color-mist);
   }
   @media (hover: hover) {
     .btn-primary:hover:not(:disabled) {
-      filter: brightness(1.06) saturate(1.05);
+      background: var(--color-arcane-300);
+    }
+    .btn-ivory:hover:not(:disabled) {
+      background: #f7f5ee;
     }
     .btn-secondary:hover:not(:disabled) {
-      background: var(--gloss), rgb(220 212 255 / 0.11);
+      background: var(--color-night-600);
     }
     .btn-tertiary:hover:not(:disabled) {
-      background-color: rgb(185 164 255 / 0.09);
+      background-color: rgb(155 123 255 / 0.1);
       color: var(--color-arcane-200);
     }
     .btn-ghost:hover:not(:disabled) {
-      background-color: rgb(220 212 255 / 0.07);
+      background-color: var(--color-night-700);
       color: var(--color-mist);
     }
     .btn-danger:hover:not(:disabled) {
-      background: rgb(156 45 74 / 0.32);
+      background: rgb(156 45 74 / 0.28);
     }
   }
 
@@ -514,30 +563,23 @@
   .field {
     width: 100%;
     min-height: 2.75rem;
-    padding-inline: 0.875rem;
-    border-radius: var(--radius-sm);
-    background-color: rgb(4 2 18 / 0.5);
-    box-shadow:
-      inset 0 1px 2px rgb(0 0 0 / 0.55),
-      inset 0 0 0 1px rgb(214 204 255 / 0.09);
+    padding-inline: 0.75rem;
+    border-radius: var(--radius-md);
+    background-color: var(--color-night-950);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
     color: var(--color-mist);
     /* 16 px: abaixo disso o iPhone dá zoom ao focar */
     font-size: var(--text-body);
     outline: none;
-    transition:
-      box-shadow var(--dur-fast) var(--ease-out),
-      background-color var(--dur-fast) var(--ease-out);
+    transition: box-shadow var(--dur-fast) var(--ease-out);
   }
   .field:hover:not(:disabled) {
-    box-shadow:
-      inset 0 1px 2px rgb(0 0 0 / 0.55),
-      inset 0 0 0 1px rgb(214 204 255 / 0.15);
+    box-shadow: inset 0 0 0 1px var(--color-night-500);
   }
   .field:focus,
   .field:focus-visible {
     outline: none;
     box-shadow:
-      inset 0 1px 2px rgb(0 0 0 / 0.55),
       inset 0 0 0 1px var(--color-arcane-400),
       var(--ring);
   }
@@ -551,7 +593,7 @@
   select.field {
     appearance: none;
     padding-right: 2.25rem;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23b9a4ff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23b9b5a8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
     background-size: 12px 8px;
     background-position: right 0.875rem center;
     background-repeat: no-repeat;
@@ -561,28 +603,23 @@
     background-color: var(--color-night-850);
     color: var(--color-mist);
   }
-  /* campo sobre pergaminho (login) */
+  /* campo sobre papel (login) */
   .field-paper {
     background-color: var(--color-parchment-50);
     color: var(--color-ink-900);
-    box-shadow:
-      inset 0 1px 2px rgb(40 30 90 / 0.18),
-      inset 0 0 0 1px rgb(92 82 140 / 0.35);
+    box-shadow: inset 0 0 0 1px var(--color-parchment-300);
   }
   .field-paper::placeholder {
     color: var(--color-ink-500);
   }
   .field-paper:hover:not(:disabled) {
-    box-shadow:
-      inset 0 1px 2px rgb(40 30 90 / 0.18),
-      inset 0 0 0 1px rgb(92 82 140 / 0.55);
+    box-shadow: inset 0 0 0 1px var(--color-ink-500);
   }
   .field-paper:focus,
   .field-paper:focus-visible {
     box-shadow:
-      inset 0 1px 2px rgb(40 30 90 / 0.18),
       inset 0 0 0 1px var(--color-arcane-600),
-      0 0 0 4px rgb(94 63 209 / 0.2);
+      0 0 0 3px rgb(97 66 207 / 0.22);
   }
 
   /* ------------------------------------------------------------ segmentado: poço com a peça que desliza */
@@ -593,11 +630,9 @@
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
     padding: 3px;
-    border-radius: 0.75rem;
-    background-color: rgb(4 2 18 / 0.5);
-    box-shadow:
-      inset 0 1px 2px rgb(0 0 0 / 0.5),
-      inset 0 0 0 1px rgb(214 204 255 / 0.06);
+    border-radius: var(--radius-md);
+    background-color: var(--color-night-950);
+    box-shadow: inset 0 0 0 1px var(--line);
   }
   .seg-thumb {
     position: absolute;
@@ -607,17 +642,15 @@
     left: 3px;
     width: calc((100% - 6px) / var(--n, 2));
     transform: translateX(calc(var(--i, 0) * 100%));
-    border-radius: 0.5625rem;
-    background: var(--gloss), rgb(64 54 130 / 0.92);
-    box-shadow:
-      var(--edge),
-      0 2px 6px rgb(0 0 0 / 0.4);
-    transition: transform var(--dur-spring) var(--ease-spring);
+    border-radius: var(--radius-xs);
+    background: var(--color-night-600);
+    box-shadow: inset 0 0 0 1px var(--color-night-500);
+    transition: transform var(--dur-base) var(--ease-out);
   }
   .seg > button {
     height: 2.375rem;
     padding-inline: 1rem;
-    border-radius: 0.5625rem;
+    border-radius: var(--radius-xs);
     color: var(--color-mist-dim);
     font-size: 0.875rem;
     font-weight: 600;
@@ -645,7 +678,7 @@
     gap: 1.5rem;
     overflow-x: auto;
     scrollbar-width: none;
-    box-shadow: inset 0 -1px 0 rgb(214 204 255 / 0.1);
+    box-shadow: inset 0 -1px 0 var(--line-strong);
   }
   .tabs::-webkit-scrollbar {
     display: none;
@@ -658,8 +691,10 @@
     gap: 0.5rem;
     height: 2.75rem;
     color: var(--color-mist-faint);
-    font-size: var(--text-subhead);
-    font-weight: 600;
+    font-family: var(--font-caps);
+    font-size: var(--text-footnote);
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
     white-space: nowrap;
     transition: color var(--dur-fast) var(--ease-out);
   }
@@ -675,12 +710,10 @@
     position: absolute;
     bottom: 0;
     height: 2px;
-    border-radius: 2px;
-    background: var(--color-arcane-300);
-    box-shadow: 0 0 12px rgb(185 164 255 / 0.5);
+    background: var(--area);
     transition:
-      left var(--dur-spring) var(--ease-spring),
-      width var(--dur-spring) var(--ease-spring);
+      left var(--dur-base) var(--ease-out),
+      width var(--dur-base) var(--ease-out);
   }
 
   /* ------------------------------------------------------------ fichas: filtros e placar de um toque */
@@ -691,21 +724,21 @@
     gap: 0.375rem;
     min-height: 2.75rem;
     padding-inline: 0.875rem;
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-md);
     color: var(--color-mist);
     font-size: var(--text-subhead);
     font-weight: 600;
     white-space: nowrap;
-    background: var(--gloss), rgb(220 212 255 / 0.06);
-    box-shadow: var(--edge);
+    background: var(--color-night-750);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
     transition:
-      transform var(--dur-spring) var(--ease-spring),
+      transform var(--dur-fast) var(--ease-out),
       background-color var(--dur-fast) var(--ease-out),
       color var(--dur-fast) var(--ease-out),
       box-shadow var(--dur-fast) var(--ease-out);
   }
   .chip:active:not(:disabled) {
-    transform: scale(0.94);
+    transform: scale(0.96);
     transition-duration: var(--dur-press);
   }
   .chip:disabled {
@@ -713,91 +746,85 @@
   }
   .chip[aria-pressed="true"],
   .chip[aria-checked="true"] {
-    color: var(--color-ink-900);
-    background: linear-gradient(180deg, var(--color-arcane-200), var(--color-arcane-400));
-    box-shadow:
-      inset 0 1px 0 rgb(246 243 255 / 0.7),
-      0 4px 12px -4px rgb(140 110 245 / 0.6);
+    color: var(--area-ink);
+    background: var(--area);
+    box-shadow: none;
   }
   @media (hover: hover) {
     .chip:hover:not(:disabled):not([aria-pressed="true"]):not([aria-checked="true"]) {
-      background: var(--gloss), rgb(220 212 255 / 0.11);
+      background: var(--color-night-600);
     }
   }
   .chip-pill {
     min-height: 2.25rem;
-    padding-inline: 0.875rem;
-    border-radius: 999px;
+    padding-inline: 0.75rem;
     font-size: 0.875rem;
   }
 
-  /* ------------------------------------------------------------ selos */
+  /* ------------------------------------------------------------ etiquetas: contorno na cor do tom, mono em caixa alta */
   .badge {
     display: inline-flex;
     align-items: center;
     gap: 0.375rem;
-    height: 1.5rem;
-    padding-inline: 0.5625rem;
-    border-radius: 999px;
-    font-size: var(--text-caption);
-    font-weight: 600;
+    height: 1.375rem;
+    padding-inline: 0.4375rem;
+    border-radius: var(--radius-xs);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 500;
     line-height: 1;
-    letter-spacing: 0.01em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     white-space: nowrap;
     color: var(--color-mist-dim);
-    background-color: rgb(220 212 255 / 0.07);
-    box-shadow: inset 0 0 0 1px rgb(214 204 255 / 0.1);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
   }
   .badge[data-tone="ok"] {
     color: var(--color-moss-300);
-    background-color: rgb(44 122 79 / 0.25);
-    box-shadow: inset 0 0 0 1px rgb(95 207 138 / 0.3);
+    box-shadow: inset 0 0 0 1px rgb(76 195 138 / 0.6);
   }
   .badge[data-tone="warn"] {
     color: var(--color-ember-300);
-    background-color: rgb(163 89 27 / 0.25);
-    box-shadow: inset 0 0 0 1px rgb(245 158 66 / 0.32);
+    box-shadow: inset 0 0 0 1px rgb(245 158 66 / 0.6);
   }
   .badge[data-tone="bad"] {
     color: var(--color-wine-300);
-    background-color: rgb(156 45 74 / 0.25);
-    box-shadow: inset 0 0 0 1px rgb(240 96 127 / 0.32);
+    box-shadow: inset 0 0 0 1px rgb(240 96 127 / 0.6);
   }
   .badge[data-tone="info"],
   .badge[data-tone="live"] {
-    color: var(--color-astral-200);
-    background-color: rgb(31 111 149 / 0.28);
-    box-shadow: inset 0 0 0 1px rgb(86 185 224 / 0.35);
+    color: var(--color-astral-300);
+    box-shadow: inset 0 0 0 1px rgb(74 163 255 / 0.6);
   }
   .badge[data-tone="arcane"] {
-    color: var(--color-arcane-200);
-    background-color: rgb(140 110 245 / 0.16);
-    box-shadow: inset 0 0 0 1px rgb(140 110 245 / 0.32);
+    color: var(--area-soft);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--area) 60%, transparent);
+  }
+  .badge[data-tone="gold"] {
+    color: var(--color-gold-300);
+    box-shadow: inset 0 0 0 1px rgb(232 193 90 / 0.6);
   }
   .badge-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
+    width: 6px;
+    height: 6px;
+    transform: rotate(45deg);
     background: currentColor;
   }
   .badge[data-tone="live"] .badge-dot {
-    background: var(--color-astral-300);
     animation: var(--animate-live);
   }
 
-  /* ------------------------------------------------------------ carregando: brilho que atravessa */
+  /* ------------------------------------------------------------ carregando */
   .skeleton {
     border-radius: var(--radius-xs);
-    background: linear-gradient(90deg, rgb(220 212 255 / 0.05) 0%, rgb(220 212 255 / 0.11) 40%, rgb(220 212 255 / 0.05) 80%);
+    background: linear-gradient(90deg, rgb(233 230 220 / 0.04) 0%, rgb(233 230 220 / 0.09) 40%, rgb(233 230 220 / 0.04) 80%);
     background-size: 240% 100%;
     animation: shimmer 1.6s linear infinite;
   }
 
-  /* ------------------------------------------------------------ janelas: entram com mola, saem rápido */
+  /* ------------------------------------------------------------ janelas: entram rápido, saem mais rápido */
   .scrim {
-    background: rgb(5 3 20 / 0.62);
-    -webkit-backdrop-filter: blur(6px) saturate(1.1);
-    backdrop-filter: blur(6px) saturate(1.1);
+    background: rgb(4 5 7 / 0.72);
   }
   .scrim[data-state="open"] {
     animation: fade 220ms var(--ease-out) both;
@@ -806,39 +833,38 @@
     animation: fade-out 180ms var(--ease-out) both;
   }
   .sheet[data-state="open"] {
-    animation: sheet-in var(--dur-spring) var(--ease-spring) both;
+    animation: sheet-in var(--dur-base) var(--ease-out) both;
   }
   .sheet[data-state="closed"] {
     animation: sheet-out 180ms var(--ease-out) both;
   }
   .drawer[data-state="open"] {
-    animation: drawer-in var(--dur-spring) var(--ease-spring) both;
+    animation: drawer-in var(--dur-base) var(--ease-out) both;
   }
   .drawer[data-state="closed"] {
     animation: drawer-out 180ms var(--ease-out) both;
   }
   .popover[data-state="open"] {
     transform-origin: var(--origin, top right);
-    animation: pop-in 320ms var(--ease-spring) both;
+    animation: pop-in 200ms var(--ease-out) both;
   }
   .toast[data-state="open"] {
-    animation: toast-in var(--dur-spring) var(--ease-spring) both;
+    animation: toast-in var(--dur-base) var(--ease-out) both;
   }
   .toast[data-state="closed"] {
     animation: fade-out 180ms var(--ease-out) both;
   }
   .sheet-handle {
     width: 36px;
-    height: 5px;
-    border-radius: 999px;
-    background: rgb(236 232 255 / 0.25);
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-night-500);
   }
 }
 
-/* brasas que sobem atrás do campeão */
+/* faíscas que sobem atrás do campeão */
 .ember {
   opacity: 0;
-  box-shadow: 0 0 8px 2px rgb(185 164 255 / 0.55);
   animation: ember 4s var(--ease-out) infinite;
 }
 @keyframes ember {
@@ -871,7 +897,7 @@
 @keyframes sheet-in {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.97);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -881,7 +907,7 @@
 @keyframes sheet-out {
   to {
     opacity: 0;
-    transform: translateY(6px) scale(0.98);
+    transform: translateY(6px);
   }
 }
 @keyframes drawer-in {
@@ -900,7 +926,7 @@
 @keyframes pop-in {
   from {
     opacity: 0;
-    transform: scale(0.94);
+    transform: scale(0.97);
   }
   to {
     opacity: 1;
@@ -910,7 +936,7 @@
 @keyframes toast-in {
   from {
     opacity: 0;
-    transform: translateY(16px) scale(0.96);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -934,102 +960,48 @@
   }
 }
 
-/* cantos contínuos (squircle) onde o navegador sabe desenhar; nos outros, o arredondado normal */
-@supports (corner-shape: squircle) {
-  @layer components {
-    .glass,
-    .board {
-      corner-shape: squircle;
-      border-radius: 1.875rem;
-    }
-    .glass-float {
-      corner-shape: squircle;
-      border-radius: 1.375rem;
-    }
-    .glass-sheet {
-      corner-shape: squircle;
-      border-radius: 2.5rem;
-    }
-    .well,
-    .board-sunken,
-    .field {
-      corner-shape: squircle;
-      border-radius: 1rem;
-    }
-    .btn {
-      corner-shape: squircle;
-      border-radius: 1.125rem;
-    }
-    .btn-sm {
-      border-radius: 1rem;
-    }
-    .btn-lg {
-      border-radius: 1.375rem;
-    }
-    .chip:not(.chip-pill) {
-      corner-shape: squircle;
-      border-radius: 0.875rem;
-    }
-    .seg {
-      corner-shape: squircle;
-      border-radius: 1.125rem;
-    }
-    .seg-thumb,
-    .seg > button {
-      corner-shape: squircle;
-      border-radius: 0.875rem;
-    }
-    .parchment {
-      corner-shape: squircle;
-      border-radius: 1.375rem;
-    }
-  }
-}
-
-/* sem desfoque (navegador antigo ou "reduzir transparência"): vidro vira painel quase opaco */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  :root {
-    --glass-tint: rgb(27 21 66 / 0.95);
-    --glass-float-tint: rgb(20 15 52 / 0.97);
-    --glass-sheet-tint: rgb(16 11 44 / 0.98);
-  }
-}
-@media (prefers-reduced-transparency: reduce) {
-  :root {
-    --glass-tint: rgb(27 21 66 / 0.95);
-    --glass-float-tint: rgb(20 15 52 / 0.97);
-    --glass-sheet-tint: rgb(16 11 44 / 0.98);
-  }
-}
-
 /* ====================================================================== peças do scanner e das cartas */
 .card-img {
   border-radius: var(--radius-card);
 }
 
-/* visor da câmera: janela com moldura dupla de latão escurecido e cantos vinhetados */
+/* visor da câmera na página (no celular a câmera aberta ocupa a tela inteira: ver .cam) */
 .viewfinder {
   position: relative;
   overflow: hidden;
   background: var(--color-night-950);
   border-radius: var(--radius-lg);
-  box-shadow:
-    inset 0 0 0 1px rgb(185 164 255 / 0.28),
-    0 0 0 4px rgb(9 6 30 / 0.9),
-    0 0 0 5px rgb(94 63 209 / 0.55),
-    var(--shadow-raised);
+  border: 1px solid var(--line-strong);
+  outline: 1px solid var(--line-faint);
+  outline-offset: 2px;
 }
 
-.viewfinder::after {
-  content: "";
-  position: absolute;
+/* câmera em tela cheia: o vídeo é o fundo da tela inteira e tudo o mais flutua por cima,
+   então o visor nunca muda de tamanho quando um aviso aparece */
+.cam {
+  position: fixed;
   inset: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  box-shadow: inset 0 0 60px rgb(0 0 0 / 0.55);
+  z-index: 50;
+  overflow: hidden;
+  background: #000;
+  /* a altura visível de verdade (a barra do Safari entra e sai) */
+  height: 100dvh;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+.cam-chip {
+  background: rgb(8 9 11 / 0.78);
+  box-shadow: inset 0 0 0 1px rgb(233 230 220 / 0.16);
+  border-radius: var(--radius-md);
+}
+.cam-shade-top {
+  background: linear-gradient(180deg, rgb(0 0 0 / 0.55), transparent);
+}
+.cam-shade-bottom {
+  background: linear-gradient(0deg, rgb(0 0 0 / 0.82) 55%, transparent);
 }
 
-/* borda do visor que pisca a cada leitura: verde (anotada), dourada (valiosa) ou vermelha (não reconhecida) */
+/* borda do visor que pisca a cada leitura: verde (anotada) ou dourada (valiosa) */
 .edge-flash {
   position: absolute;
   inset: 0;
@@ -1041,14 +1013,14 @@
 
 .edge-flash[data-tone="ok"] {
   box-shadow:
-    inset 0 0 0 5px #6ee08f,
-    inset 0 0 48px 6px rgb(110 224 143 / 0.55);
+    inset 0 0 0 5px #4cc38a,
+    inset 0 0 48px 6px rgb(76 195 138 / 0.5);
 }
 
 .edge-flash[data-tone="gold"] {
   box-shadow:
-    inset 0 0 0 6px #f2c554,
-    inset 0 0 56px 8px rgb(242 197 84 / 0.55);
+    inset 0 0 0 6px #e8c15a,
+    inset 0 0 56px 8px rgb(232 193 90 / 0.5);
 }
 
 @keyframes edge-flash {

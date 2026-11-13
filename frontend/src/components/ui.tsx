@@ -25,7 +25,7 @@ const reducedMotion = () => typeof window !== "undefined" && window.matchMedia("
 
 // ------------------------------------------------------------------ botões
 /** primary: latão polido (a ação da tela) · secondary: vidro · tertiary: texto de latão · ghost: neutro · danger: lacre. */
-type Variant = "primary" | "secondary" | "tertiary" | "ghost" | "danger" | "arcane" | "outline" | "quiet";
+type Variant = "primary" | "secondary" | "tertiary" | "ghost" | "danger" | "ivory" | "arcane" | "outline" | "quiet";
 
 const VARIANTS: Record<Variant, string> = {
   primary: "btn-primary",
@@ -33,6 +33,7 @@ const VARIANTS: Record<Variant, string> = {
   tertiary: "btn-tertiary",
   ghost: "btn-ghost",
   danger: "btn-danger",
+  ivory: "btn-ivory",
   // nomes antigos
   arcane: "btn-primary",
   outline: "btn-secondary",
@@ -118,10 +119,10 @@ export function PageTitle({ kicker, title, children, className }: { kicker?: Rea
 }
 
 /** Link de texto em latão, para "ver tudo", "abrir" e afins. */
-export const LINK = "rounded-xs text-subhead font-medium text-arcane-300 underline-offset-4 hover:text-arcane-200 hover:underline";
+export const LINK = "rounded-xs text-subhead font-medium text-area-soft underline-offset-4 hover:text-area-soft hover:underline";
 
 // ------------------------------------------------------------------ selos e etiquetas
-export type Tone = "neutral" | "ok" | "warn" | "bad" | "info" | "arcane" | "live";
+export type Tone = "neutral" | "ok" | "warn" | "bad" | "info" | "arcane" | "live" | "gold";
 
 export function Tag({ tone = "neutral", children, className, title, dot }: { tone?: Tone; children: ReactNode; className?: string; title?: string; dot?: boolean }) {
   return (
@@ -133,26 +134,27 @@ export function Tag({ tone = "neutral", children, className, title, dot }: { ton
 }
 
 const WAX: Record<Tone, string> = {
-  neutral: "from-night-500 to-night-700 text-mist",
-  ok: "from-moss-400 to-moss-600 text-night-950",
-  warn: "from-ember-300 to-ember-600 text-night-950",
-  bad: "from-wine-400 to-wine-600 text-parchment-50",
-  info: "from-astral-300 to-astral-600 text-night-950",
-  live: "from-astral-300 to-astral-600 text-night-950",
-  arcane: "from-arcane-300 to-arcane-600 text-ink-900",
+  neutral: "bg-night-500 text-mist",
+  ok: "bg-moss-400 text-night-950",
+  warn: "bg-ember-400 text-night-950",
+  bad: "bg-wine-400 text-night-950",
+  info: "bg-astral-400 text-night-950",
+  live: "bg-astral-400 text-night-950",
+  arcane: "bg-area text-ink-900",
+  gold: "bg-gold-400 text-night-950",
 };
 
-/** Selo de cera: número ou ícone curto num disco com borda irregular. */
+/** Selo: número ou ícone curto num quadradinho na cor do tom. */
 export function Seal({ tone = "arcane", size = 30, children, title, className }: { tone?: Tone; size?: number; children: ReactNode; title?: string; className?: string }) {
   return (
     <span
       title={title}
       className={cx(
-        "relative inline-grid shrink-0 place-items-center rounded-full bg-gradient-to-b font-sans font-bold leading-none shadow-[inset_0_1px_0_rgb(255_255_255/0.3),inset_0_-2px_3px_rgb(0_0_0/0.3),0_1px_2px_rgb(0_0_0/0.6)]",
+        "relative inline-grid shrink-0 place-items-center rounded-xs font-mono font-bold leading-none",
         WAX[tone],
         className,
       )}
-      style={{ width: size, height: size, fontSize: size * 0.42, clipPath: "polygon(50% 0%, 61% 4%, 73% 3%, 81% 11%, 92% 15%, 95% 27%, 100% 38%, 97% 50%, 100% 62%, 95% 73%, 92% 85%, 81% 89%, 73% 97%, 61% 96%, 50% 100%, 39% 96%, 27% 97%, 19% 89%, 8% 85%, 5% 73%, 0% 62%, 3% 50%, 0% 38%, 5% 27%, 8% 15%, 19% 11%, 27% 3%, 39% 4%)" }}
+      style={{ width: size, height: size, fontSize: size * 0.46 }}
     >
       {children}
     </span>
@@ -164,10 +166,10 @@ export function Plate({ children, className, muted }: { children: ReactNode; cla
   return (
     <span
       className={cx(
-        "tabular inline-grid h-7 min-w-8 shrink-0 place-items-center rounded-[8px] px-2 font-sans text-footnote font-bold",
+        "tabular inline-grid h-7 min-w-8 shrink-0 place-items-center rounded-xs px-2 text-footnote font-bold",
         muted
-          ? "bg-night-700/70 text-mist-dim shadow-[inset_0_1px_0_rgb(226_220_255/0.1)]"
-          : "bg-[linear-gradient(180deg,var(--color-arcane-200),var(--color-arcane-400))] text-ink-900 shadow-[inset_0_1px_0_rgb(246_243_255/0.7),inset_0_-1px_0_rgb(38_24_110/0.3),0_1px_2px_rgb(0_0_0/0.4)]",
+          ? "bg-night-700 text-mist-dim"
+          : "bg-area text-area-ink",
         className,
       )}
     >
@@ -284,14 +286,14 @@ export function Switch({ checked, onChange, label, disabled }: { checked: boolea
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={cx(
-        "relative inline-flex h-[31px] w-[51px] shrink-0 items-center rounded-full p-[2px] shadow-[inset_0_1px_2px_rgb(0_0_0/0.4)] transition-colors duration-200 disabled:opacity-45",
+        "relative inline-flex h-[31px] w-[51px] shrink-0 items-center rounded-full p-[2px] transition-colors duration-200 disabled:opacity-45",
         checked ? "bg-moss-600" : "bg-night-700",
       )}
     >
       <span
         aria-hidden="true"
         className={cx(
-          "size-[27px] rounded-full bg-[linear-gradient(180deg,#ffffff,#e2dcf5)] shadow-[0_2px_5px_rgb(0_0_0/0.4)] transition-transform duration-500 ease-spring",
+          "size-[27px] rounded-full bg-mist transition-transform duration-300 ease-out",
           checked ? "translate-x-5" : "translate-x-0",
         )}
       />
@@ -380,7 +382,7 @@ export function Tabs<T extends string>({ value, onChange, tabs, className }: { v
 
 /** Contador ao lado do nome da aba. */
 export function Count({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cx("tabular rounded-full bg-mist/8 px-1.5 py-0.5 text-caption font-semibold text-mist-dim", className)}>{children}</span>;
+  return <span className={cx("tabular rounded-xs bg-night-700 px-1.5 py-0.5 text-caption font-medium tracking-normal text-mist-dim", className)}>{children}</span>;
 }
 
 // ------------------------------------------------------------------ camadas (janelas, gavetas)
@@ -720,7 +722,7 @@ export function InlineEdit({ value, placeholder, onSave, className, label }: { v
             setEditing(false);
           }
         }}
-        className={cx("w-full rounded-sm bg-night-950/60 px-2 outline-none shadow-[inset_0_0_0_1px_var(--color-arcane-400),var(--ring)]", className)}
+        className={cx("w-full rounded-sm bg-night-950/60 px-2 outline-none shadow-[inset_0_0_0_1px_var(--area),var(--ring)]", className)}
       />
     );
   return (
@@ -738,7 +740,7 @@ export function InlineEdit({ value, placeholder, onSave, className, label }: { v
 
 // ------------------------------------------------------------------ estados
 export function Spinner({ className, label = "carregando" }: { className?: string; label?: string }) {
-  return <Loader2 aria-label={label} className={cx("size-5 animate-spin text-arcane-300", className)} />;
+  return <Loader2 aria-label={label} className={cx("size-5 animate-spin text-area-soft", className)} />;
 }
 
 export function Skeleton({ className }: { className?: string }) {
@@ -748,8 +750,7 @@ export function Skeleton({ className }: { className?: string }) {
 export function EmptyState({ art, title, children, action }: { art: ReactNode; title: string; children?: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
-      <div className="relative grid size-20 place-items-center text-arcane-300">
-        <span aria-hidden="true" className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgb(185_164_255/0.18),transparent_68%)]" />
+      <div className="relative grid size-16 place-items-center text-area-soft">
         <span className="relative">{art}</span>
       </div>
       <p className="font-display text-title-3 font-semibold text-mist">{title}</p>
@@ -761,7 +762,8 @@ export function EmptyState({ art, title, children, action }: { art: ReactNode; t
 
 export function Meter({ value, tone = "arcane", className, label }: { value: number | null; tone?: Tone; className?: string; label?: string }) {
   const color = {
-    arcane: "bg-[linear-gradient(180deg,var(--color-arcane-200),var(--color-arcane-400))]",
+    arcane: "bg-area",
+    gold: "bg-gold-400",
     ok: "bg-moss-400",
     warn: "bg-ember-400",
     bad: "bg-wine-400",
@@ -771,7 +773,7 @@ export function Meter({ value, tone = "arcane", className, label }: { value: num
   }[tone];
   return (
     <div
-      className={cx("well h-2 w-full overflow-hidden rounded-full", className)}
+      className={cx("well h-2 w-full overflow-hidden rounded-xs", className)}
       role="progressbar"
       aria-label={label}
       aria-valuenow={value === null ? undefined : Math.round(value * 100)}
@@ -779,7 +781,7 @@ export function Meter({ value, tone = "arcane", className, label }: { value: num
       aria-valuemax={100}
     >
       <div
-        className={cx("h-full rounded-full shadow-[inset_0_1px_0_rgb(255_255_255/0.35)] transition-[width] duration-700 ease-spring", color, value === null && "w-1/3 animate-pulse")}
+        className={cx("h-full transition-[width] duration-700 ease-out", color, value === null && "w-1/3 animate-pulse")}
         style={value === null ? undefined : { width: `${Math.max(3, Math.min(100, value * 100))}%` }}
       />
     </div>
@@ -787,7 +789,7 @@ export function Meter({ value, tone = "arcane", className, label }: { value: num
 }
 
 export function Kbd({ children }: { children: ReactNode }) {
-  return <kbd className="rounded-xs bg-night-950/70 px-1.5 py-0.5 font-mono text-caption text-mist-dim shadow-[inset_0_0_0_1px_rgb(214_204_255/0.12)]">{children}</kbd>;
+  return <kbd className="rounded-xs bg-night-950/70 px-1.5 py-0.5 font-mono text-caption text-mist-dim shadow-[inset_0_0_0_1px_rgb(233_230_220/0.12)]">{children}</kbd>;
 }
 
 // ------------------------------------------------------------------ etapas
@@ -809,15 +811,15 @@ export function StepIndicator({ steps, onSelect, current, className }: { steps: 
                 disabled={!reachable}
                 onClick={() => onSelect?.(s.id)}
                 aria-current={s.state === "now" ? "step" : undefined}
-                className={cx("group flex min-h-11 min-w-0 items-center gap-2.5 rounded-full pr-2 text-left disabled:cursor-default", reachable && "hover:text-mist")}
+                className={cx("group flex min-h-11 min-w-0 items-center gap-2.5 rounded-md pr-2 text-left disabled:cursor-default", reachable && "hover:text-mist")}
               >
                 <span
                   className={cx(
-                    "tabular grid size-7 shrink-0 place-items-center rounded-full text-footnote font-semibold transition-shadow",
-                    s.state === "done" && "bg-arcane-400 text-ink-900 shadow-[inset_0_1px_0_rgb(243_240_255/0.5)]",
-                    s.state === "now" && "bg-arcane-300/14 text-arcane-200 shadow-[inset_0_0_0_1.5px_var(--color-arcane-300),0_0_0_5px_rgb(185_164_255/0.12)]",
-                    s.state === "todo" && "bg-night-950/45 text-mist-faint shadow-[inset_0_0_0_1px_rgb(214_204_255/0.12)]",
-                    viewing && s.state === "done" && "shadow-[0_0_0_3px_rgb(185_164_255/0.35)]",
+                    "tabular grid size-7 shrink-0 place-items-center rounded-md text-footnote font-semibold transition-shadow",
+                    s.state === "done" && "bg-area text-area-ink",
+                    s.state === "now" && "bg-area-soft/14 text-area-soft shadow-[inset_0_0_0_1.5px_var(--area-soft),0_0_0_5px_rgb(233_230_220/0.12)]",
+                    s.state === "todo" && "bg-night-950/45 text-mist-faint shadow-[inset_0_0_0_1px_rgb(233_230_220/0.12)]",
+                    viewing && s.state === "done" && "shadow-[0_0_0_3px_rgb(233_230_220/0.35)]",
                   )}
                 >
                   {s.state === "done" ? <Check className="size-4 [--icon-stroke:2.4]" /> : i + 1}
@@ -833,7 +835,7 @@ export function StepIndicator({ steps, onSelect, current, className }: { steps: 
                 </span>
               </button>
               {i < steps.length - 1 && (
-                <span aria-hidden="true" className={cx("mx-1 h-px min-w-3 flex-1 sm:mx-2", i < now ? "bg-[linear-gradient(90deg,var(--color-arcane-500),rgb(140_110_245/0.3))]" : "bg-mist/12")} />
+                <span aria-hidden="true" className={cx("mx-1 h-px min-w-3 flex-1 sm:mx-2", i < now ? "bg-area" : "bg-line-strong")} />
               )}
             </li>
           );

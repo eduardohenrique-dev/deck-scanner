@@ -16,7 +16,7 @@ export default function DeckTome({ deck }: { deck: Deck }) {
         {art ? (
           <img src={art} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]" />
         ) : (
-          <div className="grid h-full place-items-center bg-[radial-gradient(circle_at_50%_40%,rgb(185_164_255/0.12),transparent_70%)] font-display text-display text-arcane-700">{deck.name.slice(0, 1)}</div>
+          <div className="grid h-full place-items-center bg-[radial-gradient(circle_at_50%_40%,rgb(233_230_220/0.12),transparent_70%)] font-display text-display text-arcane-700">{deck.name.slice(0, 1)}</div>
         )}
         <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-night-950/90 via-night-950/35 to-transparent" />
         <div className="absolute bottom-2 left-3 flex items-center gap-2">
@@ -24,7 +24,7 @@ export default function DeckTome({ deck }: { deck: Deck }) {
         </div>
       </div>
       <div className="flex flex-1 flex-col gap-1 px-4 pt-3 pb-4">
-        <h3 className="truncate font-serif text-headline font-semibold text-mist group-hover:text-arcane-100">{deck.name}</h3>
+        <h3 className="truncate font-serif text-headline font-semibold text-mist group-hover:text-mist">{deck.name}</h3>
         <p className="truncate text-footnote text-mist-faint">
           {deck.format_name ?? deck.format_id}
           {deck.commanders?.length ? ` · ${deck.commanders.join(" & ")}` : ""}
@@ -33,8 +33,8 @@ export default function DeckTome({ deck }: { deck: Deck }) {
           <span className="tabular">{deck.card_count} cartas</span>
           <span className="text-mist-faint">{relativeDay(deck.updated_at ?? deck.created_at)}</span>
         </div>
-        <div className="well mt-1 h-1.5 overflow-hidden rounded-full" title={`${deck.physical_count ?? 0} cartas físicas registradas neste deck`}>
-          <div className="h-full rounded-full bg-[linear-gradient(180deg,var(--color-arcane-200),var(--color-arcane-400))]" style={{ width: `${Math.round(physicalShare * 100)}%` }} />
+        <div className="well mt-1 h-1.5 overflow-hidden rounded-xs" title={`${deck.physical_count ?? 0} cartas físicas registradas neste deck`}>
+          <div className="h-full bg-area" style={{ width: `${Math.round(physicalShare * 100)}%` }} />
         </div>
       </div>
     </Link>

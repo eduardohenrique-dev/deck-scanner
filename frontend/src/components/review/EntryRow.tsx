@@ -66,7 +66,7 @@ function EntryRowImpl({ entry, format, game, detections = [], ownedElsewhere, on
           <ArtThumb card={card} size={54} />
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-1.5">
-              {entry.is_commander && <Crown size={17} className="shrink-0 text-arcane-300" />}
+              {entry.is_commander && <Crown size={17} className="shrink-0 text-area-soft" />}
               <span className="truncate font-serif text-headline leading-tight font-semibold text-mist">{cardName(card)}</span>
               <span className="ml-1 hidden shrink-0 sm:inline">
                 <ManaCost cost={card?.mana_cost} size={15} />
@@ -133,7 +133,7 @@ function EntryRowImpl({ entry, format, game, detections = [], ownedElsewhere, on
                 <SetSymbol card={card} size={16} />
                 {card?.set_name} · #{card?.collector_number}
               </span>
-              {usd !== null && fxRate && <span className="tabular text-arcane-200">≈ {(usd * fxRate).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>}
+              {usd !== null && fxRate && <span className="tabular text-area-soft">≈ {(usd * fxRate).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>}
               {det?.source && <span className="text-mist-faint">identificada {SOURCE_LABEL[det.source] ?? det.source}</span>}
             </div>
 
@@ -280,7 +280,7 @@ function ChangeCard({ entry, onClose, onPick }: { entry: Entry; onClose: () => v
                 onClick={() => onPick(p)}
                 className={cx(
                   "rounded-md p-1.5 text-left transition-[box-shadow,background-color,transform] duration-300 active:scale-[0.97]",
-                  p.id === entry.card_ref_id ? "bg-arcane-400/10 shadow-[inset_0_0_0_1.5px_var(--color-arcane-400)]" : "shadow-[inset_0_0_0_1px_rgb(214_204_255/0.08)] hover:bg-mist/5 hover:shadow-[inset_0_0_0_1px_rgb(185_164_255/0.4)]",
+                  p.id === entry.card_ref_id ? "bg-area/10 shadow-[inset_0_0_0_1.5px_var(--area)]" : "shadow-[inset_0_0_0_1px_rgb(233_230_220/0.08)] hover:bg-mist/5 hover:shadow-[inset_0_0_0_1px_rgb(233_230_220/0.4)]",
                 )}
               >
                 <CardImage card={p} />

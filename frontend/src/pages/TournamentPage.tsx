@@ -135,7 +135,7 @@ export default function TournamentPage({ id }: { id: string }) {
       {/* no celular a ação da etapa fica sempre à mão, acima da barra de navegação */}
       {action && <div className="h-20 sm:hidden" aria-hidden="true" />}
       {action && (
-        <div className="bar-glass fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 px-4 py-3 shadow-[inset_0_1px_0_rgb(214_204_255/0.1),0_-8px_24px_-16px_rgb(0_0_0/0.8)] sm:hidden">
+        <div className="bar-glass fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 px-4 py-3 shadow-[inset_0_1px_0_rgb(233_230_220/0.1),0_-8px_24px_-16px_rgb(0_0_0/0.8)] sm:hidden">
           <ActionButton action={action} className="w-full" />
         </div>
       )}
