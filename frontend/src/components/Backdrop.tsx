@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
   O chão do app: uma tela amarela viva, desenhada em canvas atrás de tudo.
   - retícula de pontos que cresce em diagonal e incha perto do dedo ou do mouse;
   - anéis segmentados girando devagar, com paralaxe na rolagem e no ponteiro;
-  - fita preta em diagonal com letreiro correndo (o nome da área em que a pessoa está);
+  - três listras finas em diagonal no pé da tela, a do meio na cor da área;
   - estrelas soltas que fogem do ponteiro, e um estouro a cada toque;
   - ao trocar de área, uma faixa na cor dela varre a tela.
   Para quando a aba está oculta ou a câmera cobre a tela; com "reduzir movimento" vira um quadro parado.
@@ -13,7 +13,6 @@ import { useEffect, useRef } from "react";
 const GROUND = "#ffd80a";
 const DEEP = "#f9bc00";
 const INK = "#0b0b0c";
-const LABEL: Record<string, string> = { home: "INÍCIO", scan: "ESCANEAR", decks: "DECKS", collection: "COLEÇÃO", tournament: "TORNEIO" };
 
 type Star = { x: number; y: number; r: number; spin: number; drift: number; ink: boolean; vx: number; vy: number };
 type Burst = { x: number; y: number; t0: number };
@@ -138,25 +137,18 @@ export default function Backdrop() {
       ctx.fill();
     }
 
-    function ribbon(par: number) {
-      const text = `${LABEL[area] ?? "DECK SCANNER"}  ★  DECK SCANNER  ★  `;
-      const band = w < 640 ? 30 : 40;
+    // três listras finas em diagonal no pé da tela: branca, na cor da área e preta (sem texto, sem correr)
+    function stripes(par: number) {
       ctx.save();
-      ctx.translate(w / 2, h * 0.8 + par);
+      ctx.translate(w / 2, h * 0.84 + par);
       ctx.rotate(-0.2);
       const L = Math.hypot(w, h);
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(-L, -band / 2 - 14, L * 2, 5);
-      ctx.fillStyle = areaColor === GROUND ? "#ff4133" : areaColor;
-      ctx.fillRect(-L, band / 2 + 6, L * 2, 12);
+      ctx.fillRect(-L, -16, L * 2, 5);
+      ctx.fillStyle = areaColor === GROUND ? "#ff4d3d" : areaColor;
+      ctx.fillRect(-L, -6, L * 2, 14);
       ctx.fillStyle = INK;
-      ctx.fillRect(-L, -band / 2, L * 2, band);
-      ctx.font = `italic 800 ${Math.round(band * 0.62)}px "Barlow Condensed", "Arial Narrow", sans-serif`;
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = GROUND;
-      const tw = Math.max(80, ctx.measureText(text).width);
-      const off = (t * 34) % tw;
-      for (let x = -L - off; x < L; x += tw) ctx.fillText(text, x, 1);
+      ctx.fillRect(-L, 13, L * 2, 4);
       ctx.restore();
     }
 
@@ -181,7 +173,7 @@ export default function Backdrop() {
       rings(w * 0.9 - ox * 26, h * 0.14 - oy * 20 - scroll * 0.12, R, 1);
       halftone(px, py);
       rings(w * 0.04 - ox * 14, h * 1.02 - oy * 12 - scroll * 0.05, R * 0.5, -1);
-      ribbon(-scroll * 0.2 + oy * -10);
+      stripes(-scroll * 0.2 + oy * -10);
 
       for (const s of stars) {
         const dx = s.x - px;
@@ -304,8 +296,6 @@ export default function Backdrop() {
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("visibilitychange", start);
     reduce.addEventListener("change", start);
-    // o letreiro usa a fonte da casa: redesenha quando ela chega
-    void document.fonts?.ready.then(() => reduce.matches && draw(0));
     return () => {
       window.cancelAnimationFrame(raf);
       watch.disconnect();

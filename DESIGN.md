@@ -31,11 +31,11 @@ Chão amarelo vivo e em movimento, tinta preta, painéis de vidro escuro por cim
 | `gold-400` | #ffc53d | preço, carta valiosa, campeão |
 | `moss` / `ember` / `wine` | verde / âmbar / carmim | só estado: certo, atenção, erro |
 
-- O shell grava `data-area` no `<body>`; menu, abas, faixas, borda das barras e o letreiro do fundo seguem a área sozinhos.
+- O shell grava `data-area` no `<body>`; menu, abas, faixas, borda das barras e a listra do fundo seguem a área sozinhos.
 
 ## Fundo (`components/Backdrop.tsx`)
 
-Canvas fixo atrás de tudo: retícula que cresce em diagonal e incha perto do ponteiro, anéis segmentados girando com paralaxe, fita preta em diagonal com o nome da área correndo, estrelas que fogem do ponteiro, estouro a cada toque e uma faixa na cor da área que varre a tela ao trocar de seção. Para com a aba oculta e com a câmera aberta; no celular roda a 30 quadros por segundo; com "reduzir movimento" é um quadro parado.
+Canvas fixo atrás de tudo: retícula que cresce em diagonal e incha perto do ponteiro, anéis segmentados girando com paralaxe, três listras finas em diagonal (a do meio na cor da área), estrelas que fogem do ponteiro, estouro a cada toque e uma faixa na cor da área que varre a tela ao trocar de seção. Para com a aba oculta e com a câmera aberta; no celular roda a 30 quadros por segundo; com "reduzir movimento" é um quadro parado.
 
 ## Forma
 
