@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { apply, champion, champions, currentRound, inverse, leaders, needsFinal, nextRoundBlocker, plannedRounds, stage, stages, startBlocker, summary, TournamentError, type Command } from "./engine.ts";
 import { finalText, matchesCsv, pairingsText, standingsText } from "./export.ts";
-import { podMeetings, podSizes } from "./pods.ts";
+import { podMeetings, podRematches, podSizes } from "./pods.ts";
 import { standings } from "./standings.ts";
 import { AT, make, run } from "./testkit.ts";
 import type { Pod, PodResult, Tournament } from "./types.ts";
@@ -200,4 +200,40 @@ test("texto e CSV do mesão", () => {
   assert.match(text, /Mesa 1: .+ \(venceu Jogador \d\)/);
   assert.match(standingsText(t), /pts \(1V 0E 0D\)/);
   assert.match(matchesCsv(t), /rodada,1,1,.+,vitoria,Jogador \d,Jogador \d/);
+});
+
+test("8 jogadores em 3 rodadas: nenhuma dupla divide mesa nas três", () => {
+  for (let seed = 1; seed <= 40; seed++) {
+    const t = playAll(mesao(8, 3, seed), strongest);
+    const met = podMeetings(t.rounds);
+    assert.ok(Math.max(...met.values()) <= 2, `semente ${seed}: uma dupla jogou junta ${Math.max(...met.values())} vezes`);
+    // 2ª rodada: cada mesa nova é metade de cada mesa antiga (4 duplas repetidas é o mínimo possível)
+    assert.equal(podRematches(t.rounds, 2).pairs, 4, `semente ${seed}`);
+    const tables = t.rounds.map((r) => (r.pods ?? []).map((p) => [...p.players].sort().join(",")).sort().join(" / "));
+    assert.equal(new Set(tables).size, 3, `semente ${seed}: rodada com as mesmas mesas`);
+  }
+});
+
+test("16 jogadores em 4 rodadas: ninguém repete adversário enquanto dá", () => {
+  for (let seed = 1; seed <= 6; seed++) {
+    const t = playAll(mesao(16, 4, seed), strongest);
+    // 16 em mesas de 4 fecha 4 rodadas sem ninguém se reencontrar (plano afim de ordem 4)
+    for (const r of [2, 3]) assert.equal(podRematches(t.rounds, r).pairs, 0, `semente ${seed}, rodada ${r}`);
+    assert.ok(Math.max(...podMeetings(t.rounds).values()) <= 2, `semente ${seed}`);
+  }
+});
+
+test("24 jogadores: as três primeiras rodadas saem sem reencontro e rápido", () => {
+  const started = Date.now();
+  for (let seed = 1; seed <= 4; seed++) {
+    const t = playAll(mesao(24, 3, seed), strongest);
+    for (const r of [2, 3]) assert.equal(podRematches(t.rounds, r).pairs, 0, `semente ${seed}, rodada ${r}`);
+  }
+  assert.ok(Date.now() - started < 8000, "montar as mesas demorou demais");
+});
+
+test("4 jogadores: a mesma mesa volta porque não existe outra", () => {
+  const t = playAll(mesao(4, 3, 2), strongest);
+  const re = podRematches(t.rounds, 3);
+  assert.deepEqual([re.pairs, re.worst, re.exact], [6, 2, true]);
 });

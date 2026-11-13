@@ -7,8 +7,12 @@
  * - depois, a rodada inteira sai de uma conta só: primeiro, o mínimo de adversários repetidos (as mesas
  *   se reorganizam para cada um enfrentar gente diferente); depois, quem tem pontos parecidos junto,
  *   como no suíço; o resto é sorteio;
- * - até 12 jogadores testa todas as divisões possíveis (no máximo 5.775); acima disso, parte de várias
- *   divisões e troca jogadores entre mesas enquanto a conta melhora.
+ * - repetir pesa cada vez mais: a conta primeiro evita que uma dupla se encontre pela 3ª vez, depois
+ *   pela 2ª, e só então olha quantas duplas se repetem. Sem isso, "a mesma dupla junta três rodadas"
+ *   empatava com "duas duplas juntas duas rodadas" e a mesma mesa voltava sem precisar;
+ * - até 16 jogadores a divisão é a melhor que existe (todas são consideradas): se sobrou reencontro,
+ *   é porque não há divisão sem ele. Acima disso, parte de várias divisões e troca jogadores entre
+ *   mesas enquanto a conta melhora.
  */
 import { shuffle, type Rng } from "./rng.ts";
 import { collectStats } from "./standings.ts";
@@ -49,18 +53,30 @@ export function podMeetings(rounds: Round[]): Map<string, number> {
   return met;
 }
 
-type Scorer = { pod: (members: number[]) => number };
+/** Até este número de jogadores a divisão escolhida é comprovadamente a de menos reencontros. */
+export const POD_EXACT_LIMIT = 16;
 
-/** Todas as divisões de `0..n-1` nos tamanhos dados, cada uma uma vez só; guarda a de menor custo. */
-function bestExhaustive(n: number, sizes: number[], score: Scorer): number[][] {
-  let best: number[][] = [];
-  let bestCost = Infinity;
+/** Custo de uma mesa: [reencontros (pesados), pontos + sorteio]. Compara-se o primeiro; o segundo desempata. */
+type Cost = [number, number];
+type Scorer = { pod: (members: number[]) => Cost };
+
+const less = (a: Cost, b: Cost) => a[0] < b[0] || (a[0] === b[0] && a[1] < b[1] - 1e-9);
+const plus = (a: Cost, b: Cost): Cost => [a[0] + b[0], a[1] + b[1]];
+const NONE: Cost = [0, 0];
+
+/**
+ * Todas as divisões de `0..n-1` nos tamanhos dados, cada uma uma vez só; guarda a de menor custo.
+ * `start` é uma divisão já conhecida: o que não for melhor do que ela é cortado cedo.
+ */
+function bestExhaustive(n: number, sizes: number[], score: Scorer, start?: number[][]): number[][] {
+  let best: number[][] = start ?? [];
+  let bestCost: Cost = start ? start.reduce<Cost>((acc, p) => plus(acc, score.pod(p)), NONE) : [Infinity, Infinity];
   const used = new Array<boolean>(n).fill(false);
   const pods: number[][] = [];
   const remainingSizes = [...sizes];
 
-  const recurse = (cost: number) => {
-    if (cost >= bestCost) return;
+  const recurse = (cost: Cost) => {
+    if (!less(cost, bestCost)) return;
     const first = used.indexOf(false);
     if (first < 0) {
       bestCost = cost;
@@ -80,7 +96,7 @@ function bestExhaustive(n: number, sizes: number[], score: Scorer): number[][] {
         if (members.length === size) {
           const c = score.pod(members);
           pods.push([...members]);
-          recurse(cost + c);
+          recurse(plus(cost, c));
           pods.pop();
           return;
         }
@@ -98,7 +114,7 @@ function bestExhaustive(n: number, sizes: number[], score: Scorer): number[][] {
       remainingSizes.splice(s, 0, size);
     }
   };
-  recurse(0);
+  recurse(NONE);
   return best;
 }
 
@@ -113,7 +129,7 @@ function bestLocal(n: number, sizes: number[], score: Scorer, initial: number[],
     }
     return pods;
   };
-  const total = (pods: number[][]) => pods.reduce((acc, p) => acc + score.pod(p), 0);
+  const total = (pods: number[][]) => pods.reduce<Cost>((acc, p) => plus(acc, score.pod(p)), NONE);
   const improve = (pods: number[][]) => {
     let costs = pods.map((p) => score.pod(p));
     for (let changed = true; changed; ) {
@@ -127,7 +143,7 @@ function bestLocal(n: number, sizes: number[], score: Scorer, initial: number[],
               [pa[i], pb[j]] = [pb[j], pa[i]];
               const ca = score.pod(pa);
               const cb = score.pod(pb);
-              if (ca + cb < costs[a] + costs[b] - 1e-9) {
+              if (less(plus(ca, cb), plus(costs[a], costs[b]))) {
                 pods[a] = pa;
                 pods[b] = pb;
                 costs = [...costs];
@@ -141,10 +157,10 @@ function bestLocal(n: number, sizes: number[], score: Scorer, initial: number[],
   };
   let best = improve(fill(initial));
   let bestCost = total(best);
-  for (let restart = 0; restart < 8; restart++) {
+  for (let restart = 0; restart < 48; restart++) {
     const candidate = improve(fill(shuffle([...initial], rng)));
     const c = total(candidate);
-    if (c < bestCost - 1e-9) {
+    if (less(c, bestCost)) {
       best = candidate;
       bestCost = c;
     }
@@ -179,20 +195,24 @@ export function pairPods(t: Pick<Tournament, "players" | "rounds" | "settings">,
   // sorteio fixo por par: desempata divisões iguais sem mudar de uma conta para outra
   const jitter = Array.from({ length: n }, () => Array.from({ length: n }, () => opts.rng()));
   const totalPairs = sizes.reduce((acc, s) => acc + (s * (s - 1)) / 2, 0);
-  // escalas: o sorteio nunca vence 1 ponto de diferença, e uma repetição a menos vence qualquer arranjo de pontos
+  // o sorteio nunca vence 1 ponto de diferença
   const S = totalPairs + 1;
-  const maxDelta = Math.max(0, ...pts) - Math.min(0, ...pts);
-  const R = S * (totalPairs * maxDelta * maxDelta + 1);
+  // uma dupla que já se encontrou m vezes pesa B^(m-1): um encontro a mais de quem já repetiu vale mais
+  // do que todas as duplas da rodada se encontrando uma vez a menos (o expoente para em 6 para caber no número)
+  const B = totalPairs + 1;
+  const weight = (m: number) => (m <= 0 ? 0 : B ** Math.min(m - 1, 6));
   const score: Scorer = {
     pod(members) {
-      let c = 0;
+      let rep = 0;
+      let rest = 0;
       for (let i = 0; i < members.length; i++)
         for (let j = i + 1; j < members.length; j++) {
           const u = members[i];
           const v = members[j];
-          c += (met.get(podKey(ids[u], ids[v])) ?? 0) * R + (pts[u] - pts[v]) ** 2 * S + jitter[Math.min(u, v)][Math.max(u, v)];
+          rep += weight(met.get(podKey(ids[u], ids[v])) ?? 0);
+          rest += (pts[u] - pts[v]) ** 2 * S + jitter[Math.min(u, v)][Math.max(u, v)];
         }
-      return c;
+      return [rep, rest];
     },
   };
   // começa por pontos (do maior para o menor, com sorteio entre iguais)
@@ -200,7 +220,8 @@ export function pairPods(t: Pick<Tournament, "players" | "rounds" | "settings">,
     ids.map((_, i) => i),
     opts.rng,
   ).sort((a, b) => pts[b] - pts[a]);
-  const groups = n <= 12 ? bestExhaustive(n, sizes, score) : bestLocal(n, sizes, score, byPoints, opts.rng);
+  const local = bestLocal(n, sizes, score, byPoints, opts.rng);
+  const groups = n <= POD_EXACT_LIMIT ? bestExhaustive(n, sizes, score, local) : local;
 
   // mesa 1 é a de mais pontos; dentro da mesa, quem tem mais pontos primeiro
   const avg = (g: number[]) => g.reduce((acc, v) => acc + pts[v], 0) / g.length;
@@ -208,4 +229,27 @@ export function pairPods(t: Pick<Tournament, "players" | "rounds" | "settings">,
     .map((g) => [...g].sort((a, b) => pts[b] - pts[a] || a - b))
     .sort((x, y) => avg(y) - avg(x) || Math.min(...x) - Math.min(...y));
   return toPods(ordered.map((g) => g.map((v) => ids[v])));
+}
+
+/**
+ * Reencontros das mesas de uma rodada: quantas duplas já tinham dividido mesa antes (`pairs`) e o maior
+ * número de encontros anteriores entre elas (`worst`). `exact` diz se a divisão é comprovadamente a de
+ * menos reencontros (então o que sobrou era inevitável).
+ */
+export function podRematches(rounds: Round[], roundNo: number): { pairs: number; worst: number; exact: boolean } {
+  const round = rounds.find((r) => r.number === roundNo);
+  const met = podMeetings(rounds.filter((r) => r.number < roundNo));
+  let pairs = 0;
+  let worst = 0;
+  let players = 0;
+  for (const pod of round?.pods ?? []) {
+    players += pod.players.length;
+    for (let i = 0; i < pod.players.length; i++)
+      for (let j = i + 1; j < pod.players.length; j++) {
+        const m = met.get(podKey(pod.players[i], pod.players[j])) ?? 0;
+        if (m > 0) pairs++;
+        worst = Math.max(worst, m);
+      }
+  }
+  return { pairs, worst, exact: players <= POD_EXACT_LIMIT };
 }

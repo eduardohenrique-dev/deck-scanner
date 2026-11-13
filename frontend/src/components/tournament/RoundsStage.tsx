@@ -1,10 +1,10 @@
-import { ArrowLeftRight, Copy, Search, Shuffle, Trash2, X } from "lucide-react";
+import { ArrowLeftRight, Copy, Repeat2, Search, Shuffle, Sparkles, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "../../lib/toast";
 import { currentRound, cutOf, plannedRounds, roundComplete } from "../../tournament/engine.ts";
 import { pairingsText } from "../../tournament/export.ts";
 import { meetings, pairKey } from "../../tournament/pairing.ts";
-import { podKey, podMeetings } from "../../tournament/pods.ts";
+import { podKey, podMeetings, podRematches } from "../../tournament/pods.ts";
 import { standings } from "../../tournament/standings.ts";
 import type { Pod, Tournament } from "../../tournament/types.ts";
 import { Board, Button, Confirm, cx, Input, Menu, Segmented, Tabs, Tag } from "../ui";
@@ -56,6 +56,24 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
     for (let i = 0; i < p.players.length; i++) for (let j = i + 1; j < p.players.length; j++) n += podsBefore.has(podKey(p.players[i], p.players[j])) ? 1 : 0;
     return n;
   };
+
+  // reencontros da rodada: o sorteio só repete adversário quando não existe divisão sem repetir
+  const rematch = isPods && round.number > 1 ? podRematches(t.rounds, round.number) : null;
+  const seated = pods.reduce((acc, p) => acc + p.players.length, 0);
+  const rematchNote = rematch && (
+    <p className="flex items-start gap-2 text-footnote text-mist-dim">
+      {rematch.pairs ? <Repeat2 className="mt-0.5 size-4 shrink-0 text-ember-400" /> : <Sparkles className="mt-0.5 size-4 shrink-0 text-moss-400" />}
+      <span>
+        {!rematch.pairs
+          ? "Mesas novas: ninguém enfrenta de novo quem já enfrentou."
+          : pods.some((p) => p.manual)
+            ? `${rematch.pairs === 1 ? "1 dupla se reencontra" : `${rematch.pairs} duplas se reencontram`} nesta rodada (houve troca manual de mesa).`
+            : rematch.exact
+              ? `${rematch.pairs === 1 ? "1 dupla se reencontra" : `${rematch.pairs} duplas se reencontram`}: com ${seated} jogadores na rodada ${round.number} não existe divisão sem repetir, e esta é a que menos repete.`
+              : `${rematch.pairs === 1 ? "1 dupla se reencontra" : `${rematch.pairs} duplas se reencontram`} nesta rodada; o sorteio buscou a divisão que menos repete.`}
+      </span>
+    </p>
+  );
 
   function pick(id: string) {
     if (!picked) return setPicked(id);
@@ -131,7 +149,7 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
       </div>
       {swapping && (
         <div className="glass-float flex items-center gap-3 px-4 py-3" role="status">
-          <ArrowLeftRight className="size-5 shrink-0 text-arcane-300" />
+          <ArrowLeftRight className="size-5 shrink-0 text-area-soft" />
           <p className="min-w-0 flex-1 text-subhead text-mist">
             {picked ? `Agora toque em quem vai para o lugar de ${players.get(picked)?.name}.` : isPods ? "Toque em dois jogadores de mesas diferentes para trocá-los de lugar." : "Toque em dois jogadores para trocá-los de mesa (vale também para a folga)."}
           </p>
@@ -194,11 +212,12 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
           tabs={t.rounds.map((r) => ({
             value: String(r.number),
             label: `Rodada ${r.number}`,
-            badge: roundComplete(r) ? null : <span className="size-2 rounded-full bg-astral-300" aria-label="em jogo" />,
+            badge: roundComplete(r) ? null : <span className="gem text-area-soft" aria-label="em jogo" />,
           }))}
         />
       )}
       {header}
+      {rematchNote}
       <div className="lg:hidden">
         <Segmented
           label="Ver"
