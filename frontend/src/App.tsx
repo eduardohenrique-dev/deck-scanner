@@ -59,7 +59,7 @@ export default function App() {
             <Candle size={30} />
           </div>
           <div className="space-y-2">
-            <p className="font-display text-title-2 font-semibold text-mist">A taverna está fechada</p>
+            <p className="font-display text-title-2 text-mist uppercase">A taverna está fechada</p>
             <p className="text-body text-mist-dim">
               {auth.step === "session"
                 ? "Não consegui falar com o serviço de login. Se você usa bloqueador de anúncios ou uma rede do trabalho, ele pode estar barrando o acesso."
@@ -92,13 +92,15 @@ export default function App() {
       <a href="#conteudo" className="btn btn-primary sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50">
         Pular para o conteúdo
       </a>
-      <header className="bar-glass sticky top-0 z-40 border-b border-line-strong">
+      <header className="bar-glass sticky top-0 z-40 border-b-[3px] border-area">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:h-16 sm:px-6">
           <Link to="/" className="flex items-center gap-2.5 rounded-sm" aria-label="Deck Scanner, início">
             <BrandMark size={28} />
-            <span className="font-brand text-headline leading-none tracking-[0.12em] text-mist uppercase sm:text-title-3">Deck Scanner</span>
+            <span className="font-brand text-title-3 leading-none font-extrabold tracking-[0.02em] text-mist uppercase sm:text-title-2">
+              Deck <span className="slant !px-1.5 !text-[1em] !leading-[1.05] !tracking-[0.02em]">Scanner</span>
+            </span>
           </Link>
-          <nav className="ml-2 hidden items-stretch gap-1 self-stretch md:flex" aria-label="Principal">
+          <nav className="ml-2 hidden items-stretch gap-1.5 self-stretch md:flex" aria-label="Principal">
             {NAV.map((item) => {
               const active = item.match(path);
               return (
@@ -108,11 +110,11 @@ export default function App() {
                   aria-current={active ? "page" : undefined}
                   data-area={item.area}
                   className={cx(
-                    "flex items-center gap-2 border-b-2 px-3 font-caps text-footnote tracking-[0.09em] uppercase transition-colors duration-200",
-                    active ? "border-area text-mist" : "border-transparent text-mist-faint hover:text-mist",
+                    "nav-item flex items-center gap-2 px-3.5 font-caps text-headline tracking-[0.05em] uppercase transition-colors duration-200",
+                    active ? "text-area-ink" : "text-mist-dim hover:text-area-soft",
                   )}
                 >
-                  <item.icon size={19} className={active ? "text-area-soft" : undefined} />
+                  <item.icon size={19} />
                   {item.label}
                 </Link>
               );
@@ -150,7 +152,7 @@ export default function App() {
       </main>
 
       <nav
-        className="bar-glass fixed inset-x-0 bottom-0 z-40 border-t border-line-strong pb-[env(safe-area-inset-bottom)] md:hidden"
+        className="bar-glass fixed inset-x-0 bottom-0 z-40 border-t-[3px] border-area pb-[env(safe-area-inset-bottom)] md:hidden"
         aria-label="Principal"
       >
         <div className="grid" style={{ gridTemplateColumns: `repeat(${NAV.length}, minmax(0, 1fr))` }}>
@@ -163,11 +165,11 @@ export default function App() {
                 aria-current={active ? "page" : undefined}
                 data-area={item.area}
                 className={cx(
-                  "-mt-px flex h-15 flex-col items-center justify-center gap-1 border-t-2 text-caption font-medium transition-colors duration-200",
-                  active ? "border-area text-mist" : "border-transparent text-mist-faint",
+                  "nav-item flex h-15 flex-col items-center justify-center gap-0.5 font-caps text-footnote tracking-[0.04em] uppercase transition-colors duration-200",
+                  active ? "text-area-ink" : "text-mist-dim",
                 )}
               >
-                <item.icon size={22} className={active ? "text-area-soft" : undefined} />
+                <item.icon size={22} />
                 {item.label}
               </Link>
             );

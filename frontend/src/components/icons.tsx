@@ -184,29 +184,21 @@ export function Hourglass(props: P) {
 export function BrandMark({ size = 30, ...rest }: P) {
   const id = useId().replace(/:/g, "");
   return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" aria-hidden="true" {...rest}>
-      <defs>
-        <radialGradient id={`${id}i`} cx="0.42" cy="0.38" r="0.7">
-          <stop offset="0" stopColor="#efe9ff" />
-          <stop offset="0.55" stopColor="#b9a4ff" />
-          <stop offset="1" stopColor="#7c5cf0" />
-        </radialGradient>
-        <linearGradient id={`${id}b`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#b9a4ff" stopOpacity="0.55" />
-          <stop offset="1" stopColor="#7c5cf0" stopOpacity="0.08" />
-        </linearGradient>
-      </defs>
-      {/* faísca */}
-      <path d="M16 .6l.45 1.25L17.7 2.3l-1.25.45L16 4l-.45-1.25L14.3 2.3l1.25-.45Z" fill="#d9ccff" />
-      {/* feixe */}
-      <path d="M13.3 14.6h5.4l3.3 6.4H10Z" fill={`url(#${id}b)`} />
-      {/* olho */}
-      <path d="M3.6 10.2Q16 1.6 28.4 10.2 16 18.8 3.6 10.2Z" fill="#160f33" stroke="#d9ccff" strokeWidth="1.3" strokeLinejoin="round" />
-      <circle cx="16" cy="10.2" r="4.4" fill={`url(#${id}i)`} />
-      <path d="M16 6.3q1.35 3.9 0 7.8-1.35-3.9 0-7.8Z" fill="#07031d" />
-      {/* carta deitada */}
-      <path d="M9.6 20.6h12.8l3.6 8.3H6Z" fill="#1b1450" stroke="#9a7ff7" strokeWidth="1.3" strokeLinejoin="round" />
-      <ellipse cx="16" cy="24.4" rx="4.4" ry="1.7" stroke="#b9a4ff" strokeWidth="1" fill="#b9a4ff" fillOpacity="0.12" />
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none" aria-hidden="true" {...rest}>
+      <rect x="1.25" y="1.25" width="61.5" height="61.5" rx="8" fill="#ffd80a" stroke="#0b0b0c" strokeWidth="2.5"/>
+      <g fill="#f7b500">
+        <circle cx="6" cy="58" r="4.4"/><circle cx="17" cy="58" r="3.6"/><circle cx="28" cy="58" r="2.7"/><circle cx="39" cy="58" r="1.7"/>
+        <circle cx="11.5" cy="49" r="3.3"/><circle cx="22.5" cy="49" r="2.4"/><circle cx="33.5" cy="49" r="1.4"/>
+        <circle cx="6" cy="40" r="2.6"/><circle cx="17" cy="40" r="1.7"/>
+        <circle cx="11.5" cy="31" r="1.3"/>
+      </g>
+      <circle cx="56" cy="7" r="16" fill="none" stroke="#ffffff" strokeWidth="5" strokeDasharray="15 7"/>
+      <rect x="14.5" y="14.5" width="29" height="41" rx="3.5" fill="#ffffff" transform="rotate(-13 32 32)"/>
+      <rect x="19" y="11" width="29" height="41" rx="3.5" fill="#0b0b0c" transform="rotate(-13 32 32)"/>
+      <path d="M0 40.5 64 25.5v8.4L0 48.9Z" fill="#0b0b0c"/>
+      <clipPath id={id}><rect x="19" y="11" width="29" height="41" rx="3.5" transform="rotate(-13 32 32)"/></clipPath>
+      <path d="M0 40.5 64 25.5v8.4L0 48.9Z" fill="#ffd80a" clipPath={`url(#${id})`}/>
+      <path d="M27.5 13.5l1.7 4.3 4.3 1.7-4.3 1.7-1.7 4.3-1.7-4.3-4.3-1.7 4.3-1.7Z" fill="#ffffff"/>
     </svg>
   );
 }

@@ -1,29 +1,34 @@
 @import "tailwindcss";
-@import "@fontsource/marcellus/latin-400.css";
-@import "@fontsource/marcellus/latin-ext-400.css";
+@import "@fontsource/barlow-condensed/latin-600-italic.css";
+@import "@fontsource/barlow-condensed/latin-700-italic.css";
+@import "@fontsource/barlow-condensed/latin-800-italic.css";
 @import "@fontsource-variable/instrument-sans/standard.css";
 @import "@fontsource-variable/instrument-sans/standard-italic.css";
 @import "@fontsource-variable/jetbrains-mono/wght.css";
 
 /*
-  Carta: o app tem o traço do objeto que ele lê. Regras da casa (o resumo está em DESIGN.md):
+  Canal amarelo: chão amarelo vivo e em movimento, tinta preta, painéis de vidro escuro por cima.
+  Regras da casa (o resumo está em DESIGN.md):
   - todo valor visual sai daqui (cores, tipos, raios, sombras, molas);
-  - chão quase preto neutro e texto marfim; a cor entra com função, nunca como fundo de tudo;
-  - uma cor de mana por área: azul (escanear), violeta (decks e a ação da tela), ouro (coleção e valor),
-    fogo (torneio); verde, âmbar e carmim são só estado;
-  - superfícies opacas separadas por tom e por fio de 1 px; painel leva moldura de fio duplo, como a carta;
-  - cantos quase retos: etiqueta 2–3 px, controle e painel 4 px, folha 6 px; círculo só em ponto e interruptor;
-  - Marcellus em caixa alta nos rótulos, botões e marca, em caixa normal nos títulos; números em mono;
+  - o chão é o canvas amarelo (components/Backdrop.tsx); direto sobre ele o texto é tinta preta;
+  - as superfícies são vidro escuro (desfoque do chão + fio claro em cima + sombra dura preta), com texto branco;
+  - os tokens de texto e de linha mudam sozinhos com o contexto: `text-mist` é preto no chão e branco no vidro
+    (ver "contexto" mais abaixo), então nenhum componente precisa saber onde está;
+  - amarelo é a ação sobre o vidro; no chão a ação é o bloco preto com letra amarela;
+  - uma cor de barra de TV por área: ciano (escanear), rosa (decks), laranja (coleção), vermelho (torneio);
+    verde, âmbar e carmim são só estado;
+  - cantos de 4 px; a inclinação vem da letra em itálico e do corte enviesado de botões, faixas e títulos;
+  - Barlow Condensed itálica em caixa alta nos títulos, rótulos, botões e marca; números em mono;
   - espaçamento na grade de 4/8 px, sem meios-passos.
 */
 @theme {
   /* ------------------------------------------------------------ tipos */
-  --font-brand: "Marcellus", Georgia, serif;
-  --font-display: "Marcellus", Georgia, "Times New Roman", serif;
+  --font-brand: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
   /* nomes próprios (cartas, decks, jogadores): sans em peso firme */
   --font-serif: "Instrument Sans Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-sans: "Instrument Sans Variable", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-caps: "Marcellus", Georgia, serif;
+  --font-caps: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
 
   /* escala com nome: 10 tamanhos, nada fora dela */
@@ -57,50 +62,58 @@
 
   /* ------------------------------------------------------------ cores */
   /* noite: o chão e as superfícies, neutras (sem tom de violeta) */
-  --color-night-950: #08090b;
-  --color-night-900: #0c0d10;
-  --color-night-850: #101116;
-  --color-night-800: #14151a;
-  --color-night-750: #191a20;
-  --color-night-700: #1f2027;
-  --color-night-600: #2b2d35;
-  --color-night-500: #3b3d47;
+  /* os valores daqui são os do VIDRO (superfície escura); o chão amarelo troca alguns em "contexto" */
+  --color-night-950: #050506;
+  --color-night-900: #0b0b0c;
+  --color-night-850: #101012;
+  --color-night-800: #151517;
+  --color-night-750: #1c1c1f;
+  --color-night-700: #242428;
+  --color-night-600: #333338;
+  --color-night-500: #47474e;
 
-  /* marfim: texto. Sobre o painel (#14151a): 14,6:1, 9:1 e 5,4:1 */
-  --color-mist: #e9e6dc;
-  --color-mist-dim: #b9b5a8;
-  --color-mist-faint: #8f8c82;
+  /* texto sobre o vidro: branco quente */
+  --color-mist: #f7f6f1;
+  --color-mist-dim: #c6c4bb;
+  --color-mist-faint: #9a988f;
 
-  /* violeta (mana preta/arcana): a ação da tela, a seleção e os decks */
-  --color-arcane-100: #efeaff;
-  --color-arcane-200: #d8ccff;
-  --color-arcane-300: #b9a5ff;
-  --color-arcane-400: #9b7bff;
-  --color-arcane-500: #7f5cf0;
-  --color-arcane-600: #6142cf;
-  --color-arcane-700: #3f2c8c;
-  --color-arcane-800: #251b52;
+  /* amarelo: a marca, a ação da tela e a seleção */
+  --color-arcane-100: #fff8d1;
+  --color-arcane-200: #ffef99;
+  --color-arcane-300: #ffe45c;
+  --color-arcane-400: #ffd80a;
+  --color-arcane-500: #f2c200;
+  --color-arcane-600: #c79c00;
+  --color-arcane-700: #6b5400;
+  --color-arcane-800: #3a2e00;
 
-  /* azul (mana azul): escanear, "ao vivo", informação */
-  --color-astral-200: #c5e1ff;
-  --color-astral-300: #8cc4ff;
-  --color-astral-400: #4aa3ff;
-  --color-astral-600: #1f6fc4;
-  --color-astral-800: #10335c;
+  /* ciano: escanear, "ao vivo", informação */
+  --color-astral-200: #c2efff;
+  --color-astral-300: #85dfff;
+  --color-astral-400: #2ec4ff;
+  --color-astral-600: #0a7fb5;
+  --color-astral-800: #06354d;
 
-  /* ouro (mana branca): coleção, preço, carta valiosa, campeão */
-  --color-gold-200: #f6e3a6;
-  --color-gold-300: #f0d27c;
-  --color-gold-400: #e8c15a;
-  --color-gold-600: #9c7a1f;
-  --color-gold-800: #46370f;
+  /* ouro: preço, carta valiosa, campeão */
+  --color-gold-200: #ffe9a8;
+  --color-gold-300: #ffd870;
+  --color-gold-400: #ffc53d;
+  --color-gold-600: #a87a12;
+  --color-gold-800: #4a3608;
 
-  /* fogo (mana vermelha): torneio */
-  --color-fire-200: #fbc3b6;
-  --color-fire-300: #f79a85;
-  --color-fire-400: #e5533d;
-  --color-fire-600: #a8301e;
-  --color-fire-800: #4a160e;
+  /* vermelho: torneio */
+  --color-fire-200: #ffc2bb;
+  --color-fire-300: #ff958a;
+  --color-fire-400: #ff4d3d;
+  --color-fire-600: #b3261a;
+  --color-fire-800: #4f120c;
+
+  /* rosa: decks */
+  --color-rose-300: #ff9cc4;
+  --color-rose-400: #ff5c9d;
+  /* laranja: coleção */
+  --color-tang-300: #ffbe73;
+  --color-tang-400: #ff9a1f;
 
   /* papel marfim e tinta: o que é "papel" (login, avisos) */
   --color-parchment-50: #f7f5ee;
@@ -218,13 +231,14 @@
   }
 }
 
-/* a cor da área em que a pessoa está (o shell marca data-area no <main>); fora dele vale o violeta */
+/* a cor da área em que a pessoa está (o shell marca data-area no <body>) */
 @theme inline {
   --color-area: var(--area);
   --color-area-soft: var(--area-soft);
   --color-area-ink: var(--area-ink);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
+  --color-ground: var(--ground);
 }
 
 :root {
@@ -234,43 +248,150 @@
   --dur-base: 280ms;
   --dur-spring: 420ms;
 
-  --line: #26272e;
-  --line-strong: #34363e;
-  --line-faint: #1b1c21;
-  --ring: 0 0 0 3px rgb(155 123 255 / 0.28);
+  --ground: #ffd80a;
+  --ink: #0b0b0c;
+  /* sombra dura, de quadrinho: o painel "descolado" do chão */
+  --hard: 5px 5px 0 rgb(0 0 0 / 0.92);
+  --hard-sm: 3px 3px 0 rgb(0 0 0 / 0.92);
 
-  --area: var(--color-arcane-400);
-  --area-soft: var(--color-arcane-300);
-  --area-ink: #140b33;
-
-  /* fibra do papel marfim */
+  /* fibra do papel claro */
   --tex-paper: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='p'><feTurbulence type='fractalNoise' baseFrequency='0.035' numOctaves='4' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.4  0 0 0 0 0.3  0 0 0 0.1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23p)'/></svg>");
 }
 
-[data-area="scan"] {
-  --area: var(--color-astral-400);
-  --area-soft: var(--color-astral-300);
-  --area-ink: #06213f;
-}
-[data-area="decks"] {
-  --area: var(--color-arcane-400);
-  --area-soft: var(--color-arcane-300);
-  --area-ink: #140b33;
-}
-[data-area="collection"] {
-  --area: var(--color-gold-400);
-  --area-soft: var(--color-gold-300);
-  --area-ink: #2e2305;
-}
-[data-area="tournament"] {
-  --area: var(--color-fire-400);
-  --area-soft: var(--color-fire-300);
-  --area-ink: #2a0b06;
-}
-[data-area="ok"] {
-  --area: var(--color-moss-400);
-  --area-soft: var(--color-moss-300);
-  --area-ink: #06281a;
+/* ====================================================================== contexto
+   Dois contextos: CHÃO (amarelo, tinta preta) e VIDRO (escuro, texto branco).
+   Os mesmos tokens valem nos dois; cada superfície escura redeclara os seus ao entrar.
+   --a / --a-soft / --a-ink: a cor da área, fixa. --area / --area-soft / --area-ink: como ela se apresenta
+   no contexto (no vidro, a própria cor; no chão, bloco preto com a cor na letra). */
+@layer base {
+  :root,
+  [data-area="home"] {
+    --a: #ffd80a;
+    --a-soft: #ffe45c;
+    --a-ink: #1c1700;
+  }
+  [data-area="scan"] {
+    --a: #2ec4ff;
+    --a-soft: #85dfff;
+    --a-ink: #00212f;
+  }
+  [data-area="decks"] {
+    --a: #ff5c9d;
+    --a-soft: #ff9cc4;
+    --a-ink: #33001a;
+  }
+  [data-area="collection"] {
+    --a: #ff9a1f;
+    --a-soft: #ffbe73;
+    --a-ink: #2e1800;
+  }
+  [data-area="tournament"] {
+    --a: #ff4d3d;
+    --a-soft: #ff958a;
+    --a-ink: #2e0500;
+  }
+  [data-area="ok"] {
+    --a: #4cd693;
+    --a-soft: #8fe8bb;
+    --a-ink: #06281a;
+  }
+
+  /* vidro: os valores do @theme, redeclarados para quem está dentro de uma superfície escura */
+  [data-area] {
+    --area: var(--a);
+    --area-soft: var(--a-soft);
+    --area-ink: var(--a-ink);
+  }
+  :root,
+  .glass,
+  .board,
+  .glass-float,
+  .glass-sheet,
+  .bar-glass,
+  .well,
+  .board-sunken,
+  .viewfinder,
+  .cam,
+  .on-dark,
+  .field,
+  .seg,
+  .chip,
+  .btn-secondary,
+  [class*="bg-night-"] {
+    --color-mist: #f7f6f1;
+    --color-mist-dim: #c6c4bb;
+    --color-mist-faint: #9a988f;
+    --color-arcane-200: #ffef99;
+    --color-arcane-300: #ffe45c;
+    --color-arcane-400: #ffd80a;
+    --color-astral-300: #85dfff;
+    --color-gold-300: #ffd870;
+    --color-fire-300: #ff958a;
+    --color-moss-300: #8fe8bb;
+    --color-ember-300: #ffc27a;
+    --color-wine-300: #ff9db3;
+    --line: rgb(255 255 255 / 0.1);
+    --line-strong: rgb(255 255 255 / 0.2);
+    --line-faint: rgb(255 255 255 / 0.05);
+    --ring: 0 0 0 3px rgb(255 216 10 / 0.3);
+    --area: var(--a);
+    --area-soft: var(--a-soft);
+    --area-ink: var(--a-ink);
+    --primary-bg: #ffd80a;
+    --primary-fg: #0b0b0c;
+    --primary-hover: #ffe45c;
+    --primary-shadow: none;
+  }
+  :root {
+    --lift: 0 0 #0000;
+  }
+  /* quem contém coisas (não o controle em si) também define o anel de foco e a cor do texto */
+  .glass,
+  .board,
+  .glass-float,
+  .glass-sheet,
+  .bar-glass,
+  .well,
+  .board-sunken,
+  .viewfinder,
+  .cam,
+  .on-dark,
+  [class*="bg-night-"] {
+    --focus: #ffffff;
+    --lift: 0 0 #0000;
+    color: var(--color-mist);
+  }
+
+  /* chão: tinta preta sobre o amarelo */
+  body,
+  body[data-area],
+  .on-ground {
+    --color-mist: #0b0b0c;
+    --color-mist-dim: #2b2606;
+    --color-mist-faint: #574a05;
+    --color-arcane-200: #0b0b0c;
+    --color-arcane-300: #0b0b0c;
+    --color-arcane-400: #0b0b0c;
+    --color-astral-300: #00456e;
+    --color-gold-300: #5c4300;
+    --color-fire-300: #8f1a0d;
+    --color-moss-300: #0a5c33;
+    --color-ember-300: #7a3d00;
+    --color-wine-300: #99102f;
+    --line: rgb(0 0 0 / 0.2);
+    --line-strong: rgb(0 0 0 / 0.62);
+    --line-faint: rgb(0 0 0 / 0.1);
+    --ring: 0 0 0 3px rgb(0 0 0 / 0.25);
+    --area: #0b0b0c;
+    --area-soft: #0b0b0c;
+    --area-ink: var(--a);
+    --primary-bg: #0b0b0c;
+    --primary-fg: #ffd80a;
+    --primary-hover: #26262a;
+    --primary-shadow: 3px 3px 0 #ffffff;
+    --focus: #0b0b0c;
+    --lift: var(--hard-sm);
+  }
 }
 
 /* ====================================================================== base */
@@ -283,13 +404,14 @@
   #root {
     min-height: 100%;
   }
+  html {
+    background-color: var(--ground);
+  }
   body {
-    background-color: var(--color-night-900);
     color: var(--color-mist);
     font-family: var(--font-sans);
     font-size: 1rem;
     line-height: 1.5;
-    /* a Marcellus só tem um peso: nada de negrito falso */
     font-synthesis-weight: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -305,8 +427,21 @@
     text-wrap: pretty;
   }
   ::selection {
-    background: color-mix(in oklab, var(--color-arcane-400) 45%, transparent);
-    color: var(--color-parchment-50);
+    background: #0b0b0c;
+    color: #ffd80a;
+  }
+  /* a letra da casa é sempre itálica e pesada */
+  .font-display,
+  .font-brand,
+  .font-caps {
+    font-style: italic;
+    font-weight: 700;
+  }
+  h1.font-display {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0;
+    line-height: 0.95;
   }
   button {
     cursor: pointer;
@@ -315,8 +450,17 @@
     cursor: not-allowed;
   }
   :focus-visible {
-    outline: 2px solid var(--color-arcane-300);
+    outline: 2px solid var(--focus);
     outline-offset: 2px;
+  }
+  /* o chão vivo: canvas fixo atrás de tudo (components/Backdrop.tsx) */
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    width: 100vw;
+    height: 100lvh;
+    pointer-events: none;
   }
   input::placeholder,
   textarea::placeholder {
@@ -339,33 +483,59 @@
     letter-spacing: -0.03em;
   }
 
-  /* 1 · painel: superfície opaca com moldura de fio duplo (a borda da carta) */
+  /* 1 · painel: vidro escuro. Desfoca o chão, fio claro em cima e sombra dura preta por baixo */
   .glass,
   .board {
     position: relative;
     border-radius: var(--radius-lg);
-    background: var(--color-night-800);
-    border: 1px solid var(--line-strong);
-    outline: 1px solid var(--line-faint);
-    outline-offset: 2px;
+    background:
+      linear-gradient(155deg, rgb(255 255 255 / 0.09), rgb(255 255 255 / 0) 42%),
+      rgb(9 9 11 / 0.9);
+    -webkit-backdrop-filter: blur(24px) saturate(1.25);
+    backdrop-filter: blur(24px) saturate(1.25);
+    border: 1px solid rgb(255 255 255 / 0.13);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.2),
+      inset 0 0 0 1px rgb(0 0 0 / 0.35),
+      var(--hard);
+  }
+  /* o desfoque cria um contexto de empilhamento: o painel com um menu aberto sobe para a frente */
+  .glass:has(.glass-float),
+  .board:has(.glass-float) {
+    z-index: 30;
+  }
+  /* vidro dentro de vidro: só um tom a mais, sem sombra nem segundo desfoque */
+  :is(.glass, .board, .glass-sheet, .glass-float) :is(.glass, .board) {
+    background: rgb(255 255 255 / 0.05);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08);
   }
   /* 2 · flutuante: menus, avisos */
   .glass-float {
     position: relative;
     border-radius: var(--radius-md);
-    background: var(--color-night-750);
-    border: 1px solid var(--line-strong);
-    box-shadow: var(--shadow-float);
+    background: rgb(22 22 25 / 0.9);
+    -webkit-backdrop-filter: blur(22px) saturate(1.7);
+    backdrop-filter: blur(22px) saturate(1.7);
+    border: 1px solid rgb(255 255 255 / 0.16);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.2),
+      var(--shadow-float);
   }
   /* 3 · folha: janelas e folhas que sobem no celular */
   .glass-sheet {
     position: relative;
     border-radius: var(--radius-xl);
-    background: var(--color-night-800);
-    border: 1px solid var(--line-strong);
-    box-shadow: var(--shadow-overlay);
+    background: rgb(15 15 17 / 0.9);
+    -webkit-backdrop-filter: blur(26px) saturate(1.7);
+    backdrop-filter: blur(26px) saturate(1.7);
+    border: 1px solid rgb(255 255 255 / 0.16);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.22),
+      var(--shadow-overlay);
   }
-  /* barras do app (topo e rodapé no celular): opacas, para nunca prender um position: fixed */
+  /* barras do app (topo e rodapé no celular): preto chapado, para nunca prender um position: fixed */
   .bar-glass {
     background: var(--color-night-900);
   }
@@ -373,15 +543,17 @@
   .well,
   .board-sunken {
     border-radius: var(--radius-sm);
-    background: var(--color-night-950);
-    box-shadow: inset 0 0 0 1px var(--line);
+    background: rgb(5 5 6 / 0.84);
+    box-shadow:
+      inset 0 0 0 1px var(--line),
+      inset 0 2px 6px rgb(0 0 0 / 0.5);
   }
   .parchment {
     border-radius: var(--radius-md);
-    background-color: var(--color-parchment-100);
-    background-image: var(--tex-paper);
+    background-color: #ffffff;
     color: var(--color-ink-900);
-    border: 1px solid var(--color-parchment-300);
+    border: 2px solid #0b0b0c;
+    box-shadow: var(--hard);
   }
   /* separadores */
   .hairline {
@@ -389,21 +561,36 @@
     background: var(--line);
   }
   .arcane-rule {
-    height: 1px;
+    height: 2px;
     background: var(--area);
   }
 
-  /* rótulo de seção: Marcellus em caixa alta, pequeno e espaçado */
-  /* o item do menu pinta só a si mesmo com a cor da sua área */
+  /* rótulo de seção: caixa alta itálica, pequeno e espaçado */
   .eyebrow,
   .kicker {
     font-family: var(--font-caps);
-    font-size: var(--text-caption);
-    line-height: var(--text-caption--line-height);
-    font-weight: 400;
-    letter-spacing: 0.1em;
+    font-style: italic;
+    font-size: 0.875rem;
+    line-height: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--area-soft);
+  }
+  /* etiqueta enviesada: bloco preto com letra amarela (ou o inverso no vidro), para chamar um título */
+  .slant {
+    display: inline-block;
+    padding: 0.125rem 0.625rem;
+    background: var(--primary-bg);
+    color: var(--primary-fg);
+    font-family: var(--font-caps);
+    font-style: italic;
+    font-weight: 800;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transform: skewX(-9deg);
   }
 
   /* cabeçalho de um painel de lista (a cor do texto diz o tom) */
@@ -415,10 +602,11 @@
     padding: 0.625rem 1rem;
     border-bottom: 1px solid var(--line);
     font-family: var(--font-caps);
-    font-size: var(--text-footnote);
-    line-height: var(--text-footnote--line-height);
-    font-weight: 400;
-    letter-spacing: 0.09em;
+    font-style: italic;
+    font-size: var(--text-subhead);
+    line-height: var(--text-subhead--line-height);
+    font-weight: 700;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
   }
   /* faixa cheia na cor da área: cabeçalho de mesa, de partida, de bloco em destaque */
@@ -432,8 +620,10 @@
     background: var(--area);
     color: var(--area-ink);
     font-family: var(--font-caps);
-    font-size: var(--text-footnote);
-    letter-spacing: 0.09em;
+    font-style: italic;
+    font-weight: 800;
+    font-size: var(--text-subhead);
+    letter-spacing: 0.06em;
     text-transform: uppercase;
   }
   /* losango: o marcador da casa no lugar da bolinha */
@@ -444,6 +634,28 @@
     height: 0.5rem;
     transform: rotate(45deg);
     background: currentColor;
+  }
+  /* peça que salta ao passar o mouse: sobe na diagonal e a sombra dura cresce */
+  .pop {
+    transition:
+      translate var(--dur-fast) var(--ease-out),
+      box-shadow var(--dur-fast) var(--ease-out),
+      background-color var(--dur-fast) var(--ease-out);
+  }
+  @media (hover: hover) {
+    .pop:hover {
+      translate: -2px -3px;
+      box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.2),
+        inset 0 0 0 1px rgb(0 0 0 / 0.35),
+        8px 9px 0 rgb(0 0 0 / 0.92);
+    }
+  }
+  .pop:active {
+    translate: 2px 2px;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.2),
+      1px 1px 0 rgb(0 0 0 / 0.92);
   }
 
   /* ------------------------------------------------------------ botões */
@@ -457,22 +669,25 @@
     padding-inline: 1rem;
     border-radius: var(--radius-md);
     font-family: var(--font-caps);
-    font-size: var(--text-footnote);
-    font-weight: 400;
+    font-style: italic;
+    font-size: var(--text-subhead);
+    font-weight: 700;
     line-height: 1;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     white-space: nowrap;
     user-select: none;
+    transform: skewX(var(--skew, 0deg)) scale(var(--press, 1));
     transition:
       transform var(--dur-fast) var(--ease-out),
+      translate var(--dur-fast) var(--ease-out),
       filter var(--dur-fast) var(--ease-out),
       background-color var(--dur-fast) var(--ease-out),
       border-color var(--dur-fast) var(--ease-out),
       color var(--dur-fast) var(--ease-out);
   }
   .btn:active:not(:disabled) {
-    transform: scale(0.975);
+    --press: 0.96;
     transition-duration: var(--dur-press);
   }
   .btn:disabled {
@@ -482,11 +697,19 @@
   .btn svg {
     flex: none;
   }
+  /* a ação apagada continua legível nos dois contextos (sem virar amarelo sobre amarelo) */
+  .btn-primary:disabled {
+    opacity: 1;
+    filter: none;
+    background: color-mix(in srgb, var(--primary-bg) 30%, transparent);
+    color: color-mix(in srgb, var(--color-mist) 62%, transparent);
+    box-shadow: none;
+  }
   .btn-sm {
     height: 2.25rem;
     padding-inline: 0.75rem;
     gap: 0.375rem;
-    font-size: var(--text-caption);
+    font-size: 0.875rem;
   }
   /* alvo de toque de 44 px mesmo quando o desenho é menor */
   .btn-sm::after {
@@ -496,9 +719,9 @@
   }
   .btn-lg {
     height: 3.25rem;
-    padding-inline: 1.375rem;
+    padding-inline: 1.5rem;
     gap: 0.625rem;
-    font-size: var(--text-subhead);
+    font-size: var(--text-title-3);
   }
   .btn-icon {
     width: 2.75rem;
@@ -510,15 +733,27 @@
   .btn-sm.btn-icon::after {
     inset: -4px;
   }
-  /* a ação da tela: violeta cheio, sem brilho */
+  /* a ação da tela: corte enviesado. Amarelo no vidro; no chão, bloco preto com letra amarela */
+  .btn-primary,
+  .btn-ivory {
+    --skew: -8deg;
+  }
+  .btn-primary > *,
+  .btn-ivory > * {
+    transform: skewX(8deg);
+  }
   .btn-primary {
-    color: #140b33;
-    background: var(--color-arcane-400);
+    color: var(--primary-fg);
+    background: var(--primary-bg);
+    box-shadow: var(--primary-shadow);
   }
   .btn-secondary {
     color: var(--color-mist);
     background: var(--color-night-700);
-    box-shadow: inset 0 0 0 1px var(--line-strong);
+    box-shadow:
+      inset 0 0 0 1px var(--line-strong),
+      inset 0 1px 0 rgb(255 255 255 / 0.1),
+      var(--lift);
   }
   .btn-tertiary {
     color: var(--color-arcane-300);
@@ -528,45 +763,49 @@
   }
   .btn-danger {
     color: var(--color-wine-300);
-    background: rgb(156 45 74 / 0.16);
-    box-shadow: inset 0 0 0 1px rgb(240 96 127 / 0.4);
+    background: rgb(240 96 127 / 0.14);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 45%, transparent);
   }
-  /* marfim cheio: a ação que fecha uma etapa (fechar rodada, salvar) quando já há um violeta na tela */
+  /* branco cheio: a ação que fecha uma etapa (fechar rodada, salvar) quando já há um amarelo na tela */
   .btn-ivory {
-    color: var(--color-ink-900);
-    background: var(--color-mist);
+    color: #0b0b0c;
+    background: #ffffff;
+    box-shadow: var(--lift);
   }
   @media (hover: hover) {
     .btn-primary:hover:not(:disabled) {
-      background: var(--color-arcane-300);
+      background: var(--primary-hover);
+      translate: -1px -2px;
     }
     .btn-ivory:hover:not(:disabled) {
-      background: #f7f5ee;
+      background: #fff8d1;
+      translate: -1px -2px;
     }
     .btn-secondary:hover:not(:disabled) {
       background: var(--color-night-600);
     }
-    .btn-tertiary:hover:not(:disabled) {
-      background-color: rgb(155 123 255 / 0.1);
-      color: var(--color-arcane-200);
+    .btn-tertiary:hover:not(:disabled),
+    .btn-ghost:hover:not(:disabled) {
+      background-color: color-mix(in srgb, currentColor 13%, transparent);
     }
     .btn-ghost:hover:not(:disabled) {
-      background-color: var(--color-night-700);
       color: var(--color-mist);
     }
     .btn-danger:hover:not(:disabled) {
-      background: rgb(156 45 74 / 0.28);
+      background: rgb(240 96 127 / 0.26);
     }
   }
 
-  /* ------------------------------------------------------------ campos */
+/* ------------------------------------------------------------ campos */
   .field {
     width: 100%;
     min-height: 2.75rem;
     padding-inline: 0.75rem;
     border-radius: var(--radius-md);
-    background-color: var(--color-night-950);
-    box-shadow: inset 0 0 0 1px var(--line-strong);
+    background-color: rgb(5 5 6 / 0.9);
+    box-shadow:
+      inset 0 0 0 1px var(--line-strong),
+      var(--lift);
     color: var(--color-mist);
     /* 16 px: abaixo disso o iPhone dá zoom ao focar */
     font-size: var(--text-body);
@@ -574,14 +813,17 @@
     transition: box-shadow var(--dur-fast) var(--ease-out);
   }
   .field:hover:not(:disabled) {
-    box-shadow: inset 0 0 0 1px var(--color-night-500);
+    box-shadow:
+      inset 0 0 0 1px var(--color-night-500),
+      var(--lift);
   }
   .field:focus,
   .field:focus-visible {
     outline: none;
     box-shadow:
-      inset 0 0 0 1px var(--color-arcane-400),
-      var(--ring);
+      inset 0 0 0 2px var(--color-arcane-400),
+      var(--ring),
+      var(--lift);
   }
   .field:disabled {
     opacity: 0.5;
@@ -593,7 +835,7 @@
   select.field {
     appearance: none;
     padding-right: 2.25rem;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23b9b5a8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23c6c4bb' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");
     background-size: 12px 8px;
     background-position: right 0.875rem center;
     background-repeat: no-repeat;
@@ -631,8 +873,10 @@
     grid-auto-columns: 1fr;
     padding: 3px;
     border-radius: var(--radius-md);
-    background-color: var(--color-night-950);
-    box-shadow: inset 0 0 0 1px var(--line);
+    background-color: rgb(5 5 6 / 0.9);
+    box-shadow:
+      inset 0 0 0 1px var(--line),
+      var(--lift);
   }
   .seg-thumb {
     position: absolute;
@@ -643,8 +887,7 @@
     width: calc((100% - 6px) / var(--n, 2));
     transform: translateX(calc(var(--i, 0) * 100%));
     border-radius: var(--radius-xs);
-    background: var(--color-night-600);
-    box-shadow: inset 0 0 0 1px var(--color-night-500);
+    background: var(--color-arcane-400);
     transition: transform var(--dur-base) var(--ease-out);
   }
   .seg > button {
@@ -658,10 +901,10 @@
     transition: color var(--dur-fast) var(--ease-out);
   }
   .seg > button[aria-checked="true"] {
-    color: var(--color-mist);
+    color: #0b0b0c;
   }
   @media (hover: hover) {
-    .seg > button:hover {
+    .seg > button:not([aria-checked="true"]):hover {
       color: var(--color-mist);
     }
   }
@@ -692,8 +935,10 @@
     height: 2.75rem;
     color: var(--color-mist-faint);
     font-family: var(--font-caps);
-    font-size: var(--text-footnote);
-    letter-spacing: 0.09em;
+    font-style: italic;
+    font-weight: 700;
+    font-size: var(--text-headline);
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     white-space: nowrap;
     transition: color var(--dur-fast) var(--ease-out);
@@ -709,8 +954,9 @@
   .tab-indicator {
     position: absolute;
     bottom: 0;
-    height: 2px;
+    height: 4px;
     background: var(--area);
+    transform: skewX(-24deg);
     transition:
       left var(--dur-base) var(--ease-out),
       width var(--dur-base) var(--ease-out);
@@ -730,7 +976,9 @@
     font-weight: 600;
     white-space: nowrap;
     background: var(--color-night-750);
-    box-shadow: inset 0 0 0 1px var(--line-strong);
+    box-shadow:
+      inset 0 0 0 1px var(--line-strong),
+      var(--lift);
     transition:
       transform var(--dur-fast) var(--ease-out),
       background-color var(--dur-fast) var(--ease-out),
@@ -748,7 +996,7 @@
   .chip[aria-checked="true"] {
     color: var(--area-ink);
     background: var(--area);
-    box-shadow: none;
+    box-shadow: var(--lift);
   }
   @media (hover: hover) {
     .chip:hover:not(:disabled):not([aria-pressed="true"]):not([aria-checked="true"]) {
@@ -777,32 +1025,26 @@
     text-transform: uppercase;
     white-space: nowrap;
     color: var(--color-mist-dim);
-    box-shadow: inset 0 0 0 1px var(--line-strong);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 55%, transparent);
   }
   .badge[data-tone="ok"] {
     color: var(--color-moss-300);
-    box-shadow: inset 0 0 0 1px rgb(76 195 138 / 0.6);
   }
   .badge[data-tone="warn"] {
     color: var(--color-ember-300);
-    box-shadow: inset 0 0 0 1px rgb(245 158 66 / 0.6);
   }
   .badge[data-tone="bad"] {
     color: var(--color-wine-300);
-    box-shadow: inset 0 0 0 1px rgb(240 96 127 / 0.6);
   }
   .badge[data-tone="info"],
   .badge[data-tone="live"] {
     color: var(--color-astral-300);
-    box-shadow: inset 0 0 0 1px rgb(74 163 255 / 0.6);
   }
   .badge[data-tone="arcane"] {
     color: var(--area-soft);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--area) 60%, transparent);
   }
   .badge[data-tone="gold"] {
     color: var(--color-gold-300);
-    box-shadow: inset 0 0 0 1px rgb(232 193 90 / 0.6);
   }
   .badge-dot {
     width: 6px;
@@ -817,14 +1059,16 @@
   /* ------------------------------------------------------------ carregando */
   .skeleton {
     border-radius: var(--radius-xs);
-    background: linear-gradient(90deg, rgb(233 230 220 / 0.04) 0%, rgb(233 230 220 / 0.09) 40%, rgb(233 230 220 / 0.04) 80%);
+    background: linear-gradient(90deg, color-mix(in srgb, var(--color-mist) 6%, transparent) 0%, color-mix(in srgb, var(--color-mist) 14%, transparent) 40%, color-mix(in srgb, var(--color-mist) 6%, transparent) 80%);
     background-size: 240% 100%;
     animation: shimmer 1.6s linear infinite;
   }
 
   /* ------------------------------------------------------------ janelas: entram rápido, saem mais rápido */
   .scrim {
-    background: rgb(4 5 7 / 0.72);
+    background: rgb(4 4 5 / 0.62);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
   }
   .scrim[data-state="open"] {
     animation: fade 220ms var(--ease-out) both;
@@ -971,9 +1215,8 @@
   overflow: hidden;
   background: var(--color-night-950);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--line-strong);
-  outline: 1px solid var(--line-faint);
-  outline-offset: 2px;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  box-shadow: var(--hard);
 }
 
 /* câmera em tela cheia: o vídeo é o fundo da tela inteira e tudo o mais flutua por cima,
@@ -991,7 +1234,7 @@
 }
 .cam-chip {
   background: rgb(8 9 11 / 0.78);
-  box-shadow: inset 0 0 0 1px rgb(233 230 220 / 0.16);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
   border-radius: var(--radius-md);
 }
 .cam-shade-top {
@@ -1071,4 +1314,62 @@
   .skeleton {
     animation: none !important;
   }
+}
+
+/* ====================================================================== títulos e menu
+   Fora das camadas de propósito: valem por cima dos utilitários de peso e tamanho já espalhados nas telas. */
+h1.font-display,
+h1.font-brand {
+  font-size: 2.5rem;
+  line-height: 0.95;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+@media (min-width: 640px) {
+  h1.font-display,
+  h1.font-brand {
+    font-size: 3.5rem;
+  }
+}
+h2.font-display,
+h3.font-display,
+p.font-display {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+/* título de página: levemente torto, como um letreiro colado */
+.tilt {
+  rotate: -2deg;
+  transform-origin: left center;
+}
+
+/* item do menu: o da área atual vira um bloco enviesado na cor dela */
+.nav-item {
+  position: relative;
+  isolation: isolate;
+  font-weight: 700;
+}
+.nav-item::before {
+  content: "";
+  position: absolute;
+  inset: 6px 3px;
+  z-index: -1;
+  border-radius: 3px;
+  background: var(--area);
+  transform: skewX(-10deg) scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.nav-item[aria-current="page"]::before {
+  transform: skewX(-10deg) scaleX(1);
+}
+@media (hover: hover) {
+  .nav-item:not([aria-current="page"]):hover svg {
+    rotate: -8deg;
+  }
+}
+.nav-item svg {
+  transition: rotate var(--dur-fast) var(--ease-out);
 }

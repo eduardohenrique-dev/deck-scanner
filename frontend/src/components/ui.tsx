@@ -102,7 +102,7 @@ export function Parchment({ className, children }: { className?: string; childre
 export function SectionTitle({ children, aside, className }: { children: ReactNode; aside?: ReactNode; className?: string }) {
   return (
     <div className={cx("flex flex-wrap items-end justify-between gap-x-3 gap-y-2", className)}>
-      <h2 className="font-display text-title-3 font-semibold text-mist first-letter:uppercase">{children}</h2>
+      <h2 className="slant !text-title-3 !leading-7">{children}</h2>
       {aside}
     </div>
   );
@@ -111,8 +111,8 @@ export function SectionTitle({ children, aside, className }: { children: ReactNo
 export function PageTitle({ kicker, title, children, className }: { kicker?: ReactNode; title: ReactNode; children?: ReactNode; className?: string }) {
   return (
     <header className={cx("space-y-2", className)}>
-      {kicker && <p className="eyebrow">{kicker}</p>}
-      <h1 className="font-display text-title-2 font-semibold text-mist sm:text-display">{title}</h1>
+      {kicker && <p className="slant">{kicker}</p>}
+      <h1 className="tilt font-display text-title-2 font-semibold text-mist sm:text-display">{title}</h1>
       {children && <div className="max-w-2xl text-subhead text-mist-dim">{children}</div>}
     </header>
   );

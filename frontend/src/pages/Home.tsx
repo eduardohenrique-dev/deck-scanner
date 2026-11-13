@@ -42,7 +42,7 @@ export default function Home() {
     return (
       <div className="space-y-10">
         <section className="max-w-3xl space-y-5 pt-2">
-          <p className="eyebrow">a mesa está posta</p>
+          <p className="slant">a mesa está posta</p>
           <h1 className="font-display text-display font-semibold text-mist sm:text-hero">
             Espalhe as cartas.
             <br />
@@ -73,8 +73,8 @@ export default function Home() {
     <div className="space-y-10">
       <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
         <div className="space-y-1">
-          <p className="eyebrow">{greeting()}</p>
-          <h1 className="font-display text-title-2 font-semibold text-mist sm:text-display">Taverna</h1>
+          <p className="slant">{greeting()}</p>
+          <h1 className="tilt font-display text-title-2 font-semibold text-mist sm:text-display">Taverna</h1>
         </div>
         {cards > 0 && (
           <dl className="grid w-full grid-cols-3 gap-2 sm:w-auto sm:min-w-[26rem]">
@@ -86,7 +86,7 @@ export default function Home() {
       </header>
 
       {live && (
-        <Link to={`/torneios/${live.id}`} data-area="tournament" className="group glass flex items-center gap-4 border-l-[3px] border-l-area px-5 py-4 transition-colors hover:bg-night-750">
+        <Link to={`/torneios/${live.id}`} data-area="tournament" className="pop group glass flex items-center gap-4 border-l-[3px] border-l-area px-5 py-4">
           <span className="grid size-10 shrink-0 place-items-center text-area-soft">
             <Goblet size={24} />
           </span>
@@ -183,13 +183,13 @@ function ActionTile({ icon, title, text, onClick, primary, area }: { icon: React
       onClick={onClick}
       data-area={primary ? undefined : area}
       className={cx(
-        "group relative flex items-center gap-4 px-4 py-4 text-left transition-colors duration-200 active:scale-[0.99] sm:flex-col sm:items-start sm:gap-3 sm:px-5 sm:py-5",
-        primary ? "rounded-lg bg-area hover:bg-area-soft" : "glass border-t-[3px] border-t-area hover:bg-night-750",
+        "pop group relative flex items-center gap-4 px-4 py-4 text-left sm:flex-col sm:items-start sm:gap-3 sm:px-5 sm:py-5 sm:odd:-rotate-[0.7deg] sm:even:rotate-[0.7deg]",
+        primary ? "rounded-lg border-2 border-night-950 bg-white shadow-[var(--hard)]" : "glass border-t-[3px] border-t-area",
       )}
     >
       <span className={cx("grid size-10 shrink-0 place-items-center", primary ? "text-ink-900" : "text-area-soft")}>{icon}</span>
       <span className="min-w-0 flex-1">
-        <span className={cx("block font-caps text-subhead tracking-[0.08em] uppercase", primary ? "text-ink-900" : "text-mist")}>{title}</span>
+        <span className={cx("block font-caps text-title-3 leading-6 tracking-[0.03em] uppercase", primary ? "text-ink-900" : "text-mist")}>{title}</span>
         <span className={cx("mt-0.5 block text-footnote", primary ? "text-ink-700" : "text-mist-faint")}>{text}</span>
       </span>
       <ChevronRight className={cx("size-5 shrink-0 sm:hidden", primary ? "text-ink-700" : "text-mist-faint")} />
