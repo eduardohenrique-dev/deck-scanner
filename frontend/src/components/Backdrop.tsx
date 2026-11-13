@@ -13,7 +13,7 @@ import { useEffect, useRef } from "react";
 const GROUND = "#ffd80a";
 const DEEP = "#f9bc00";
 const INK = "#0b0b0c";
-const LABEL: Record<string, string> = { home: "TAVERNA", scan: "ESCANEAR", decks: "DECKS", collection: "COLEÇÃO", tournament: "TORNEIO" };
+const LABEL: Record<string, string> = { home: "INÍCIO", scan: "ESCANEAR", decks: "DECKS", collection: "COLEÇÃO", tournament: "TORNEIO" };
 
 type Star = { x: number; y: number; r: number; spin: number; drift: number; ink: boolean; vx: number; vy: number };
 type Burst = { x: number; y: number; t0: number };

@@ -16,7 +16,7 @@ function greeting() {
   return h < 5 ? "Boa madrugada" : h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
 }
 
-export default function Home() {
+export default function Home({ name }: { name?: string | null }) {
   const sessions = useResource(() => api.sessions(), []);
   const decks = useResource(() => api.decks(), []);
   const summary = useResource(() => api.collectionSummary(), []);
@@ -72,9 +72,9 @@ export default function Home() {
   return (
     <div className="space-y-10">
       <header className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5">
-        <div className="space-y-1">
+        <div className="min-w-0 space-y-1">
           <p className="slant">{greeting()}</p>
-          <h1 className="tilt font-display text-title-2 font-semibold text-mist sm:text-display">Taverna</h1>
+          <h1 className="tilt max-w-full truncate pr-2 font-display text-title-2 font-semibold text-mist sm:text-display">{name || "Início"}</h1>
         </div>
         {cards > 0 && (
           <dl className="grid w-full grid-cols-3 gap-2 sm:w-auto sm:min-w-[26rem]">

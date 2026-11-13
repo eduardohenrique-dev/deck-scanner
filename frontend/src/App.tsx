@@ -19,7 +19,7 @@ const TournamentDisplay = lazy(() => import("./pages/TournamentDisplay"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const NAV = [
-  { to: "/", label: "Taverna", icon: Tankard, area: "home", match: (p: string) => p === "/" },
+  { to: "/", label: "Início", icon: Tankard, area: "home", match: (p: string) => p === "/" },
   { to: "/escanear", label: "Escanear", icon: Lens, area: "scan", match: (p: string) => p.startsWith("/escanear") || p.startsWith("/s/") },
   { to: "/decks", label: "Decks", icon: Tome, area: "decks", match: (p: string) => p.startsWith("/decks") },
   { to: "/colecao", label: "Coleção", icon: Chest, area: "collection", match: (p: string) => p.startsWith("/colecao") },
@@ -77,6 +77,8 @@ export default function App() {
 
   const route = matchRoute(path);
   const email = auth.status === "signed-in" ? auth.user.email : null;
+  // primeiro nome do cadastro; sem ele, o começo do e-mail; sem conta (modo local), nada
+  const firstName = auth.status === "signed-in" ? (auth.user.name?.trim().split(/s+/)[0] || auth.user.email.split("@")[0] || null) : null;
 
   // telão: tela cheia, sem a moldura do app
   if (route.name === "tournament-display")
@@ -139,7 +141,7 @@ export default function App() {
             </div>
           }
         >
-          {route.name === "home" && <Home />}
+          {route.name === "home" && <Home name={firstName} />}
           {route.name === "scan-new" && <NewScan />}
           {route.name === "session" && <ScanSession key={route.id} id={route.id} />}
           {route.name === "decks" && <Decks />}
