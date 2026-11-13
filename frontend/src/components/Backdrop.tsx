@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
   O chão do app: uma tela amarela viva, desenhada em canvas atrás de tudo.
   - retícula de pontos que cresce em diagonal e incha perto do dedo ou do mouse;
   - anéis segmentados girando devagar, com paralaxe na rolagem e no ponteiro;
-  - três listras finas em diagonal no pé da tela, a do meio na cor da área;
   - estrelas soltas que fogem do ponteiro, e um estouro a cada toque;
   - ao trocar de área, uma faixa na cor dela varre a tela.
   Para quando a aba está oculta ou a câmera cobre a tela; com "reduzir movimento" vira um quadro parado.
@@ -137,21 +136,6 @@ export default function Backdrop() {
       ctx.fill();
     }
 
-    // três listras finas em diagonal no pé da tela: branca, na cor da área e preta (sem texto, sem correr)
-    function stripes(par: number) {
-      ctx.save();
-      ctx.translate(w / 2, h * 0.84 + par);
-      ctx.rotate(-0.2);
-      const L = Math.hypot(w, h);
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(-L, -16, L * 2, 5);
-      ctx.fillStyle = areaColor === GROUND ? "#ff4d3d" : areaColor;
-      ctx.fillRect(-L, -6, L * 2, 14);
-      ctx.fillStyle = INK;
-      ctx.fillRect(-L, 13, L * 2, 4);
-      ctx.restore();
-    }
-
     function draw(dt: number) {
       ptr.x += (ptr.tx - ptr.x) * Math.min(1, dt * 5);
       ptr.y += (ptr.ty - ptr.y) * Math.min(1, dt * 5);
@@ -173,7 +157,6 @@ export default function Backdrop() {
       rings(w * 0.9 - ox * 26, h * 0.14 - oy * 20 - scroll * 0.12, R, 1);
       halftone(px, py);
       rings(w * 0.04 - ox * 14, h * 1.02 - oy * 12 - scroll * 0.05, R * 0.5, -1);
-      stripes(-scroll * 0.2 + oy * -10);
 
       for (const s of stars) {
         const dx = s.x - px;
