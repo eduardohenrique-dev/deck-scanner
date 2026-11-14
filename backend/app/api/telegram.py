@@ -47,12 +47,14 @@ class ProfileIn(BaseModel):
 @router.get("/me")
 async def me(request: Request, user: User = Depends(current_user)):
     bot = None
+    problem = None
     if telegram.enabled():
         try:
             await telegram.ensure_webhook(_origin(request))
             bot = await telegram.bot_username()
-        except telegram.TelegramError:
-            bot = None
+        except Exception as exc:  # noqa: BLE001 — o perfil abre mesmo com o Telegram fora do ar
+            problem = f"{type(exc).__name__}: {exc}"[:200]
+            print(f"[telegram] /me: {problem}", flush=True)
     link = telegram.user_link(user.id)
     group = telegram.group_link(user.id)
     return json_response({
@@ -65,6 +67,7 @@ async def me(request: Request, user: User = Depends(current_user)):
             "connected": link is not None,
             "username": link["username"] if link else None,
             "group": {"title": group["title"]} if group else None,
+            "problem": problem,
         },
     })
 
