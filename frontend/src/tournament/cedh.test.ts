@@ -5,7 +5,7 @@
  */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { apply, currentRound, leaders, needsFinal, plannedRounds } from "./engine.ts";
+import { apply, currentRound, leaders, needsFinal } from "./engine.ts";
 import { pairPods } from "./pods.ts";
 import { mulberry32 } from "./rng.ts";
 import { standings } from "./standings.ts";
@@ -105,24 +105,15 @@ test("mesa de 3: adversário fantasma com o piso de 1/7 no OMW% (não entra nos 
   assert.ok(g);
 });
 
-test("empate total na liderança: final só entre quem empata em todos os critérios", () => {
+test("mesa final do Friday night: top 4 na ordem da classificação (Olívio entra em 4º pelos pontos médios)", () => {
   const t = fridayNight();
   const final = apply(t, { type: "makeFinal", at: AT });
-  assert.deepEqual(final.tiebreak!.players, ["Dudu", "Leo", "Guilherme"]);
+  assert.deepEqual(final.tiebreak!.players, ["Dudu", "Leo", "Guilherme", "Olívio"]);
 });
 
 /** Vence o primeiro da mesa pelo número do jogador (p1 é o mais forte). */
 const strongest = (pod: Pod): PodResult => ({ kind: "win", winner: [...pod.players].sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)))[0] });
 
-function playAll(t: Tournament, decide: (pod: Pod) => PodResult): Tournament {
-  t = apply(t, { type: "start", at: AT });
-  for (let r = 1; r <= plannedRounds(t); r++) {
-    const round = currentRound(t)!;
-    for (const pod of round.pods!) t = apply(t, { type: "podResult", round: round.number, pod: pod.id, result: decide(pod), at: AT });
-    if (r < plannedRounds(t)) t = apply(t, { type: "pairNext" });
-  }
-  return t;
-}
 
 // Evitar reencontro vem antes (no cEDH ele é obrigatório; a mesa de 3 repetida, só "desejável"). Num torneio
 // normal o mínimo de reencontros quase sempre já decide quem vai para a mesa de 3; aqui o histórico só tem a

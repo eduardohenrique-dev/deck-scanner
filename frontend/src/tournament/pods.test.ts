@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { apply, champion, champions, currentRound, inverse, leaders, needsFinal, nextRoundBlocker, plannedRounds, stage, stages, startBlocker, summary, TournamentError, type Command } from "./engine.ts";
+import { apply, champion, champions, currentRound, finalists, inverse, leaders, needsFinal, nextRoundBlocker, plannedRounds, stage, stages, startBlocker, TournamentError, type Command } from "./engine.ts";
 import { finalText, matchesCsv, pairingsText, standingsText } from "./export.ts";
 import { podMeetings, podRematches, podSizes } from "./pods.ts";
 import { standings } from "./standings.ts";
@@ -57,7 +57,7 @@ test("tamanhos das mesas: 4, com mesas de 3 completando (e uma de 5 com 5 jogado
 test("8 jogadores: 3 rodadas, 2 mesas de 4, todo mundo joga as 3", () => {
   let t = mesao(8, 0, 4);
   assert.equal(plannedRounds(t), 3);
-  assert.deepEqual(stages(t), ["setup", "players", "rounds", "champion"]);
+  assert.deepEqual(stages(t), ["setup", "players", "rounds", "final", "champion"]);
   t = playAll(t, strongest);
   for (const r of t.rounds) {
     assert.deepEqual(r.pods!.map((p) => p.players.length), [4, 4]);
@@ -139,50 +139,72 @@ test("resultados que não fecham com a regra são recusados", () => {
   throws(() => apply(t, at({ kind: "split", players: pod.players.slice(0, 2) })), /só vale na final/);
 });
 
-test("empate na liderança: final entre os empatados, sem tempo, com vencedor ou prêmio dividido", () => {
-  // 8 jogadores, todas as mesas empatam com todos vivos: todo mundo termina com 3 pontos
+test("mesa final sempre com os 4 primeiros, sem tempo, com vencedor ou prêmio dividido", () => {
+  // 8 jogadores, todas as mesas empatam: todo mundo com 3 pontos, a final leva os 4 primeiros da lista
   let t = playAll(mesao(8, 3, 2), (pod) => ({ kind: "draw", survivors: pod.players }));
-  assert.equal(leaders(t).length, 8);
+  const top4 = standings(t).slice(0, 4).map((s) => s.playerId);
+  assert.deepEqual(finalists(t), top4);
   assert.ok(needsFinal(t));
   assert.equal(stage(t), "final");
   assert.deepEqual(stages(t), ["setup", "players", "rounds", "final", "champion"]);
   assert.equal(nextRoundBlocker(t), "Todas as rodadas planejadas já foram jogadas.");
-  throws(() => apply(t, { type: "finish", at: AT }), /a final decide/);
+  throws(() => apply(t, { type: "finish", at: AT }), /A final decide o campeão/);
 
   t = apply(t, { type: "makeFinal", at: AT });
-  assert.equal(t.tiebreak!.players.length, 8);
+  // a ordem da mesa é a da classificação: o 1º começa
+  assert.deepEqual(t.tiebreak!.players, top4);
   // rodadas travam enquanto a final existe
   const pod = t.rounds[0].pods![0];
   throws(() => apply(t, { type: "podResult", round: 1, pod: pod.id, result: null, at: AT }), /travadas/);
   // a final não tem tempo: não aceita empate
-  throws(() => apply(t, { type: "finalResult", result: { kind: "draw", survivors: t.tiebreak!.players.slice(0, 2) }, at: AT }), /não tem tempo limite/);
+  throws(() => apply(t, { type: "finalResult", result: { kind: "draw", survivors: top4.slice(0, 2) }, at: AT }), /não tem tempo limite/);
 
-  const won = apply(t, { type: "finalResult", result: { kind: "win", winner: "p3" }, at: AT });
-  assert.equal(champion(won), "p3");
+  const [w, x, y] = top4;
+  const won = apply(t, { type: "finalResult", result: { kind: "win", winner: y }, at: AT });
+  assert.equal(champion(won), y);
   assert.equal(stage(won), "champion");
-  assert.equal(summary(won).champion, "Jogador 3");
 
-  const split = apply(t, { type: "finalResult", result: { kind: "split", players: ["p5", "p2"] }, at: AT });
-  assert.deepEqual(champions(split), ["p2", "p5"]); // na ordem da mesa
-  assert.equal(summary(split).champion, "Jogador 2 e Jogador 5");
-  assert.match(finalText(split), /Campeões \(dividiram o prêmio\): \*Jogador 2 e Jogador 5\*/);
+  const split = apply(t, { type: "finalResult", result: { kind: "split", players: [x, w] }, at: AT });
+  assert.deepEqual(champions(split), [w, x]); // na ordem da mesa
+  assert.match(finalText(split), /dividiram o prêmio/);
 
   // desfazer: tirar o resultado reabre, desmontar a final devolve as rodadas
-  const undo = inverse(t, { type: "finalResult", result: { kind: "win", winner: "p3" }, at: AT })!;
+  const undo = inverse(t, { type: "finalResult", result: { kind: "win", winner: y }, at: AT })!;
   assert.equal(apply(won, undo).finishedAt, null);
   const unmade = apply(t, { type: "unmakeFinal" });
   assert.equal(unmade.tiebreak, null);
-  assert.equal(apply(unmade, inverse(t, { type: "unmakeFinal" })!).tiebreak!.players.length, 8);
+  assert.equal(apply(unmade, inverse(t, { type: "unmakeFinal" })!).tiebreak!.players.length, 4);
 });
 
-test("sem empate na liderança não há final: encerrar coroa o líder", () => {
+test("líder isolado também joga a final: a classificação vale a vaga e a ordem de jogo, não o título", () => {
   let t = playAll(mesao(8, 3, 7), strongest);
-  const top = leaders(t);
-  assert.equal(top.length, 1);
-  assert.equal(needsFinal(t), false);
-  throws(() => apply(t, { type: "makeFinal", at: AT }), /Não há empate/);
-  t = apply(t, { type: "finish", at: AT });
-  assert.equal(champion(t), top[0]);
+  assert.equal(leaders(t).length, 1);
+  assert.ok(needsFinal(t));
+  throws(() => apply(t, { type: "finish", at: AT }), /A final decide o campeão/);
+  t = apply(t, { type: "makeFinal", at: AT });
+  const [first, , , fourth] = t.tiebreak!.players;
+  assert.equal(first, leaders(t)[0]);
+  // o 4º das rodadas vence a final e é o campeão
+  t = apply(t, { type: "finalResult", result: { kind: "win", winner: fourth }, at: AT });
+  assert.equal(champion(t), fourth);
+});
+
+test("final: quem saiu não entra; com 3 jogadores a final é de 3; torneio antigo encerrado sem final continua valendo", () => {
+  let t = run(mesao(6, 1, 3), { type: "start", at: AT });
+  t = playPods(t, strongest);
+  const leader = standings(t)[0].playerId;
+  t = apply(t, { type: "drop", player: leader });
+  assert.ok(!finalists(t).includes(leader));
+  assert.equal(finalists(t).length, 4);
+
+  const three = playAll(mesao(3, 2, 1), strongest);
+  assert.equal(finalists(three).length, 3);
+
+  // encerrado antes da regra nova (sem final): o campeão é o líder e não aparece etapa de final
+  const old = { ...playAll(mesao(8, 3, 7), strongest), finishedAt: AT };
+  assert.equal(champion(old), leaders(old)[0]);
+  assert.deepEqual(stages(old), ["setup", "players", "rounds", "champion"]);
+  assert.equal(needsFinal(old), false);
 });
 
 test("10 jogadores: mesas de 4, 3 e 3, e ninguém fica de fora", () => {

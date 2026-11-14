@@ -79,7 +79,7 @@ export function finalText(t: Tournament): string {
   if (won.length === 1) lines.push(`Campeão: *${name(won[0])}*`);
   else if (won.length > 1) lines.push(`Campeões (dividiram o prêmio): *${listPt(won.map(name))}*`);
   if (t.tiebreak) {
-    lines.push("", "*Final de desempate*", t.tiebreak.players.map(name).join(", ") + (t.tiebreak.result ? ` (${podResultText(t.tiebreak.result, name)})` : ""));
+    lines.push("", "*Mesa final*", t.tiebreak.players.map(name).join(", ") + (t.tiebreak.result ? ` (${podResultText(t.tiebreak.result, name)})` : ""));
   }
   if (t.playoff) {
     const view = bracketView(t.playoff);

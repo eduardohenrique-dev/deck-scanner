@@ -41,15 +41,14 @@ export default function ChampionStage({ t, dispatch, onShare }: { t: Tournament;
   const shared = won.length > 1;
   const champId = won[0] ?? null;
   const champ = champId ? players.get(champId) : null;
-  // mesão: a final só decide o campeão; os outros lugares seguem os pontos das rodadas, e quem empata
-  // em pontos divide a posição (como na classificação)
-  const rest = table.filter((s) => !won.includes(s.playerId));
+  // mesão: a mesa final decide o campeão; os outros finalistas e o resto seguem a classificação das rodadas
+  const rest = table.filter((s) => !won.includes(s.playerId) && !s.dropped);
   const placing = t.playoff
     ? playoffPlacing(bracketView(t.playoff))
     : pods
       ? [
           ...won.map((playerId) => ({ playerId, place: 1 })),
-          ...rest.slice(0, 3).map((s) => ({ playerId: s.playerId, place: won.length + 1 + rest.filter((x) => x.points > s.points).length })),
+          ...rest.slice(0, 3).map((s, i) => ({ playerId: s.playerId, place: won.length + 1 + i })),
         ]
       : table.slice(0, 4).map((s, i) => ({ playerId: s.playerId, place: i + 1 }));
   const row = table.find((s) => s.playerId === champId);
@@ -98,7 +97,7 @@ export default function ChampionStage({ t, dispatch, onShare }: { t: Tournament;
                 <span className={cx("tabular grid size-12 shrink-0 place-items-center rounded-md text-title-3 font-bold", p.place === 2 ? "bg-mist/12 text-mist" : "bg-gold-800/40 text-gold-200")}>{p.place}º</span>
                 <span className="min-w-0">
                   <span className="block truncate text-headline font-semibold text-mist">{pl?.name}</span>
-                  <span className="block truncate text-footnote text-mist-faint">{pl?.deck?.name ?? (pods ? "Pela pontuação" : p.place === 2 ? "Vice-campeão" : "Semifinal")}</span>
+                  <span className="block truncate text-footnote text-mist-faint">{pl?.deck?.name ?? (pods ? (t.tiebreak?.players.includes(p.playerId) ? "Finalista" : "Pela classificação") : p.place === 2 ? "Vice-campeão" : "Semifinal")}</span>
                 </span>
               </Board>
             );

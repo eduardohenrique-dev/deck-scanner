@@ -8,7 +8,7 @@ export type Structure =
   | { kind: "swiss"; rounds: number; cut: number | null } // cut = X livre (top X); null = só suíço
   | { kind: "round-robin"; cut: number | null }
   | { kind: "single-elimination" } // eliminação dupla fica para uma segunda fase
-  // mesão (Commander multiplayer, regras do cEDH): mesas de 4 (3 completam), empate total na liderança vai para uma final
+  // mesão (Commander multiplayer, regras do cEDH): mesas de 4 (3 completam) e, depois das rodadas, mesa final com os 4 primeiros
   | { kind: "pods"; rounds: number };
 
 export type Points = { win: number; draw: number; loss: number };

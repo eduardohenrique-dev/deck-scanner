@@ -1,6 +1,6 @@
 import { Undo2 } from "lucide-react";
 import { useMemo } from "react";
-import { leaders, listPt } from "../../tournament/engine.ts";
+import { finalists, listPt } from "../../tournament/engine.ts";
 import { standings } from "../../tournament/standings.ts";
 import type { Tournament } from "../../tournament/types.ts";
 import { Crown } from "../icons";
@@ -10,14 +10,13 @@ import StandingsTable from "./StandingsTable";
 import type { Dispatch } from "./useTournament";
 
 /**
- * Mesão com empate total na liderança (pontos e os três desempates do cEDH iguais): os empatados jogam uma
- * final só entre eles, sem tempo limite.
- * Termina com um vencedor ou com os finalistas dividindo o prêmio.
+ * Mesa final do mesão, como no cEDH Europa: os 4 primeiros das rodadas, sem tempo limite, na ordem da
+ * classificação (o 1º começa). Mesa que empata recomeça; termina com um vencedor ou com o prêmio dividido.
  */
 export default function FinalStage({ t, dispatch, onPlayer }: { t: Tournament; dispatch: Dispatch; onPlayer: (id: string) => void }) {
   const players = useMemo(() => new Map(t.players.map((p) => [p.id, p])), [t.players]);
   const table = useMemo(() => standings(t), [t]);
-  const tied = t.tiebreak?.players ?? leaders(t);
+  const tied = t.tiebreak?.players ?? finalists(t);
   const points = new Map(table.map((s) => [s.playerId, s.points]));
   const names = tied.map((id) => players.get(id)?.name ?? "?");
 
@@ -29,12 +28,12 @@ export default function FinalStage({ t, dispatch, onPlayer }: { t: Tournament; d
             <Crown size={28} />
           </span>
           <div className="min-w-0 flex-1 basis-64">
-            <p className="eyebrow">Empate em todos os critérios</p>
-            <h2 className="mt-1 font-display text-title-1 font-semibold text-mist">{t.tiebreak ? "A final" : `${tied.length} empatados com ${points.get(tied[0]) ?? 0} pontos`}</h2>
+            <p className="eyebrow">Top {tied.length} das rodadas</p>
+            <h2 className="mt-1 font-display text-title-1 font-semibold text-mist">{t.tiebreak ? "A mesa final" : `${tied.length} finalistas`}</h2>
             <p className="mt-1 text-subhead text-mist-dim">
               {t.tiebreak
-                ? "Sem tempo limite: vale até alguém vencer. Se os finalistas combinarem, dá para dividir o prêmio."
-                : `${listPt(names)} jogam uma final só entre eles, sem tempo limite. Quem vencer é o campeão; os finalistas também podem combinar dividir o prêmio.`}
+                ? "Sem tempo limite: vale até alguém vencer, e se a partida empatar começa outra. Joga primeiro quem está mais acima na lista. Se os finalistas combinarem, dá para dividir o prêmio."
+                : `${listPt(names)} jogam a mesa final, sem tempo limite, nessa ordem de jogo: o 1º das rodadas começa. Quem vencer é o campeão; os outros ficam na ordem da classificação.`}
             </p>
           </div>
           {!t.tiebreak && (

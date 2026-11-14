@@ -162,7 +162,7 @@ export const CEDH_POINTS: Points = { win: 2 * POD_STANDARD - 1, draw: 1, loss: 0
  * 4. OMW%: média do MW% dos adversários, cada um com piso de 1 ÷ pontos da vitória (1/7), e não 1/3 como
  *    no 1 × 1; quem jogou numa mesa de 3 soma um adversário fantasma com esse piso.
  * Depois disso, o sorteio feito na inscrição. Quem saiu continua contando para quem jogou com ele.
- * Empate em tudo isso na liderança vai para a final (ver `leaders` no engine).
+ * Os 4 primeiros jogam a mesa final, que decide o campeão (ver `finalists` no engine).
  */
 function podStandings(t: Pick<Tournament, "players" | "rounds" | "settings">, upto: number): Standing[] {
   const points = t.settings.points;

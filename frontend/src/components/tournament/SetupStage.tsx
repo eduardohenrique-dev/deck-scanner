@@ -151,9 +151,9 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                 </p>
               </div>
               <div>
-                <p className="mb-1.5 text-footnote font-medium text-mist-dim">Desempate (cEDH Europa)</p>
+                <p className="mb-1.5 text-footnote font-medium text-mist-dim">Classificação e mesa final (cEDH Europa)</p>
                 <p className="text-footnote text-mist-faint">
-                  Pontos, depois aproveitamento (MW%), pontos médios dos adversários e aproveitamento dos adversários (OMW%). Se o 1º lugar ainda empatar em tudo, os empatados jogam uma final sem tempo limite.
+                  Desempate por aproveitamento (MW%), pontos médios dos adversários e aproveitamento dos adversários (OMW%). Depois das rodadas, os 4 primeiros jogam a mesa final, sem tempo limite; o 1º começa e quem vencer é o campeão.
                 </p>
               </div>
             </div>

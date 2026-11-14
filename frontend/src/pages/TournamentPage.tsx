@@ -189,7 +189,7 @@ function primaryAction(
     case "rounds": {
       if (t.playoff || t.finishedAt) return null;
       if (t.tiebreak) return { label: "Ir para a final", icon: <ArrowRight className="size-4" />, onClick: () => go.goto("final") };
-      // na última rodada planejada, a próxima ação é o corte, a final (mesão empatado no topo) ou encerrar,
+      // na última rodada planejada, a próxima ação é o corte, a mesa final (mesão) ou encerrar,
       // liberada quando todas as mesas tiverem resultado
       if (t.rounds.length >= plannedRounds(t)) {
         const cur = currentRound(t);

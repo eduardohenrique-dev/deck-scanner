@@ -83,13 +83,33 @@ export function leaders(t: Tournament): ID[] {
   return table.filter((s) => podTied(s, table[0])).map((s) => s.playerId);
 }
 
-/** Mesão com as rodadas completas e empate total na liderança: o campeão sai de uma final entre os empatados. */
-export const needsFinal = (t: Tournament) => isPods(t.structure) && roundsDone(t) && leaders(t).length > 1;
+/** Quantos jogam a final do mesão: o top 4 do cEDH Europa (adendo da MTR, apêndice E, até 16 jogadores). */
+export const POD_FINALISTS = 4;
+
+/**
+ * Finalistas do mesão: os 4 primeiros da classificação das rodadas que continuam no torneio, nessa ordem.
+ * A ordem é também a ordem de jogo na final: o 1º começa (2.2B).
+ */
+export function finalists(t: Tournament): ID[] {
+  return standings(t)
+    .filter((s) => !s.dropped)
+    .slice(0, POD_FINALISTS)
+    .map((s) => s.playerId);
+}
+
+/** Torneio de mesão encerrado antes da final obrigatória (o campeão era o líder das rodadas). */
+const legacyFinished = (t: Tournament) => !!t.finishedAt && !t.tiebreak;
+
+/**
+ * Mesão com as rodadas completas: o campeão sai sempre de uma mesa final com os 4 primeiros, como no cEDH,
+ * haja ou não empate na classificação. Ir bem nas rodadas vale a vaga e a ordem de jogo na final.
+ */
+export const needsFinal = (t: Tournament) => isPods(t.structure) && roundsDone(t) && !legacyFinished(t) && finalists(t).length > 1;
 
 export function stages(t: Tournament): StageId[] {
   const s = t.structure;
   if (s.kind === "single-elimination") return ["setup", "players", "bracket", "champion"];
-  if (s.kind === "pods") return ["setup", "players", "rounds", ...(t.tiebreak || needsFinal(t) ? (["final"] as const) : []), "champion"];
+  if (s.kind === "pods") return ["setup", "players", "rounds", ...(legacyFinished(t) ? [] : (["final"] as const)), "champion"];
   return s.cut !== null ? ["setup", "players", "rounds", "cut", "bracket", "champion"] : ["setup", "players", "rounds", "champion"];
 }
 
@@ -621,11 +641,11 @@ export function apply(t: Tournament, cmd: Command): Tournament {
     }
 
     case "makeFinal": {
-      if (!isPods(t.structure)) fail("Só o mesão tem final de desempate.");
+      if (!isPods(t.structure)) fail("Só o mesão tem mesa final.");
       if (t.tiebreak) return t;
       if (!roundsDone(t)) fail("A final só sai depois da última rodada completa.");
-      const ids = leaders(t);
-      if (ids.length < 2) fail("Não há empate na liderança: o campeão já está definido.");
+      const ids = finalists(t);
+      if (ids.length < 2) fail("Faltam jogadores ativos para a final.");
       return { ...t, tiebreak: { id: "final", table: 1, players: ids, result: null }, finishedAt: null };
     }
 
@@ -654,7 +674,7 @@ export function apply(t: Tournament, cmd: Command): Tournament {
       if (isDraft(t)) fail("O torneio ainda não começou.");
       if (isPods(t.structure)) {
         if (!roundsDone(t)) fail("Faltam rodadas ou resultados.");
-        if (needsFinal(t) && !t.tiebreak?.result) fail("Empate na liderança: a final decide o campeão.");
+        if (needsFinal(t) && !t.tiebreak?.result) fail("A final decide o campeão: falta o resultado dela.");
       } else if (hasPlayoff(t.structure)) {
         if (!t.playoff || !bracketView(t.playoff).champion) fail("Falta decidir a final.");
       } else if (!roundsDone(t)) fail("Faltam rodadas ou placares.");
