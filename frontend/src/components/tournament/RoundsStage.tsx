@@ -240,7 +240,7 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
           <StandingsTable rows={table} players={players} cut={cutOf(t.structure)} onPlayer={onPlayer} compact variant={isPods ? "pods" : "duel"} />
           <p className="px-1 text-footnote text-mist-faint">
             {isPods
-              ? "Ordem: pontos, vitórias e força dos adversários. Empate em 1º depois da última rodada vai para a final. Toque num jogador para ver o histórico."
+              ? "Ordem do cEDH: pontos, MW%, pontos médios dos adversários (Adv) e OMW%. Depois da última rodada, os 4 primeiros jogam a mesa final. Toque num jogador para ver o histórico."
               : "Desempates: pontos, OMW, GW e OGW, com piso de 33% (regra da Wizards). Toque num jogador para ver o histórico."}
           </p>
         </aside>

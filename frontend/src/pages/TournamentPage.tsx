@@ -4,6 +4,7 @@ import { Goblet } from "../components/icons";
 import ChampionStage from "../components/tournament/ChampionStage";
 import ExportSheet from "../components/tournament/ExportSheet";
 import FinalStage from "../components/tournament/FinalStage";
+import LinkPanel from "../components/tournament/LinkPanel";
 import { STAGE_LABEL, STATUS_LABEL, STATUS_TONE } from "../components/tournament/labels";
 import PlayerDrawer from "../components/tournament/PlayerDrawer";
 import PlayersStage from "../components/tournament/PlayersStage";
@@ -32,7 +33,7 @@ const SAVE: Record<SaveState, { label: string; icon: ReactNode }> = {
 };
 
 export default function TournamentPage({ id }: { id: string }) {
-  const { t, error, save, dispatch } = useTournament(id);
+  const { t, error, save, dispatch, announce } = useTournament(id);
   const [view, setView] = useState<StageId | null>(null);
   const [player, setPlayer] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
@@ -131,6 +132,12 @@ export default function TournamentPage({ id }: { id: string }) {
         {shown === "final" && <FinalStage t={t} dispatch={dispatch} onPlayer={setPlayer} />}
         {shown === "champion" && <ChampionStage t={t} dispatch={dispatch} onShare={() => setSharing(true)} />}
       </div>
+
+      {(shown === "players" || shown === "rounds" || shown === "final") && (
+        <div className="max-w-xl">
+          <LinkPanel t={t} onResend={t.tiebreak || t.rounds.length ? () => void announce(t.tiebreak ? "final" : `r${t.rounds.length}`, true) : undefined} />
+        </div>
+      )}
 
       {/* no celular a ação da etapa fica sempre à mão, acima da barra de navegação */}
       {action && <div className="h-20 sm:hidden" aria-hidden="true" />}

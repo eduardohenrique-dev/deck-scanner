@@ -1,4 +1,4 @@
-import { LogOut } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { BrandMark, Candle, Chest, Goblet, Lens, Tankard, Tome } from "./components/icons";
 import { Button, cx, IconButton, Spinner } from "./components/ui";
@@ -17,6 +17,8 @@ const Tournaments = lazy(() => import("./pages/Tournaments"));
 const TournamentPage = lazy(() => import("./pages/TournamentPage"));
 const TournamentDisplay = lazy(() => import("./pages/TournamentDisplay"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Account = lazy(() => import("./pages/Account"));
+const PublicTournament = lazy(() => import("./pages/PublicTournament"));
 
 const NAV = [
   { to: "/", label: "Início", icon: Tankard, area: "home", match: (p: string) => p === "/" },
@@ -40,6 +42,16 @@ export default function App() {
     window.addEventListener("auth:expired", onExpired);
     return () => window.removeEventListener("auth:expired", onExpired);
   }, []);
+
+  // link público do torneio: abre para qualquer um, com ou sem login (a própria página cuida de entrar)
+  const early = matchRoute(path);
+  if (early.name === "public-tournament")
+    return (
+      <Suspense fallback={<FullScreen><Spinner className="size-7" /></FullScreen>}>
+        <PublicTournament token={early.token} />
+        <Toaster />
+      </Suspense>
+    );
 
   if (auth.status === "loading")
     return (
@@ -123,7 +135,14 @@ export default function App() {
             })}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            {email && <span className="hidden max-w-48 truncate text-footnote text-mist-faint lg:inline">{email}</span>}
+            {email && (
+              <Link to="/conta" className="hidden max-w-48 truncate text-footnote text-mist-dim underline-offset-2 hover:underline lg:inline">
+                {email}
+              </Link>
+            )}
+            <Link to="/conta" className="btn btn-ghost btn-icon shrink-0 lg:hidden" aria-label="Sua conta" title="Sua conta">
+              <UserRound className="size-[18px]" />
+            </Link>
             {auth.status === "signed-in" && (
               <IconButton label="Sair" onClick={() => void signOut()}>
                 <LogOut className="size-[18px]" />
@@ -149,6 +168,7 @@ export default function App() {
           {route.name === "collection" && <Collection />}
           {route.name === "tournaments" && <Tournaments />}
           {route.name === "tournament" && <TournamentPage key={route.id} id={route.id} />}
+          {route.name === "account" && <Account />}
           {route.name === "not-found" && <NotFound />}
         </Suspense>
       </main>

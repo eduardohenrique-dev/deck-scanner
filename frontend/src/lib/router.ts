@@ -29,6 +29,8 @@ export type Route =
   | { name: "tournaments" }
   | { name: "tournament"; id: string }
   | { name: "tournament-display"; id: string }
+  | { name: "public-tournament"; token: string }
+  | { name: "account" }
   | { name: "not-found" };
 
 export function matchRoute(path: string): Route {
@@ -45,6 +47,9 @@ export function matchRoute(path: string): Route {
   if (m) return { name: "tournament", id: m[1] };
   m = path.match(/^\/torneios\/([a-f0-9]{8,})\/telao\/?$/);
   if (m) return { name: "tournament-display", id: m[1] };
+  m = path.match(/^\/t\/([A-Za-z0-9]{6,32})\/?$/);
+  if (m) return { name: "public-tournament", token: m[1] };
+  if (path === "/conta") return { name: "account" };
   return { name: "not-found" };
 }
 

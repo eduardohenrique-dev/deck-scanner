@@ -74,6 +74,9 @@ PRICE_TTL = 24 * 3600
 
 # ---------------------------------------------------------------- modelo multimodal (etapa 3)
 ANTHROPIC_API_KEY = _env("ANTHROPIC_API_KEY")
+
+# robô do Telegram para os avisos de torneio (criado no @BotFather); vazio = avisos desligados
+TELEGRAM_BOT_TOKEN = _env("TELEGRAM_BOT_TOKEN")
 AI_GATEWAY_API_KEY = _env("AI_GATEWAY_API_KEY")
 _VLM_SWITCH = _env("DECKSCANNER_VLM")  # "1" liga, "0" desliga; vazio = liga só com chave configurada
 # Na Vercel o AI Gateway aceita o token OIDC da própria função (chega a cada requisição), mas isso gera custo

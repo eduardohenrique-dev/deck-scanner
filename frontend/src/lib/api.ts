@@ -277,7 +277,47 @@ export const api = {
   saveTournament: (id: string, doc: Tournament, summary: ServerSummary, baseVersion: number) =>
     request<{ version: number; updated_at: string }>(`/api/tournaments/${id}`, { method: "PUT", body: json({ doc, summary, base_version: baseVersion }) }),
   deleteTournament: (id: string) => request<{ ok: true }>(`/api/tournaments/${id}`, { method: "DELETE" }),
+  /** Link público do torneio (relógio, mesas e inscrição pelo jogador). */
+  shareTournament: (id: string) => request<{ token: string }>(`/api/tournaments/${id}/share`, { method: "POST" }),
+  /** Quem da lista tem conta e quem recebe aviso no Telegram. */
+  tournamentAccounts: (id: string) => request<TournamentAccounts>(`/api/tournaments/${id}/accounts`),
+  announce: (id: string, body: AnnounceBody) => request<AnnounceResult>(`/api/tournaments/${id}/announce`, { method: "POST", body: json(body) }),
+  publicTournament: async (token: string, version?: number): Promise<PublicTournament | null> => {
+    const res = await raw(`/api/public/t/${token}${q({ since: version })}`);
+    return res.status === 204 ? null : ((await res.json()) as PublicTournament);
+  },
+  joinTournament: (token: string, name?: string) => request<{ player: string }>(`/api/public/t/${token}/join`, { method: "POST", body: json({ name: name ?? null }) }),
+  leaveTournament: (token: string) => request<{ left: boolean }>(`/api/public/t/${token}/leave`, { method: "POST" }),
+
+  // ---------------------------------------------------------------- conta e Telegram
+  me: () => request<Me>("/api/me"),
+  updateMe: (name: string) => request<{ name: string }>("/api/me", { method: "PATCH", body: json({ name }) }),
+  telegramLink: () => request<{ url: string; bot: string }>("/api/me/telegram/link", { method: "POST" }),
+  telegramUnlink: () => request<{ ok: true }>("/api/me/telegram", { method: "DELETE" }),
+  telegramGroup: () => request<{ command: string; bot: string; add_url: string }>("/api/me/telegram/group", { method: "POST" }),
+  telegramGroupUnlink: () => request<{ ok: true }>("/api/me/telegram/group", { method: "DELETE" }),
 };
+
+export type Me = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  telegram: { enabled: boolean; bot: string | null; connected: boolean; username: string | null; group: { title: string | null } | null };
+};
+
+export type TournamentAccounts = {
+  enabled: boolean;
+  group: { title: string | null } | null;
+  players: Record<string, { account: boolean; telegram: boolean }>;
+};
+
+export type AnnounceBody = { notice: string; heading: string; standings: Record<string, { rank: number | null; points: number | null }>; force?: boolean };
+export type AnnounceResult =
+  | { enabled: false }
+  | { enabled: true; skipped: true }
+  | { enabled: true; skipped?: undefined; group: boolean | null; players: number; failed: number; no_telegram: number; no_account: number };
+
+export type PublicTournament = { id: string; version: number; doc: Tournament; me: string | null };
 
 /** O resumo que o servidor guarda para a lista (etapa, rodada, campeão…). */
 export type ServerSummary = Summary & { format?: string; structure?: string };

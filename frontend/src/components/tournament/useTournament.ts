@@ -4,10 +4,11 @@
  * reaplicadas por cima da versão de lá — os comandos são puros, então o resultado é o mesmo.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, ApiError, type TournamentRecord } from "../../lib/api";
+import { api, ApiError, type AnnounceResult, type TournamentRecord } from "../../lib/api";
 import { toast } from "../../lib/toast";
 import { apply, inverse, TournamentError, type Command } from "../../tournament/engine.ts";
 import { serverSummary } from "./labels";
+import { announcement, noticeFor } from "../../tournament/notify.ts";
 import type { Tournament } from "../../tournament/types.ts";
 
 export type SaveState = "saved" | "saving" | "pending" | "offline" | "error";
@@ -49,6 +50,19 @@ function replay(base: Tournament, commands: Command[]): { doc: Tournament; dropp
   return { doc, dropped };
 }
 
+/** "Telegram: grupo e 3 jogadores avisados" — o que o aviso conseguiu, em uma linha (null = nada a dizer). */
+export function announceSummary(r: AnnounceResult): { text: string; tone: "ok" | "bad" } | null {
+  if (!r.enabled || r.skipped) return null;
+  const parts: string[] = [];
+  if (r.group) parts.push("grupo");
+  if (r.players) parts.push(r.players === 1 ? "1 jogador" : `${r.players} jogadores`);
+  if (!parts.length && r.group === null && !r.no_telegram) return null;
+  const bad = r.group === false || r.failed > 0;
+  const text = parts.length ? `Telegram: ${parts.join(" e ")} ${parts.length === 1 && r.players === 1 && !r.group ? "avisado" : "avisados"}` : "Telegram: ninguém para avisar ainda";
+  const extra = [r.group === false ? "o grupo não recebeu" : "", r.failed ? `${r.failed} não receberam` : ""].filter(Boolean).join(", ");
+  return { text: extra ? `${text} (${extra})` : text, tone: bad ? "bad" : "ok" };
+}
+
 export type Dispatch = (cmd: Command, opts?: { undo?: string; silent?: boolean }) => Tournament | null;
 
 export function useTournament(id: string) {
@@ -61,6 +75,25 @@ export function useTournament(id: string) {
   const inFlight = useRef(false);
   const timer = useRef(0);
   const channel = useRef<BroadcastChannel | null>(null);
+  // avisos do Telegram esperando a gravação terminar (o servidor confere as mesas no torneio salvo)
+  const notices = useRef<string[]>([]);
+
+  const announce = useCallback(
+    async (notice: string, force = false) => {
+      const doc = docRef.current;
+      const body = doc ? announcement(doc, notice) : null;
+      if (!body) return;
+      try {
+        const res = await api.announce(id, { ...body, force });
+        const line = announceSummary(res);
+        if (line) toast(line.text, { tone: line.tone, group: "telegram" });
+        else if (force && res.enabled) toast("Aviso reenviado.", { group: "telegram" });
+      } catch (e) {
+        toast(`Não consegui avisar no Telegram: ${e instanceof Error ? e.message : String(e)}`, { tone: "bad", group: "telegram" });
+      }
+    },
+    [id],
+  );
 
   const publish = useCallback((next: Tournament) => {
     docRef.current = next;
@@ -91,6 +124,11 @@ export function useTournament(id: string) {
       setSave(pending.current.length ? "pending" : "saved");
       // o que foi tocado enquanto esta gravação ia vai na próxima
       if (pending.current.length) timer.current = window.setTimeout(() => void flush(), 300);
+      else if (notices.current.length) {
+        const queued = notices.current;
+        notices.current = [];
+        for (const n of queued) void announce(n);
+      }
     } catch (e) {
       if (e instanceof ApiError && e.status === 409 && e.body?.current) {
         const current = e.body.current as TournamentRecord;
@@ -114,7 +152,7 @@ export function useTournament(id: string) {
     } finally {
       inFlight.current = false;
     }
-  }, [id, persistLocal, publish]);
+  }, [id, persistLocal, publish, announce]);
 
   // carrega: servidor + o que tiver ficado pendente neste aparelho (ex.: sem internet)
   useEffect(() => {
@@ -173,6 +211,8 @@ export function useTournament(id: string) {
         return null;
       }
       pending.current = [...pending.current, cmd];
+      const notice = noticeFor(cmd, next);
+      if (notice && !notices.current.includes(notice)) notices.current = [...notices.current, notice];
       publish(next);
       persistLocal();
       setSave("pending");
@@ -187,7 +227,23 @@ export function useTournament(id: string) {
     [flush, persistLocal, publish],
   );
 
-  return { t: doc, error, save, dispatch, flush };
+  useEffect(() => {
+    const tick = window.setInterval(async () => {
+      const cur = docRef.current;
+      if (!cur || cur.startedAt || pending.current.length || inFlight.current || document.visibilityState !== "visible") return;
+      try {
+        const rec = await api.tournamentSince(id, version.current);
+        if (!rec || pending.current.length || inFlight.current) return;
+        version.current = rec.version;
+        publish(rec.doc);
+      } catch {
+        /* sem rede: tenta no próximo */
+      }
+    }, 6000);
+    return () => window.clearInterval(tick);
+  }, [id, publish]);
+
+  return { t: doc, error, save, dispatch, flush, announce };
 }
 
 /**

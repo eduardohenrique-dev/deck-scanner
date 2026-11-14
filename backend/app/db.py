@@ -473,10 +473,24 @@ CREATE TABLE IF NOT EXISTS tournaments (
   summary TEXT,                    -- json: etapa, rodada, campeão, líder (para a lista)
   doc TEXT NOT NULL,               -- json do torneio inteiro (as regras moram no cliente)
   version INTEGER NOT NULL DEFAULT 1,  -- sobe a cada gravação; gravar com versão velha dá 409
+  public_token TEXT,               -- link público (relógio, mesas e inscrição dos jogadores)
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_tournaments_user ON tournaments(user_id, updated_at);
+CREATE INDEX IF NOT EXISTS idx_tournaments_public ON tournaments(public_token);
+CREATE TABLE IF NOT EXISTS telegram_links (
+  user_id TEXT PRIMARY KEY, chat_id TEXT NOT NULL, username TEXT, linked_at TEXT
+);
+CREATE TABLE IF NOT EXISTS telegram_groups (
+  user_id TEXT PRIMARY KEY, chat_id TEXT NOT NULL, title TEXT, linked_at TEXT
+);
+CREATE TABLE IF NOT EXISTS telegram_codes (
+  code TEXT PRIMARY KEY, kind TEXT NOT NULL, user_id TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS tournament_notices (
+  tournament_id TEXT NOT NULL, notice TEXT NOT NULL, sent_at TEXT NOT NULL, PRIMARY KEY (tournament_id, notice)
+);
 CREATE TABLE IF NOT EXISTS locations (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -606,12 +620,13 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE INDEX IF NOT EXISTS idx_names_trgm ON card_names USING gin (name_norm gin_trgm_ops);
 """
 
-# sobe a cada tabela nova: no Postgres o schema só roda de novo quando a versão muda (4: torneios)
-SCHEMA_VERSION = "4"
+# sobe a cada tabela nova: no Postgres o schema só roda de novo quando a versão muda (5: Telegram e link público)
+SCHEMA_VERSION = "5"
 
 # colunas adicionadas depois da versão 1 (bancos SQLite já existentes)
 APP_MIGRATIONS: dict[str, dict[str, str]] = {
     "users": {"email": "TEXT", "settings": "TEXT"},
+    "tournaments": {"public_token": "TEXT"},
     "scan_sessions": {"purpose": "TEXT NOT NULL DEFAULT 'build'", "target_deck_id": "TEXT", "saved_deck_id": "TEXT",
                       "saved_at": "TEXT", "seq_counter": "INTEGER NOT NULL DEFAULT 0",
                       "capture_counter": "INTEGER NOT NULL DEFAULT 0"},

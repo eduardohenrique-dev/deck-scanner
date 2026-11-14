@@ -34,6 +34,8 @@ export type Player = {
   droppedAfter: number | null;
   /** sorteio fixo para o empate total: a ordem não "pisca" entre um cálculo e outro */
   lot: number;
+  /** conta do Deck Scanner de quem se inscreveu pelo link (recebe os avisos no Telegram); some na página pública */
+  userId?: string | null;
 };
 
 /** Placar em games: vencidos por A, vencidos por B e empatados. */

@@ -5,6 +5,7 @@ import { useResource } from "../../lib/hooks";
 import { isDraft, parsePlayerList } from "../../tournament/engine.ts";
 import { suggestRounds } from "../../tournament/pairing.ts";
 import type { DeckRef, Player, Tournament } from "../../tournament/types.ts";
+import { useAccounts } from "./LinkPanel";
 import type { Deck } from "../../lib/types";
 import { IdentityPips } from "../mtg";
 import { Board, Button, Confirm, cx, EmptyState, IconButton, InlineEdit, Input, Modal, Tag, Textarea } from "../ui";
@@ -21,6 +22,7 @@ export default function PlayersStage({ t, dispatch, onPlayer }: { t: Tournament;
   const [dropping, setDropping] = useState<Player | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const n = t.players.length;
+  const accounts = useAccounts(t);
 
   function add(e: FormEvent) {
     e.preventDefault();
@@ -85,6 +87,11 @@ export default function PlayersStage({ t, dispatch, onPlayer }: { t: Tournament;
                     )}
                   </button>
                 </div>
+                {accounts?.players[p.id]?.account && (
+                  <Tag tone={accounts.players[p.id].telegram ? "info" : "neutral"} title={accounts.players[p.id].telegram ? "Tem conta e recebe os avisos no Telegram" : "Tem conta, mas ainda não ligou o Telegram"}>
+                    {accounts.players[p.id].telegram ? "Telegram" : "Conta"}
+                  </Tag>
+                )}
                 {p.droppedAfter !== null && <Tag tone="bad">{p.droppedAfter === 0 ? "Saiu antes de jogar" : `Saiu após a rodada ${p.droppedAfter}`}</Tag>}
                 {draft ? (
                   <IconButton label={`Tirar ${p.name} da lista`} onClick={() => dispatch({ type: "removePlayer", id: p.id }, { undo: `${p.name} saiu da lista` })}>
