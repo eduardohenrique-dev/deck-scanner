@@ -1,6 +1,7 @@
 import { ChevronRight } from "lucide-react";
 import { Fragment } from "react";
 import { pct, podRecord, record } from "../../tournament/export.ts";
+import { podTied } from "../../tournament/standings.ts";
 import type { Player, Standing } from "../../tournament/types.ts";
 import { IdentityPips } from "../mtg";
 import { cx, Tag } from "../ui";
@@ -9,8 +10,8 @@ import { cx, Tag } from "../ui";
  * Classificação com os desempates da MTR. No celular fica só o essencial (pontos e OMW); o resto aparece
  * a partir do tablet. A linha do corte marca quem vai para o mata-mata.
  *
- * No mesão ("pods") a posição é por pontos, com empate dividindo a posição (1, 1, 3…): quem empata em 1º
- * vai para a final. Vitórias e força dos adversários só ordenam a lista.
+ * No mesão ("pods") vale o desempate do cEDH: pontos, MW%, pontos médios dos adversários e OMW%. Só quem
+ * empata em todos divide a posição (1, 1, 3…); empate total em 1º vai para a final.
  */
 export default function StandingsTable({
   rows,
@@ -31,7 +32,7 @@ export default function StandingsTable({
 }) {
   const pods = variant === "pods";
   const shown = limit ? rows.slice(0, limit) : rows;
-  const position = new Map(rows.map((r) => [r.playerId, pods ? 1 + rows.filter((x) => x.points > r.points).length : r.rank]));
+  const position = new Map(rows.map((r) => [r.playerId, pods ? 1 + rows.findIndex((x) => podTied(x, r)) : r.rank]));
   // o corte conta só quem continua no torneio
   let active = 0;
   const cutAfter = new Set<string>();
@@ -53,11 +54,17 @@ export default function StandingsTable({
             <th className="py-3 pr-3 text-right font-semibold">Pts</th>
             {pods ? (
               <>
-                <th className="py-3 pr-3 text-right font-semibold" title="Vitórias, empates no tempo (vivo no fim) e derrotas">
+                <th className={cx("py-3 pr-3 text-right font-semibold", wide ? "max-sm:hidden" : "hidden")} title="Vitórias, empates no tempo e derrotas">
                   V–E–D
                 </th>
-                <th className={cx("py-3 pr-4 text-right font-semibold", wide ? "max-sm:hidden" : "hidden")} title="Média do aproveitamento de quem dividiu mesa com ele">
-                  Adversários
+                <th className={cx("py-3 pr-3 text-right font-semibold", wide ? "max-md:hidden" : "hidden")} title="Aproveitamento: pontos ÷ (mesas × pontos da vitória)">
+                  MW
+                </th>
+                <th className="py-3 pr-3 text-right font-semibold" title="Pontos médios dos adversários">
+                  Adv
+                </th>
+                <th className={cx("py-3 pr-4 text-right font-semibold", wide ? "max-sm:hidden" : "hidden")} title="Aproveitamento médio dos adversários (piso de 1 ÷ pontos da vitória)">
+                  OMW
                 </th>
               </>
             ) : (
@@ -103,7 +110,9 @@ export default function StandingsTable({
                   <td className={cx("tabular py-3 pr-3 text-right text-headline font-bold", r.dropped ? "text-mist-faint" : "text-mist")}>{r.points}</td>
                   {pods ? (
                     <>
-                      <td className="tabular py-3 pr-3 text-right whitespace-nowrap text-mist-dim">{podRecord(r.wins, r.draws, r.losses)}</td>
+                      <td className={cx("tabular py-3 pr-3 text-right whitespace-nowrap text-mist-dim", wide ? "max-sm:hidden" : "hidden")}>{podRecord(r.wins, r.draws, r.losses)}</td>
+                      <td className={cx("tabular py-3 pr-3 text-right text-mist-dim", wide ? "max-md:hidden" : "hidden")}>{r.matchesPlayed ? pct(r.mwp) : "—"}</td>
+                      <td className="tabular py-3 pr-3 text-right text-mist-dim">{r.matchesPlayed ? avgPts(r.oamp ?? 0) : "—"}</td>
                       <td className={cx("tabular py-3 pr-4 text-right text-mist-dim", wide ? "max-sm:hidden" : "hidden")}>{r.matchesPlayed ? pct(r.omw) : "—"}</td>
                     </>
                   ) : (
@@ -139,6 +148,8 @@ export default function StandingsTable({
     </div>
   );
 }
+
+const avgPts = (x: number) => x.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 function Who({ player, dropped }: { player: Player | undefined; dropped: boolean }) {
   return (

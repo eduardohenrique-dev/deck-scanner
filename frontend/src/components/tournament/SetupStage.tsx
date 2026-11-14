@@ -151,9 +151,9 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                 </p>
               </div>
               <div>
-                <p className="mb-1.5 text-footnote font-medium text-mist-dim">Empate na liderança</p>
+                <p className="mb-1.5 text-footnote font-medium text-mist-dim">Desempate (cEDH Europa)</p>
                 <p className="text-footnote text-mist-faint">
-                  Os empatados em 1º jogam uma final só entre eles, sem tempo limite. Quem vencer é o campeão; os finalistas também podem combinar dividir o prêmio.
+                  Pontos, depois aproveitamento (MW%), pontos médios dos adversários e aproveitamento dos adversários (OMW%). Se o 1º lugar ainda empatar em tudo, os empatados jogam uma final sem tempo limite.
                 </p>
               </div>
             </div>
@@ -200,8 +200,8 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                 {(
                   [
                     ["win", pods ? "Venceu" : "Vitória"],
-                    ["draw", pods ? "Vivo no fim do tempo" : "Empate"],
-                    ["loss", pods ? "Eliminado" : "Derrota"],
+                    ["draw", pods ? "Empate (cada um)" : "Empate"],
+                    ["loss", pods ? "Derrota" : "Derrota"],
                   ] as const
                 ).map(([k, label]) => (
                   <div key={k} className="flex items-center gap-2">
@@ -211,7 +211,7 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
                 ))}
               </div>
               <p className="mt-2 text-footnote text-mist-faint">
-                {pods ? "Regra da casa: 3 para quem vence; sem vencedor no fim do tempo, 1 para cada jogador ainda vivo e 0 para quem já tinha saído." : "Padrão da Wizards: 3, 1 e 0. A folga vale uma vitória."}
+                {pods ? "Padrão do cEDH Europa: 7 para quem vence (2 × 4 − 1, também nas mesas de 3); sem vencedor no fim do tempo, 1 para cada jogador da mesa, menos quem concedeu." : "Padrão da Wizards: 3, 1 e 0. A folga vale uma vitória."}
               </p>
             </div>
           )}
@@ -220,13 +220,13 @@ export default function SetupStage({ t, dispatch }: { t: Tournament; dispatch: D
               <p className="text-subhead font-medium text-mist">{pods ? "Tempo da partida" : "Relógio da rodada"}</p>
               <p className="text-footnote text-mist-faint">
                 {pods
-                  ? "Quando acaba, o turno em andamento termina e cada jogador vivo que ainda não jogou faz mais 1 turno. A final não tem tempo."
+                  ? "Regra do cEDH: sem turnos extras. Quando o tempo acaba, quem está no turno termina; se ninguém venceu até ali, a mesa empata. O cEDH recomenda 75 minutos. A final não tem tempo."
                   : "Aparece nas mesas e no telão; passa a contar o acréscimo quando o tempo acaba."}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {t.settings.roundMinutes !== null && <Stepper size="sm" value={t.settings.roundMinutes} min={5} max={600} label="Minutos por rodada" onChange={(v) => setSettings({ roundMinutes: v })} />}
-              <Switch checked={t.settings.roundMinutes !== null} label="Usar relógio" onChange={(on) => setSettings({ roundMinutes: on ? (pods ? 60 : 50) : null })} />
+              <Switch checked={t.settings.roundMinutes !== null} label="Usar relógio" onChange={(on) => setSettings({ roundMinutes: on ? (pods ? 75 : 50) : null })} />
             </div>
           </div>
         </Card>

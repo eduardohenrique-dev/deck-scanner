@@ -91,23 +91,50 @@ test("16 jogadores: a 2ª rodada sai sem nenhum adversário repetido (busca por 
   assert.equal(repeats(t.rounds[1].pods!, t.rounds.slice(0, 1)), 0);
 });
 
-test("pontuação: vitória 3; empate no tempo, 1 para cada vivo; eliminado 0", () => {
+test("pontuação do cEDH: vitória 7 (também na mesa de 3); empate 1 para quem a lista marca; derrota 0", () => {
   let t = run(mesao(4, 1), { type: "start", at: AT });
+  assert.deepEqual(t.settings.points, { win: 7, draw: 1, loss: 0 });
   const pod = currentRound(t)!.pods![0];
   const [w, x, y, z] = pod.players;
-  t = apply(t, { type: "podResult", round: 1, pod: pod.id, result: { kind: "draw", survivors: [x, y] }, at: AT });
-  const pts = new Map(standings(t).map((s) => [s.playerId, s.points]));
-  assert.deepEqual([pts.get(w), pts.get(x), pts.get(y), pts.get(z)], [0, 1, 1, 0]);
+  const pts = () => {
+    const m = new Map(standings(t).map((s) => [s.playerId, s.points]));
+    return [m.get(w), m.get(x), m.get(y), m.get(z)];
+  };
+  // sem vencedor: todos da mesa pontuam
+  t = apply(t, { type: "podResult", round: 1, pod: pod.id, result: { kind: "draw", survivors: pod.players }, at: AT });
+  assert.deepEqual(pts(), [1, 1, 1, 1]);
+  // quem concedeu fica fora da lista e não pontua
+  t = apply(t, { type: "podResult", round: 1, pod: pod.id, result: { kind: "draw", survivors: [x, y, z] }, at: AT });
+  assert.deepEqual(pts(), [0, 1, 1, 1]);
   t = apply(t, { type: "podResult", round: 1, pod: pod.id, result: { kind: "win", winner: z }, at: AT });
-  const again = new Map(standings(t).map((s) => [s.playerId, s.points]));
-  assert.deepEqual([again.get(w), again.get(x), again.get(y), again.get(z)], [0, 0, 0, 3]);
+  assert.deepEqual(pts(), [0, 0, 0, 7]);
+
+  // mesa de 3 vale o mesmo que a de 4
+  let three = run(mesao(3, 1), { type: "start", at: AT });
+  const p3 = currentRound(three)!.pods![0];
+  three = apply(three, { type: "podResult", round: 1, pod: p3.id, result: { kind: "win", winner: p3.players[0] }, at: AT });
+  assert.equal(standings(three).find((s) => s.playerId === p3.players[0])!.points, 7);
+});
+
+test("mesão novo nasce com 7, 1, 0; voltar para o 1 × 1 devolve 3, 1, 0; pontuação mexida à mão fica", () => {
+  let t = make(8, { kind: "swiss", rounds: 3, cut: null });
+  assert.deepEqual(t.settings.points, { win: 3, draw: 1, loss: 0 });
+  t = apply(t, { type: "setStructure", structure: { kind: "pods", rounds: 0 } });
+  assert.deepEqual(t.settings.points, { win: 7, draw: 1, loss: 0 });
+  assert.equal(t.settings.roundMinutes, 75);
+  t = apply(t, { type: "setStructure", structure: { kind: "swiss", rounds: 3, cut: null } });
+  assert.deepEqual(t.settings.points, { win: 3, draw: 1, loss: 0 });
+  assert.equal(t.settings.roundMinutes, 50);
+  t = apply(t, { type: "setSettings", settings: { points: { win: 5, draw: 1, loss: 0 } } });
+  t = apply(t, { type: "setStructure", structure: { kind: "pods", rounds: 0 } });
+  assert.deepEqual(t.settings.points, { win: 5, draw: 1, loss: 0 });
 });
 
 test("resultados que não fecham com a regra são recusados", () => {
   const t = run(mesao(4, 1), { type: "start", at: AT });
   const pod = currentRound(t)!.pods![0];
   const at = (result: PodResult): Command => ({ type: "podResult", round: 1, pod: pod.id, result, at: AT });
-  throws(() => apply(t, at({ kind: "draw", survivors: [pod.players[0]] })), /um só jogador vivo/);
+  throws(() => apply(t, at({ kind: "draw", survivors: [pod.players[0]] })), /um só jogador pontuando/);
   throws(() => apply(t, at({ kind: "win", winner: "p99" })), /precisa estar na mesa/);
   throws(() => apply(t, at({ kind: "split", players: pod.players.slice(0, 2) })), /só vale na final/);
 });

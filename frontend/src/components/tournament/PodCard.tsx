@@ -11,8 +11,9 @@ type Mode = "entry" | "survivors";
 
 /**
  * Uma mesa do mesão: quem senta nela e como terminou. Lançar é um toque em "venceu" ao lado de quem
- * ganhou; sem vencedor no fim do tempo, marca quem ainda estava vivo (esses pontuam). Na final não há
- * tempo: em vez do empate, os finalistas podem dividir o prêmio.
+ * ganhou; sem vencedor no fim do tempo é empate e, pela regra do cEDH, a mesa toda pontua: a lista vem toda
+ * marcada e só sai quem concedeu ou levou derrota como penalidade. Na final não há tempo: em vez do empate,
+ * os finalistas podem dividir o prêmio.
  */
 export default function PodCard({
   pod,
@@ -152,7 +153,7 @@ export default function PodCard({
           {mode === "survivors" ? (
             <>
               <p className="px-1 text-footnote text-mist-dim">
-                {final ? "Marque quem divide o prêmio." : `Sem vencedor no fim do tempo: marque quem ainda estava vivo. Cada um leva ${scoring.draw} ${scoring.draw === 1 ? "ponto" : "pontos"}.`}
+                {final ? "Marque quem divide o prêmio." : `Sem vencedor no fim do tempo: cada jogador da mesa leva ${scoring.draw} ${scoring.draw === 1 ? "ponto" : "pontos"}, inclusive quem já tinha sido eliminado. Desmarque só quem concedeu ou levou derrota como penalidade.`}
               </p>
               {problem && marked.length > 0 && <p className="px-1 text-footnote text-ember-300">{problem}</p>}
               <div className="flex flex-wrap justify-end gap-2">
@@ -160,7 +161,7 @@ export default function PodCard({
                   Voltar
                 </Button>
                 <Button size="sm" variant="primary" disabled={!!problem} onClick={() => send(pending)}>
-                  {final ? `Dividir entre ${marked.length}` : `Empate: ${marked.length} ${marked.length === 1 ? "vivo" : "vivos"}`}
+                  {final ? `Dividir entre ${marked.length}` : `Empate: ${marked.length} pontuam`}
                 </Button>
               </div>
             </>
@@ -190,7 +191,7 @@ export default function PodCard({
         !swap && (
           <div className="mt-auto flex items-center justify-between gap-3 px-4 pt-1 pb-3">
             <span className="min-w-0 text-footnote text-mist-faint">
-              {result.kind === "win" ? `${name(result.winner)} venceu` : result.kind === "draw" ? `Empate no tempo · ${result.survivors.length} vivos pontuam` : `Prêmio dividido entre ${result.players.length}`}
+              {result.kind === "win" ? `${name(result.winner)} venceu` : result.kind === "draw" ? `Empate no tempo · ${result.survivors.length === pod.players.length ? "a mesa toda pontua" : `${result.survivors.length} pontuam`}` : `Prêmio dividido entre ${result.players.length}`}
             </span>
             <Button size="sm" variant="tertiary" icon={<Pencil className="size-4" />} onClick={() => setEditing(true)}>
               Editar

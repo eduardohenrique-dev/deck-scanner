@@ -7,8 +7,8 @@ import { bracketView, drawSeeds, pruneStale } from "./bracket.ts";
 import { activeIn, BYE_SCORE, pairRoundRobin, pairSwiss, roundRobinCount, suggestRounds } from "./pairing.ts";
 import { pairPods, suggestPodRounds } from "./pods.ts";
 import { derive, mulberry32 } from "./rng.ts";
-import { standings } from "./standings.ts";
-import type { DeckRef, ID, Match, Player, Playoff, Pod, PodResult, Round, Score, Settings, StageId, Status, Structure, Summary, Tournament } from "./types.ts";
+import { CEDH_POINTS, podTied, standings } from "./standings.ts";
+import type { DeckRef, ID, Match, Player, Playoff, Pod, PodResult, Points, Round, Score, Settings, StageId, Status, Structure, Summary, Tournament } from "./types.ts";
 
 export class TournamentError extends Error {}
 
@@ -17,7 +17,10 @@ function fail(message: string): never {
   throw new TournamentError(message);
 }
 
-export const DEFAULT_SETTINGS: Settings = { bestOf: 3, playoffBestOf: 3, points: { win: 3, draw: 1, loss: 0 }, roundMinutes: 50, seeding: "standings" };
+/** Tempo de rodada recomendado pelo cEDH Europa para o suíço do mesão (adendo da MTR, apêndice B). */
+export const POD_MINUTES = 75;
+
+export const DEFAULT_SETTINGS: Settings ={ bestOf: 3, playoffBestOf: 3, points: { win: 3, draw: 1, loss: 0 }, roundMinutes: 50, seeding: "standings" };
 
 export function createTournament(input: { id: ID; name: string; date: string; gameFormat?: string; notes?: string; seed: number; at: string }): Tournament {
   return {
@@ -70,15 +73,17 @@ export function roundsDone(t: Tournament): boolean {
   return t.rounds.length >= plannedRounds(t) && t.rounds.every(roundComplete);
 }
 
-/** Mesão: quem está na frente em pontos, sem contar quem saiu (mais de um = empate na liderança). */
+/**
+ * Mesão: quem está em 1º, sem contar quem saiu. Mais de um só quando empatam em todos os critérios do cEDH
+ * (pontos, MW%, pontos médios dos adversários e OMW%): aí não há conta que separe e vai para a final.
+ */
 export function leaders(t: Tournament): ID[] {
   const table = standings(t).filter((s) => !s.dropped);
   if (!table.length) return [];
-  const top = table[0].points;
-  return table.filter((s) => s.points === top).map((s) => s.playerId);
+  return table.filter((s) => podTied(s, table[0])).map((s) => s.playerId);
 }
 
-/** Mesão com as rodadas completas e empate na liderança: o campeão sai de uma final entre os empatados. */
+/** Mesão com as rodadas completas e empate total na liderança: o campeão sai de uma final entre os empatados. */
 export const needsFinal = (t: Tournament) => isPods(t.structure) && roundsDone(t) && leaders(t).length > 1;
 
 export function stages(t: Tournament): StageId[] {
@@ -241,8 +246,8 @@ export function podResultProblem(r: PodResult, players: ID[], final: boolean): s
       return players.includes(r.winner) ? null : "Quem venceu precisa estar na mesa.";
     case "draw":
       if (final) return "A final não tem tempo limite: termina com um vencedor ou com o prêmio dividido.";
-      if (!inPod(r.survivors) || !unique(r.survivors)) return "Os sobreviventes precisam estar na mesa.";
-      return r.survivors.length < 2 ? "Com um só jogador vivo no fim do tempo, ele é o vencedor." : null;
+      if (!inPod(r.survivors) || !unique(r.survivors)) return "Quem pontua no empate precisa estar na mesa.";
+      return r.survivors.length < 2 ? "Com um só jogador pontuando no empate, ele é o vencedor." : null;
     case "split":
       if (!final) return "Dividir o prêmio só vale na final.";
       if (!inPod(r.players) || !unique(r.players)) return "Quem divide o prêmio precisa estar na final.";
@@ -340,6 +345,14 @@ export function apply(t: Tournament, cmd: Command): Tournament {
         if (s.kind === "pods" && t.tiebreak) fail("A final já foi montada.");
         if ((s.kind === "swiss" || s.kind === "pods") && s.rounds < t.rounds.length) fail(`Já foram geradas ${t.rounds.length} rodadas.`);
       }
+      // mesão novo nasce com a pontuação do cEDH (7, 1, 0); quem volta para o 1 × 1 volta aos 3, 1, 0 da MTR
+      const same = (a: Points, b: Points) => a.win === b.win && a.draw === b.draw && a.loss === b.loss;
+      const toPods = isDraft(t) && s.kind === "pods" && t.structure.kind !== "pods" && same(t.settings.points, DEFAULT_SETTINGS.points);
+      const fromPods = isDraft(t) && s.kind !== "pods" && t.structure.kind === "pods" && same(t.settings.points, CEDH_POINTS);
+      // o relógio segue junto quando ainda está no padrão: 75 minutos no mesão (recomendação do cEDH), 50 no 1 × 1
+      const minutes = (m: number | null) => (toPods && m === DEFAULT_SETTINGS.roundMinutes ? POD_MINUTES : fromPods && m === POD_MINUTES ? DEFAULT_SETTINGS.roundMinutes : m);
+      if (toPods || fromPods)
+        return { ...t, structure: s, settings: { ...t.settings, points: toPods ? CEDH_POINTS : DEFAULT_SETTINGS.points, roundMinutes: minutes(t.settings.roundMinutes) } };
       return { ...t, structure: s };
     }
 

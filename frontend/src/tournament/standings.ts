@@ -23,8 +23,8 @@ export type Game = {
 };
 
 /**
- * Como a mesa do mesão terminou para um jogador: vitória (3), empate por estar vivo quando o tempo e os
- * turnos extras acabaram (1) ou derrota (0). Dividir o prêmio só existe na final e conta como título.
+ * Como a mesa do mesão terminou para um jogador: vitória, empate (marcado na lista do empate: pela regra do
+ * cEDH, todos da mesa menos quem concedeu) ou derrota. Dividir o prêmio só existe na final e conta como título.
  */
 export function podOutcome(r: PodResult, id: ID): "win" | "draw" | "loss" {
   switch (r.kind) {
@@ -144,21 +144,39 @@ function cmp(a: number, b: number) {
   return Math.abs(a - b) < EPS ? 0 : a > b ? -1 : 1;
 }
 
+/** Tamanho padrão da mesa do mesão: mesas menores contam um adversário "fantasma" a mais no OMW%. */
+export const POD_STANDARD = 4;
+
 /**
- * Mesão: pontos → vitórias → força dos adversários (média do aproveitamento de quem dividiu mesa com ele).
- * Empate na liderança não se desempata por conta: vai para a final. Os percentuais ficam em `mwp`/`omw`
- * (aproveitamento próprio e dos adversários), sem o piso de 1/3 da MTR, que é coisa do 1 × 1.
+ * Pontuação do cEDH (adendo multijogador da MTR, apêndice C): vitória vale 2n − 1, com n = tamanho padrão
+ * da mesa (7 com mesas de 4, inclusive nas mesas de 3); empate, 1 para cada jogador da mesa; derrota, 0.
+ */
+export const CEDH_POINTS: Points = { win: 2 * POD_STANDARD - 1, draw: 1, loss: 0 };
+
+/**
+ * Mesão, desempates do cEDH Europa (adendo multijogador da MTR, 3.1A e apêndice C), nesta ordem:
+ * 1. pontos;
+ * 2. MW% (aproveitamento): pontos ÷ (mesas jogadas × pontos da vitória);
+ * 3. pontos médios dos adversários: soma dos pontos de cada adversário ÷ número de adversários
+ *    (quem dividiu mesa duas vezes conta duas vezes);
+ * 4. OMW%: média do MW% dos adversários, cada um com piso de 1 ÷ pontos da vitória (1/7), e não 1/3 como
+ *    no 1 × 1; quem jogou numa mesa de 3 soma um adversário fantasma com esse piso.
+ * Depois disso, o sorteio feito na inscrição. Quem saiu continua contando para quem jogou com ele.
+ * Empate em tudo isso na liderança vai para a final (ver `leaders` no engine).
  */
 function podStandings(t: Pick<Tournament, "players" | "rounds" | "settings">, upto: number): Standing[] {
   const points = t.settings.points;
   const stats = collectStats(t.players, t.rounds, points, upto);
+  const floor = points.win > 0 ? 1 / points.win : 0;
   const share = (s: PlayerStats) => (s.roundsPlayed && points.win > 0 ? s.points / (points.win * s.roundsPlayed) : 0);
   const rows = t.players.map((p) => {
     const s = stats.get(p.id)!;
     const opp = s.opponents.filter((o) => stats.has(o));
-    return { player: p, s, mwp: share(s), omw: mean(opp.map((o) => share(stats.get(o)!))) };
+    const ghosts = s.games.reduce((n, g) => n + (g.pod ? Math.max(0, POD_STANDARD - g.pod.players.length) : 0), 0);
+    const oppShares = [...opp.map((o) => Math.max(floor, share(stats.get(o)!))), ...Array<number>(ghosts).fill(floor)];
+    return { player: p, s, mwp: share(s), oamp: mean(opp.map((o) => stats.get(o)!.points)), omw: mean(oppShares) };
   });
-  rows.sort((x, y) => cmp(x.s.points, y.s.points) || cmp(x.s.wins, y.s.wins) || cmp(x.omw, y.omw) || x.player.lot - y.player.lot);
+  rows.sort((x, y) => comparePodRows(x, y) || x.player.lot - y.player.lot);
   return rows.map((r, i) => ({
     rank: i + 1,
     playerId: r.player.id,
@@ -170,11 +188,18 @@ function podStandings(t: Pick<Tournament, "players" | "rounds" | "settings">, up
     matchesPlayed: r.s.roundsPlayed,
     mwp: r.mwp,
     omw: r.omw,
+    oamp: r.oamp,
     gwp: 0,
     ogw: 0,
     dropped: r.player.droppedAfter !== null,
   }));
 }
+
+type PodRow = { s: { points: number }; mwp: number; oamp: number; omw: number };
+const comparePodRows = (x: PodRow, y: PodRow) => cmp(x.s.points, y.s.points) || cmp(x.mwp, y.mwp) || cmp(x.oamp, y.oamp) || cmp(x.omw, y.omw);
+
+/** Dois jogadores do mesão empatados em todos os critérios (só o sorteio os separaria). */
+export const podTied = (a: Standing, b: Standing) => comparePodRows({ s: a, mwp: a.mwp, oamp: a.oamp ?? 0, omw: a.omw }, { s: b, mwp: b.mwp, oamp: b.oamp ?? 0, omw: b.omw }) === 0;
 
 /** Classificação completa (dropados incluídos, marcados). `upto` limita a rodadas já jogadas. */
 export function standings(t: Pick<Tournament, "players" | "rounds" | "settings">, upto = Infinity): Standing[] {

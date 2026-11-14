@@ -8,7 +8,7 @@ export type Structure =
   | { kind: "swiss"; rounds: number; cut: number | null } // cut = X livre (top X); null = só suíço
   | { kind: "round-robin"; cut: number | null }
   | { kind: "single-elimination" } // eliminação dupla fica para uma segunda fase
-  // mesão (Commander multiplayer): mesas de 4 (3 completam), empate na liderança vai para uma final
+  // mesão (Commander multiplayer, regras do cEDH): mesas de 4 (3 completam), empate total na liderança vai para uma final
   | { kind: "pods"; rounds: number };
 
 export type Points = { win: number; draw: number; loss: number };
@@ -55,7 +55,8 @@ export type Match = {
 /** Resultado de uma mesa do mesão. */
 export type PodResult =
   | { kind: "win"; winner: ID }
-  // o tempo acabou (com os turnos extras) sem vencedor: quem ainda estava vivo pontua como empate
+  // sem vencedor quando o tempo acaba: empate. Pela regra do cEDH todos da mesa pontuam, menos quem concedeu
+  // ou levou derrota como penalidade; `survivors` é quem leva o ponto (o nome ficou da regra antiga, "vivo no fim")
   | { kind: "draw"; survivors: ID[] }
   // só na final (sem tempo limite): os finalistas combinam dividir o prêmio
   | { kind: "split"; players: ID[] };
@@ -125,6 +126,8 @@ export type Standing = {
   /** percentuais já com o piso de 1/3 da MTR */
   mwp: number;
   omw: number;
+  /** mesão: pontos médios dos adversários (3º critério do cEDH) */
+  oamp?: number;
   gwp: number;
   ogw: number;
   dropped: boolean;

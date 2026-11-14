@@ -24,7 +24,7 @@ export const STRUCTURES: { id: StructureChoice; title: string; text: string }[] 
   { id: "swiss-cut", title: "Suíço + corte", text: "Rodadas suíças e depois mata-mata com os melhores." },
   { id: "single-elimination", title: "Eliminação simples", text: "Perdeu, saiu. A chave sai na hora." },
   { id: "round-robin", title: "Todos contra todos", text: "Cada um enfrenta todos os outros uma vez." },
-  { id: "pods", title: "Mesão", text: "Mesas de 4 (Commander). Vitória 3, vivo no fim do tempo 1; empate no topo vai para a final." },
+  { id: "pods", title: "Mesão", text: "Mesas de 4 (Commander), regras do cEDH Europa: vitória 7, empate 1 para a mesa toda, desempate por MW%, pontos e OMW% dos adversários." },
 ];
 
 export function choiceOf(s: Structure): StructureChoice {

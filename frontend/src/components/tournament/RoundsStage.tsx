@@ -109,7 +109,7 @@ export default function RoundsStage({ t, dispatch, onPlayer }: { t: Tournament; 
         <RoundTimer
           round={round}
           minutes={t.settings.roundMinutes}
-          overNote={isPods ? "Tempo! Termina o turno e cada vivo joga mais 1" : undefined}
+          overNote={isPods ? "Tempo! Quem está no turno termina; sem vencedor, é empate" : undefined}
           onAction={locked ? undefined : (action) => dispatch({ type: "timer", round: round.number, action, at: new Date().toISOString() })}
         />
       ) : null}

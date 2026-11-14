@@ -8,8 +8,8 @@ import { cx, Drawer, Tag } from "../ui";
 import { scoreLabel } from "./MatchCard";
 
 const OUTCOME = { win: { label: "Vitória", tone: "ok" as const }, loss: { label: "Derrota", tone: "bad" as const }, draw: { label: "Empate", tone: "neutral" as const }, bye: { label: "Folga", tone: "ok" as const } };
-/** No mesão o "empate" é estar vivo quando o tempo e os turnos extras acabaram. */
-const POD_OUTCOME = { ...OUTCOME, draw: { label: "Vivo no tempo", tone: "neutral" as const } };
+/** No mesão o empate é a mesa sem vencedor quando o tempo acaba (regra do cEDH). */
+const POD_OUTCOME = { ...OUTCOME, draw: { label: "Empate no tempo", tone: "neutral" as const } };
 
 /** Histórico de um jogador: rodada a rodada, com oponente, placar e os números dele na tabela. */
 export default function PlayerDrawer({ t, playerId, onClose }: { t: Tournament; playerId: string | null; onClose: () => void }) {

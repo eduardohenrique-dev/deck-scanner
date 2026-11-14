@@ -7,7 +7,7 @@ import type { ID, PodResult, Score, Structure, Tournament } from "./types.ts";
 export const pct = (x: number) => `${(x * 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
 export const record = (w: number, l: number, d: number) => `${w}-${l}-${d}`;
 export const scoreText = (s: Score) => (s.draws ? `${s.a}-${s.b}-${s.draws}` : `${s.a}-${s.b}`);
-/** Mesão: vitórias, empates (vivo no fim do tempo) e derrotas, com letra, para não confundir com o 1 × 1. */
+/** Mesão: vitórias, empates (mesa sem vencedor no fim do tempo) e derrotas, com letra, para não confundir com o 1 × 1. */
 export const podRecord = (w: number, d: number, l: number) => `${w}V ${d}E ${l}D`;
 
 const rounds = (n: number) => `${n} ${n === 1 ? "rodada" : "rodadas"}`;
@@ -65,7 +65,7 @@ export function standingsText(t: Tournament): string {
   const pods = isPodTournament(t);
   const lines = [...header(t), "", played ? `*Classificação após a rodada ${played}*` : "*Classificação*"];
   for (const s of standings(t)) {
-    const detail = pods ? `(${podRecord(s.wins, s.draws, s.losses)}) · adversários ${pct(s.omw)}` : `(${record(s.wins, s.losses, s.draws)}) · OMW ${pct(s.omw)} · GW ${pct(s.gwp)}`;
+    const detail = pods ? `(${podRecord(s.wins, s.draws, s.losses)}) · MW ${pct(s.mwp)} · adv ${(s.oamp ?? 0).toFixed(2).replace(".", ",")} pts · OMW ${pct(s.omw)}` : `(${record(s.wins, s.losses, s.draws)}) · OMW ${pct(s.omw)} · GW ${pct(s.gwp)}`;
     lines.push(`${s.rank}. ${name(s.playerId)} — ${s.points} pts ${detail}${s.dropped ? " · saiu" : ""}`);
   }
   return lines.join("\n");

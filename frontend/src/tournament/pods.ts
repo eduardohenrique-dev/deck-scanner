@@ -12,7 +12,10 @@
  *   empatava com "duas duplas juntas duas rodadas" e a mesma mesa voltava sem precisar;
  * - até 16 jogadores a divisão é a melhor que existe (todas são consideradas): se sobrou reencontro,
  *   é porque não há divisão sem ele. Acima disso, parte de várias divisões e troca jogadores entre
- *   mesas enquanto a conta melhora.
+ *   mesas enquanto a conta melhora;
+ * - como pede o cEDH (adendo da MTR, 10.4A), ninguém cai numa mesa de 3 pela segunda vez se der para
+ *   evitar: isso vem logo depois dos reencontros e antes da proximidade em pontos;
+ * - a ordem dos jogadores na mesa é a ordem de jogo e é sorteada (x.3A): quem aparece em cima começa.
  */
 import { shuffle, type Rng } from "./rng.ts";
 import { collectStats } from "./standings.ts";
@@ -56,13 +59,16 @@ export function podMeetings(rounds: Round[]): Map<string, number> {
 /** Até este número de jogadores a divisão escolhida é comprovadamente a de menos reencontros. */
 export const POD_EXACT_LIMIT = 16;
 
-/** Custo de uma mesa: [reencontros (pesados), pontos + sorteio]. Compara-se o primeiro; o segundo desempata. */
-type Cost = [number, number];
+/**
+ * Custo de uma mesa: [reencontros (pesados), mesa menor repetida, pontos + sorteio]. Compara-se na ordem:
+ * cada um só desempata o anterior.
+ */
+type Cost = [number, number, number];
 type Scorer = { pod: (members: number[]) => Cost };
 
-const less = (a: Cost, b: Cost) => a[0] < b[0] || (a[0] === b[0] && a[1] < b[1] - 1e-9);
-const plus = (a: Cost, b: Cost): Cost => [a[0] + b[0], a[1] + b[1]];
-const NONE: Cost = [0, 0];
+const less = (a: Cost, b: Cost) => a[0] < b[0] || (a[0] === b[0] && (a[1] < b[1] || (a[1] === b[1] && a[2] < b[2] - 1e-9)));
+const plus = (a: Cost, b: Cost): Cost => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+const NONE: Cost = [0, 0, 0];
 
 /**
  * Todas as divisões de `0..n-1` nos tamanhos dados, cada uma uma vez só; guarda a de menor custo.
@@ -70,7 +76,7 @@ const NONE: Cost = [0, 0];
  */
 function bestExhaustive(n: number, sizes: number[], score: Scorer, start?: number[][]): number[][] {
   let best: number[][] = start ?? [];
-  let bestCost: Cost = start ? start.reduce<Cost>((acc, p) => plus(acc, score.pod(p)), NONE) : [Infinity, Infinity];
+  let bestCost: Cost = start ? start.reduce<Cost>((acc, p) => plus(acc, score.pod(p)), NONE) : [Infinity, Infinity, Infinity];
   const used = new Array<boolean>(n).fill(false);
   const pods: number[][] = [];
   const remainingSizes = [...sizes];
@@ -201,10 +207,14 @@ export function pairPods(t: Pick<Tournament, "players" | "rounds" | "settings">,
   // do que todas as duplas da rodada se encontrando uma vez a menos (o expoente para em 6 para caber no número)
   const B = totalPairs + 1;
   const weight = (m: number) => (m <= 0 ? 0 : B ** Math.min(m - 1, 6));
+  // quantas vezes cada um já jogou numa mesa menor que a padrão desta rodada
+  const standard = Math.max(...sizes);
+  const smallBefore = ids.map((id) => previous.reduce((acc, r) => acc + ((r.pods ?? []).some((p) => p.players.length < standard && p.players.includes(id)) ? 1 : 0), 0));
   const score: Scorer = {
     pod(members) {
       let rep = 0;
       let rest = 0;
+      const small = members.length < standard ? members.reduce((acc, v) => acc + smallBefore[v], 0) : 0;
       for (let i = 0; i < members.length; i++)
         for (let j = i + 1; j < members.length; j++) {
           const u = members[i];
@@ -212,7 +222,7 @@ export function pairPods(t: Pick<Tournament, "players" | "rounds" | "settings">,
           rep += weight(met.get(podKey(ids[u], ids[v])) ?? 0);
           rest += (pts[u] - pts[v]) ** 2 * S + jitter[Math.min(u, v)][Math.max(u, v)];
         }
-      return [rep, rest];
+      return [rep, small, rest];
     },
   };
   // começa por pontos (do maior para o menor, com sorteio entre iguais)
@@ -223,12 +233,10 @@ export function pairPods(t: Pick<Tournament, "players" | "rounds" | "settings">,
   const local = bestLocal(n, sizes, score, byPoints, opts.rng);
   const groups = n <= POD_EXACT_LIMIT ? bestExhaustive(n, sizes, score, local) : local;
 
-  // mesa 1 é a de mais pontos; dentro da mesa, quem tem mais pontos primeiro
+  // mesa 1 é a de mais pontos; dentro da mesa, a ordem de jogo é sorteada
   const avg = (g: number[]) => g.reduce((acc, v) => acc + pts[v], 0) / g.length;
-  const ordered = groups
-    .map((g) => [...g].sort((a, b) => pts[b] - pts[a] || a - b))
-    .sort((x, y) => avg(y) - avg(x) || Math.min(...x) - Math.min(...y));
-  return toPods(ordered.map((g) => g.map((v) => ids[v])));
+  const ordered = groups.map((g) => [...g].sort((a, b) => a - b)).sort((x, y) => avg(y) - avg(x) || Math.min(...x) - Math.min(...y));
+  return toPods(ordered.map((g) => shuffle(g, opts.rng).map((v) => ids[v])));
 }
 
 /**

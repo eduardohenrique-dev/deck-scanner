@@ -10,7 +10,8 @@ import StandingsTable from "./StandingsTable";
 import type { Dispatch } from "./useTournament";
 
 /**
- * Mesão com empate na liderança: os empatados em 1º jogam uma final só entre eles, sem tempo limite.
+ * Mesão com empate total na liderança (pontos e os três desempates do cEDH iguais): os empatados jogam uma
+ * final só entre eles, sem tempo limite.
  * Termina com um vencedor ou com os finalistas dividindo o prêmio.
  */
 export default function FinalStage({ t, dispatch, onPlayer }: { t: Tournament; dispatch: Dispatch; onPlayer: (id: string) => void }) {
@@ -27,8 +28,8 @@ export default function FinalStage({ t, dispatch, onPlayer }: { t: Tournament; d
           <span className="grid size-14 shrink-0 place-items-center rounded-md bg-gold-300/12 text-gold-300 shadow-[inset_0_0_0_1px_rgb(232_193_90/0.25)]">
             <Crown size={28} />
           </span>
-          <div className="min-w-0 flex-1">
-            <p className="eyebrow">Empate na liderança</p>
+          <div className="min-w-0 flex-1 basis-64">
+            <p className="eyebrow">Empate em todos os critérios</p>
             <h2 className="mt-1 font-display text-title-1 font-semibold text-mist">{t.tiebreak ? "A final" : `${tied.length} empatados com ${points.get(tied[0]) ?? 0} pontos`}</h2>
             <p className="mt-1 text-subhead text-mist-dim">
               {t.tiebreak

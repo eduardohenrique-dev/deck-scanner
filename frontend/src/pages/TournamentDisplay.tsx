@@ -61,7 +61,7 @@ function FinalScreen({ t }: { t: Tournament }) {
   return (
     <div className="mx-auto max-w-4xl space-y-6 text-center">
       <Crown size={72} className="mx-auto text-area-soft" />
-      <p className="text-title-2 text-mist-dim">{pod.result ? podResultText(pod.result, name) : "Empate na liderança · sem tempo limite"}</p>
+      <p className="text-title-2 text-mist-dim">{pod.result ? podResultText(pod.result, name) : "Empate em todos os critérios · sem tempo limite"}</p>
       <div className="grid gap-4 sm:grid-cols-2">
         {pod.players.map((id) => (
           <div key={id} className="glass px-6 py-5 text-title-1 font-semibold text-mist">
@@ -136,7 +136,7 @@ export default function TournamentDisplay({ id }: { id: string }) {
           </div>
         </div>
         {r && active === "pairings" && t.settings.roundMinutes ? (
-          <RoundTimer round={r} minutes={t.settings.roundMinutes} size="xl" overNote={r.pods?.length ? "Tempo! Termina o turno e cada jogador vivo faz mais 1" : undefined} />
+          <RoundTimer round={r} minutes={t.settings.roundMinutes} size="xl" overNote={r.pods?.length ? "Tempo! Quem está no turno termina; sem vencedor, é empate" : undefined} />
         ) : null}
       </header>
 
