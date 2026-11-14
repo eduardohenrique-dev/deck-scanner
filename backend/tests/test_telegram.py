@@ -138,7 +138,8 @@ def test_aviso_de_rodada_no_grupo_e_no_privado(client, bot):
         res = client.post(f"/api/tournaments/{t['id']}/announce", json=body).json()
         assert res == {"enabled": True, "group": True, "players": 1, "failed": 0, "no_telegram": 0, "no_account": 4}
         texts = {p["chat_id"]: p["text"] for m, p in bot if m == "sendMessage"}
-        assert "<b>Mesa 1</b>: Gui, Dudu, Leo, Olívio" in texts["-100"]
+        assert "<b>Mesa 1</b>\n1. Gui\n2. Dudu\n3. Leo\n4. Olívio" in texts["-100"]
+        assert "o 1º de cada mesa começa" in texts["-100"]
         assert "/t/" in texts["-100"]
         dm = texts["777"]
         assert "Mesa 1" in dm and "Gui, Leo e Olívio" in dm and "2º a jogar" in dm and "3º, com 7 pts" in dm and "?j=a" in dm
@@ -149,6 +150,9 @@ def test_aviso_de_rodada_no_grupo_e_no_privado(client, bot):
         assert again["players"] == 1
         # rodada que não existe no torneio salvo é recusada
         assert client.post(f"/api/tournaments/{t['id']}/announce", json={**body, "notice": "r2"}).status_code == 409
+        # relógio parado: o aviso de início é recusado
+        start = {"notice": "t1", "heading": "Rodada 1 começou", "detail": "Termina às 21:15."}
+        assert client.post(f"/api/tournaments/{t['id']}/announce", json=start).status_code == 409
     finally:
         client.delete(f"/api/tournaments/{t['id']}")
         db.app_db().execute("DELETE FROM tournament_notices WHERE tournament_id=?", (t["id"],))
@@ -160,3 +164,44 @@ def test_sem_robo_os_avisos_ficam_desligados(client, monkeypatch):
     monkeypatch.setattr(config, "TELEGRAM_BOT_TOKEN", "")
     assert client.get("/api/me").json()["telegram"]["enabled"] is False
     assert client.post("/api/me/telegram/link").status_code == 503
+
+
+def test_aviso_de_relogio_iniciado_e_botao_do_link(client, bot):
+    user = config.DEFAULT_USER_ID
+    players = [_player("a", "Dudu", user), _player("b", "Leo")]
+    rounds = [{"number": 1, "matches": [{"id": "m1", "table": 1, "a": "a", "b": "b", "result": None}], "pods": [],
+               "timer": {"startedAt": "2026-11-14T21:00:00.000Z", "pausedAt": None, "pausedMs": 0}}]
+    t = client.post("/api/tournaments", json={"doc": _doc("Relógio (apagar)", players, rounds, started=True), "summary": {"status": "running"}}).json()
+    try:
+        telegram.link_user(user, "777", "dudu")
+        telegram.link_group(user, "-100", "Torneios")
+        start = {"notice": "t1", "heading": "Rodada 1 começou", "detail": "Termina às 19:15."}
+        res = client.post(f"/api/tournaments/{t['id']}/announce", json=start).json()
+        assert res["group"] is True and res["players"] == 1 and res["no_account"] == 1
+        texts = {p["chat_id"]: p for m, p in bot if m == "sendMessage"}
+        assert "Rodada 1 começou" in texts["-100"]["text"] and "Termina às 19:15." in texts["777"]["text"]
+        # o mesmo início não é avisado de novo (pausar e retomar não repete)
+        assert client.post(f"/api/tournaments/{t['id']}/announce", json=start).json()["skipped"] is True
+
+        # o botão com o link só vai quando o link é https (o Telegram recusa outro)
+        sent: list[dict] = []
+
+        async def capture(method: str, payload: dict | None = None) -> dict:
+            sent.append(payload or {})
+            return {}
+
+        import asyncio
+        old = telegram.call
+        telegram.call = capture
+        try:
+            asyncio.run(telegram.send("1", "oi", ("Abrir", "https://deck-scanner.vercel.app/t/abc")))
+            asyncio.run(telegram.send("1", "oi", ("Abrir", "http://localhost/t/abc")))
+        finally:
+            telegram.call = old
+        assert sent[0]["reply_markup"]["inline_keyboard"][0][0]["url"].startswith("https://")
+        assert "reply_markup" not in sent[1]
+    finally:
+        client.delete(f"/api/tournaments/{t['id']}")
+        db.app_db().execute("DELETE FROM tournament_notices WHERE tournament_id=?", (t["id"],))
+        telegram.unlink_user(user)
+        telegram.unlink_group(user)

@@ -205,8 +205,9 @@ class Standing(BaseModel):
 
 
 class AnnounceIn(BaseModel):
-    notice: str = Field(pattern=r"^(r\d{1,2}|final)$")
+    notice: str = Field(pattern=r"^(r\d{1,2}|t\d{1,2}|final)$")
     heading: str = Field(max_length=60)
+    detail: str = Field(default="", max_length=80)
     standings: dict[str, Standing] = {}
     force: bool = False
 
@@ -239,6 +240,10 @@ async def announce(tournament_id: str, body: AnnounceIn, request: Request, user:
     if not body.force and telegram.already_sent(tournament_id, body.notice):
         return json_response({"enabled": True, "skipped": True})
     doc = row["doc"]
+    link = f"{_origin(request)}/t/{tournaments.share_token(tournament_id)}"
+    title = str(doc.get("name") or "Torneio")
+    if body.notice.startswith("t"):
+        return json_response(await _announce_start(tournament_id, doc, body, user, link, title))
     raw, final = _tables(doc, body.notice)
     people = {p["id"]: p for p in doc.get("players") or []}
 
@@ -248,19 +253,18 @@ async def announce(tournament_id: str, body: AnnounceIn, request: Request, user:
         return telegram.Seat(pid, str(p.get("name") or "?"), p.get("userId"), s.rank, s.points)
 
     tables = [telegram.Table(n, [seat(pid) for pid in ids]) for n, ids in raw]
-    link = f"{_origin(request)}/t/{tournaments.share_token(tournament_id)}"
-    title = str(doc.get("name") or "Torneio")
 
     jobs: list = []
     group = telegram.group_link(user.id)
     if group:
-        jobs.append(telegram.send(group["chat_id"], telegram.group_text(title, body.heading, tables, link, final)))
+        jobs.append(telegram.send(group["chat_id"], telegram.group_text(title, body.heading, tables, link, final), ("⏱ Ver mesas e relógio", link)))
     chats = telegram.linked_chats([s.user_id for t in tables for s in t.seats if s.user_id])
     direct = 0
     for t in tables:
         for s in t.seats:
             if s.user_id and s.user_id in chats:
-                jobs.append(telegram.send(chats[s.user_id], telegram.player_text(title, body.heading, t, s, f"{link}?j={s.player_id}", final)))
+                mine = f"{link}?j={s.player_id}"
+                jobs.append(telegram.send(chats[s.user_id], telegram.player_text(title, body.heading, t, s, mine, final), ("⏱ Minha mesa e o relógio", mine)))
                 direct += 1
     results = await asyncio.gather(*jobs) if jobs else []
     ok_group = bool(results[0]) if group else None
@@ -275,6 +279,33 @@ async def announce(tournament_id: str, body: AnnounceIn, request: Request, user:
         "no_telegram": sum(1 for s in seats if s.user_id and s.user_id not in chats),
         "no_account": sum(1 for s in seats if not s.user_id),
     })
+
+
+async def _announce_start(tournament_id: str, doc: dict, body: AnnounceIn, user: User, link: str, title: str) -> dict:
+    """Relógio da rodada iniciado: um aviso só, no grupo e no privado de quem está na rodada."""
+    number = int(body.notice[1:])
+    rnd = next((r for r in doc.get("rounds") or [] if r.get("number") == number), None)
+    if rnd is None or not (rnd.get("timer") or {}).get("startedAt"):
+        raise HTTPException(409, "o relógio dessa rodada ainda não começou no torneio salvo")
+    ids = [pid for pod in rnd.get("pods") or [] for pid in pod.get("players") or []]
+    ids += [pid for m in rnd.get("matches") or [] for pid in (m.get("a"), m.get("b")) if pid]
+    people = {p["id"]: p for p in doc.get("players") or []}
+    users = [people[pid]["userId"] for pid in ids if people.get(pid, {}).get("userId")]
+    text = telegram.start_text(title, body.heading, body.detail)
+    jobs = []
+    group = telegram.group_link(user.id)
+    if group:
+        jobs.append(telegram.send(group["chat_id"], text, ("⏱ Ver o relógio", link)))
+    chats = telegram.linked_chats(users)
+    for uid in users:
+        if uid in chats:
+            jobs.append(telegram.send(chats[uid], text, ("⏱ Ver o relógio", link)))
+    results = await asyncio.gather(*jobs) if jobs else []
+    telegram.mark_sent(tournament_id, body.notice)
+    sent = sum(1 for r in (results[1:] if group else results) if r)
+    return {"enabled": True, "group": bool(results[0]) if group else None, "players": sent,
+            "failed": (len(results) - (1 if group else 0)) - sent, "no_telegram": len([u for u in users if u not in chats]),
+            "no_account": len(ids) - len(users)}
 
 
 # ---------------------------------------------------------------------- página pública

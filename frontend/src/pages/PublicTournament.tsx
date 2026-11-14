@@ -42,8 +42,14 @@ export default function PublicTournament({ token }: { token: string }) {
 
   useEffect(() => {
     void load(true);
-    const t = window.setInterval(() => document.visibilityState === "visible" && void load(), 4000);
-    return () => window.clearInterval(t);
+    // a cada 2 s: quando o organizador dá o start, o relógio começa aqui quase junto
+    const t = window.setInterval(() => document.visibilityState === "visible" && void load(), 2000);
+    const back = () => document.visibilityState === "visible" && void load(true);
+    document.addEventListener("visibilitychange", back);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener("visibilitychange", back);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -206,7 +212,8 @@ function RoundView({ t, round, me, name, pods }: { t: Tournament; round: Round; 
       <Board className="flex flex-wrap items-center justify-between gap-4 p-5">
         <div>
           <p className="eyebrow">Relógio da rodada</p>
-          {!round.timer.startedAt && <p className="mt-1 text-footnote text-mist-faint">Ainda não começou.</p>}
+          {!round.timer.startedAt && <p className="mt-1 text-subhead text-mist-dim">Parado. Começa em todas as mesas quando o organizador der o start.</p>}
+          {round.timer.pausedAt && <p className="mt-1 text-subhead text-mist-dim">Pausado pelo organizador.</p>}
         </div>
         <RoundTimer round={round} minutes={t.settings.roundMinutes} size={wideScreen() ? "xl" : "md"} overNote={pods ? "Tempo! Quem está no turno termina; sem vencedor, é empate" : undefined} />
       </Board>

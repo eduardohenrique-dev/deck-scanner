@@ -311,7 +311,7 @@ export type TournamentAccounts = {
   players: Record<string, { account: boolean; telegram: boolean }>;
 };
 
-export type AnnounceBody = { notice: string; heading: string; standings: Record<string, { rank: number | null; points: number | null }>; force?: boolean };
+export type AnnounceBody = { notice: string; heading: string; detail?: string; standings: Record<string, { rank: number | null; points: number | null }>; force?: boolean };
 export type AnnounceResult =
   | { enabled: false }
   | { enabled: true; skipped: true }

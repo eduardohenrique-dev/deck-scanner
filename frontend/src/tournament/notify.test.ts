@@ -28,3 +28,16 @@ test("aviso da 1ª rodada não tem posição; da 2ª em diante, a posição de a
   assert.ok(winners.every((w) => (second.standings[w].rank ?? 99) <= 2));
   assert.equal(announcement(t, "r3"), null); // rodada que não existe
 });
+
+test("aviso de relógio: só no 1º start da rodada, com a hora em que termina", () => {
+  let t = run(make(8, { kind: "pods", rounds: 2 }), { type: "start", at: AT });
+  const start = { type: "timer" as const, round: 1, action: "start" as const, at: "2026-11-14T22:00:00.000Z" };
+  t = apply(t, start);
+  assert.equal(noticeFor(start, t), "t1");
+  const a = announcement(t, "t1")!;
+  assert.match(a.heading, /Rodada 1 começou/);
+  assert.match(a.detail!, /^\d+ minutos\. Termina às \d{2}:\d{2}\.$/);
+  const pause = { type: "timer" as const, round: 1, action: "pause" as const, at: "2026-11-14T22:05:00.000Z" };
+  t = apply(t, pause);
+  assert.equal(noticeFor(pause, t), null);
+});

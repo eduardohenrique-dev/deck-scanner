@@ -10,12 +10,16 @@ import type { Tournament } from "./types.ts";
 export type Announcement = {
   notice: string;
   heading: string;
+  /** linha extra (no aviso de relógio iniciado: a que horas termina) */
+  detail?: string;
   standings: Record<string, { rank: number | null; points: number | null }>;
 };
 
 /** Qual aviso um comando gera, olhando o torneio depois dele (null = nenhum). */
 export function noticeFor(cmd: Command, after: Tournament): string | null {
   if (cmd.type === "makeFinal") return after.tiebreak ? "final" : null;
+  // o relógio começou (o 1º start da rodada; pausar e retomar não avisa de novo)
+  if (cmd.type === "timer" && cmd.action === "start") return after.rounds.some((r) => r.number === cmd.round && r.timer.startedAt) ? `t${cmd.round}` : null;
   if (cmd.type === "start" || cmd.type === "pairNext") return after.rounds.length ? `r${after.rounds.length}` : null;
   return null;
 }
@@ -25,6 +29,19 @@ export function noticeFor(cmd: Command, after: Tournament): string | null {
  * rodadas, que também é a ordem de jogo.
  */
 export function announcement(t: Tournament, notice: string): Announcement | null {
+  if (notice.startsWith("t")) {
+    const round = t.rounds.find((r) => r.number === Number(notice.slice(1)));
+    if (!round?.timer.startedAt) return null;
+    const minutes = t.settings.roundMinutes;
+    const ends = minutes ? new Date(Date.parse(round.timer.startedAt) + minutes * 60_000) : null;
+    const hhmm = ends ? ends.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : null;
+    return {
+      notice,
+      heading: `Rodada ${round.number} começou: valendo em todas as mesas`,
+      detail: hhmm ? `${minutes} minutos. Termina às ${hhmm}.` : "",
+      standings: {},
+    };
+  }
   const final = notice === "final";
   const number = final ? null : Number(notice.slice(1));
   if (final ? !t.tiebreak : !t.rounds.some((r) => r.number === number)) return null;

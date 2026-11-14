@@ -177,15 +177,26 @@ def _pts(points: float | None) -> str:
 
 
 def group_text(title: str, heading: str, tables: list[Table], link: str, final: bool) -> str:
-    lines = [f"🏆 <b>{html.escape(title)}</b>", f"<b>{html.escape(heading)}</b>", ""]
+    """Todas as mesas de uma vez, cada uma com a ordem de jogo numerada (o 1º começa)."""
+    lines = [f"🏆 <b>{html.escape(title)}</b>", f"<b>{html.escape(heading)}</b>"]
     for t in tables:
         label = "Folga" if t.number is None else ("Mesa final" if final else f"Mesa {t.number}")
-        people = ", ".join(html.escape(s.name) for s in t.seats)
-        lines.append(f"<b>{label}</b>: {people}")
-    if final:
-        lines += ["", "Sem tempo limite. Começa quem está em primeiro na lista."]
-    lines += ["", f"⏱ Relógio e mesas: {link}"]
+        lines += ["", f"<b>{label}</b>"]
+        if t.number is None or len(t.seats) <= 2:
+            lines.append(" × ".join(html.escape(s.name) for s in t.seats))
+        else:
+            lines += [f"{i}. {html.escape(s.name)}" for i, s in enumerate(t.seats, 1)]
+    lines += ["", "O número é a ordem de jogo: o 1º de cada mesa começa."]
+    lines.append("Sem tempo limite." if final else "O relógio começa quando o organizador der o start.")
+    if not link.startswith("https://"):
+        lines += ["", f"⏱ Mesas e relógio: {link}"]
     return "\n".join(lines)
+
+
+def start_text(title: str, heading: str, detail: str) -> str:
+    """Aviso de relógio iniciado: vale para todas as mesas ao mesmo tempo."""
+    line = f"⏱ <b>{html.escape(heading)}</b>"
+    return f"🏆 <b>{html.escape(title)}</b>\n{line}" + (f"\n{html.escape(detail)}" if detail else "")
 
 
 def player_text(title: str, heading: str, table: Table, seat: Seat, link: str, final: bool) -> str:
@@ -201,7 +212,8 @@ def player_text(title: str, heading: str, table: Table, seat: Seat, link: str, f
             lines.append(f"Ordem de jogo: você é o {order}º a jogar.")
     if seat.rank:
         lines.append(f"Classificação: {_place(seat.rank)}" + (f", com {_pts(seat.points)}." if seat.points is not None else "."))
-    lines += ["", f"⏱ Acompanhe o relógio: {link}"]
+    if not link.startswith("https://"):
+        lines += ["", f"⏱ Acompanhe o relógio: {link}"]
     return "\n".join(lines)
 
 
@@ -209,9 +221,13 @@ def _list(items: list[str]) -> str:
     return items[0] if len(items) == 1 else f"{', '.join(items[:-1])} e {items[-1]}"
 
 
-async def send(chat_id: str, text: str) -> bool:
+async def send(chat_id: str, text: str, button: tuple[str, str] | None = None) -> bool:
+    """Manda a mensagem; com `button` (rótulo, link https), vai junto um botão que abre o link."""
+    payload: dict = {"chat_id": chat_id, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True}
+    if button and button[1].startswith("https://"):
+        payload["reply_markup"] = {"inline_keyboard": [[{"text": button[0], "url": button[1]}]]}
     try:
-        await call("sendMessage", {"chat_id": chat_id, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True})
+        await call("sendMessage", payload)
         return True
     except (TelegramError, httpx.HTTPError):
         return False
