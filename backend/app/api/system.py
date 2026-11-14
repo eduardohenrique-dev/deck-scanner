@@ -45,6 +45,7 @@ def public_config():
         "hosted": config.SERVERLESS or bool(config.DATABASE_URL),
         "vlm": vlm.enabled(),
         "spellbook": config.SPELLBOOK_ENABLED,
+        "telegram": bool(config.TELEGRAM_BOT_TOKEN),
     }
 
 

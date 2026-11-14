@@ -77,6 +77,10 @@ ANTHROPIC_API_KEY = _env("ANTHROPIC_API_KEY")
 
 # robô do Telegram para os avisos de torneio (criado no @BotFather); vazio = avisos desligados
 TELEGRAM_BOT_TOKEN = _env("TELEGRAM_BOT_TOKEN")
+if not TELEGRAM_BOT_TOKEN and SERVERLESS:
+    # ajuda a achar erro de digitação no painel: só os NOMES parecidos, nunca os valores
+    _similar = sorted(k for k in os.environ if "TELEGRAM" in k.upper() or k.upper().endswith("BOT_TOKEN"))
+    print(f"[telegram] TELEGRAM_BOT_TOKEN ausente; variáveis parecidas: {_similar or "nenhuma"}", flush=True)
 AI_GATEWAY_API_KEY = _env("AI_GATEWAY_API_KEY")
 _VLM_SWITCH = _env("DECKSCANNER_VLM")  # "1" liga, "0" desliga; vazio = liga só com chave configurada
 # Na Vercel o AI Gateway aceita o token OIDC da própria função (chega a cada requisição), mas isso gera custo
