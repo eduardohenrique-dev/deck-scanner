@@ -27,7 +27,7 @@ from . import config, db
 
 API = "https://api.telegram.org"
 CODE_TTL = 24 * 3600
-TIMEOUT = httpx.Timeout(10.0, connect=5.0)
+TIMEOUT = httpx.Timeout(25.0, connect=8.0)
 
 
 def enabled() -> bool:
@@ -40,8 +40,13 @@ def webhook_secret() -> str:
 
 
 async def call(method: str, payload: dict | None = None) -> dict:
-    async with httpx.AsyncClient(timeout=TIMEOUT) as client:
-        reply = await client.post(f"{API}/bot{config.TELEGRAM_BOT_TOKEN}/{method}", json=payload or {})
+    started = time.monotonic()
+    try:
+        async with httpx.AsyncClient(timeout=TIMEOUT) as client:
+            reply = await client.post(f"{API}/bot{config.TELEGRAM_BOT_TOKEN}/{method}", json=payload or {})
+    except httpx.HTTPError as exc:
+        raise TelegramError(f"{method}: {type(exc).__name__} depois de {time.monotonic() - started:.1f}s") from exc
+    print(f"[telegram] {method} {reply.status_code} em {time.monotonic() - started:.1f}s", flush=True)
     body = reply.json() if reply.headers.get("content-type", "").startswith("application/json") else {}
     if not body.get("ok"):
         raise TelegramError(str(body.get("description") or f"Telegram respondeu {reply.status_code}"))
